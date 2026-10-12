@@ -1,5 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { SitePage } from "@/components/SiteLayout";
+import { listPublishedEvents } from "@/lib/database";
 import {
   ScrollShowcase,
   EventRibbon,
@@ -9,6 +10,7 @@ import {
 } from "@/components/CustomerExperience";
 
 export const Route = createFileRoute("/")({
+  loader: () => listPublishedEvents(),
   head: () => ({
     meta: [
       { title: "RSVP DXB — Good people. Great rooms." },
@@ -30,11 +32,12 @@ export const Route = createFileRoute("/")({
 });
 
 function Home() {
+  const databaseEvents = Route.useLoaderData();
   return (
     <SitePage overlayHeader>
       <ScrollShowcase />
-      <EventRibbon title="Latest events" />
-      <EventRibbon title="RSVP TOP Pick" reverse />
+      <EventRibbon title="Latest events" events={databaseEvents} />
+      <EventRibbon title="RSVP TOP Pick" reverse events={databaseEvents} />
       <EventGallery />
       <ArtistGallery />
       <TicketOffers />

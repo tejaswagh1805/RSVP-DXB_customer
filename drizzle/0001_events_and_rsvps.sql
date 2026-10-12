@@ -16,7 +16,8 @@ CREATE TABLE IF NOT EXISTS events (
   who_is_invited text NOT NULL,
   host_note text NOT NULL,
   status text NOT NULL CHECK (status IN ('published', 'pending', 'closed')),
-  image_key text NOT NULL
+  image_key text NOT NULL,
+  image_data text NOT NULL DEFAULT ''
 );
 
 ALTER TABLE events ADD COLUMN IF NOT EXISTS dress_code text NOT NULL DEFAULT '';
@@ -25,6 +26,11 @@ ALTER TABLE events ADD COLUMN IF NOT EXISTS included text[] NOT NULL DEFAULT '{}
 ALTER TABLE events ADD COLUMN IF NOT EXISTS who_is_invited text NOT NULL DEFAULT '';
 ALTER TABLE events ADD COLUMN IF NOT EXISTS host_note text NOT NULL DEFAULT '';
 ALTER TABLE events ADD COLUMN IF NOT EXISTS image_key text NOT NULL DEFAULT '';
+ALTER TABLE events ADD COLUMN IF NOT EXISTS image_data text NOT NULL DEFAULT '';
+ALTER TABLE events ADD COLUMN IF NOT EXISTS created_at timestamptz NOT NULL DEFAULT now();
+ALTER TABLE events ADD COLUMN IF NOT EXISTS updated_at timestamptz NOT NULL DEFAULT now();
+ALTER TABLE events DROP CONSTRAINT IF EXISTS events_status_check;
+ALTER TABLE events ADD CONSTRAINT events_status_check CHECK (status IN ('draft', 'published', 'pending', 'closed'));
 
 CREATE TABLE IF NOT EXISTS event_rsvps (
   event_id text NOT NULL REFERENCES events(id) ON DELETE CASCADE,

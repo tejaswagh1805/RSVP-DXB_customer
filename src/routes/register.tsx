@@ -60,7 +60,7 @@ function RegisterPage() {
     setSubmitting(true);
     setSubmitError("");
     const detail = Object.entries(profileDetails)
-      .filter(([, value]) => value.trim())
+      .filter(([key, value]) => key !== "Instagram" && key !== "Follower count" && value.trim())
       .map(([key, value]) => `${key}: ${value.trim()}`)
       .join(" · ");
     try {
@@ -70,8 +70,16 @@ function RegisterPage() {
         password,
         track,
         city,
-        detail: detail || `Submitted from the website registration form (${interests.join(", ")})`,
-        followers: profileDetails["Follower count"] || "—",
+        detail: [detail, `Interests: ${interests.join(", ")}`].filter(Boolean).join(" · "),
+        instagramProfile: profileDetails["Instagram"] ?? "",
+        instagramFollowers: profileDetails["Follower count"] ?? "",
+        mobile: profileDetails["Mobile / WhatsApp"] ?? "",
+        outlet: profileDetails["Outlet"] ?? profileDetails["Company"] ?? profileDetails["Profession / company"] ?? "",
+        applicationRole: profileDetails["Role"] ?? profileDetails["Profession / company"] ?? "",
+        platform: ["Instagram", profileDetails["TikTok / YouTube"]?.trim() ? "TikTok / YouTube" : ""].filter(Boolean).join(", "),
+        allProfiles: Object.entries(profileDetails)
+          .filter(([key, value]) => value.trim() && !["Instagram", "Follower count", "Mobile / WhatsApp", "Outlet", "Company", "Profession / company", "Role"].includes(key))
+          .map(([key, value]) => `${key}: ${value.trim()}`).join(" | "),
       } });
       setStep(5);
     } catch (error) {
@@ -171,6 +179,15 @@ function RegisterPage() {
                 <Field label="Mobile / WhatsApp">
                   <input className={inputClass} placeholder="+971 50 000 0000" value={profileDetails["Mobile / WhatsApp"] ?? ""} onChange={(e) => setProfileDetail("Mobile / WhatsApp", e.target.value)} />
                 </Field>
+                <Field label="Instagram profile">
+                  <input className={inputClass} placeholder="@yourhandle or instagram.com/yourhandle" value={profileDetails["Instagram"] ?? ""} onChange={(e) => setProfileDetail("Instagram", e.target.value)} autoComplete="url" />
+                </Field>
+                <Field label="Instagram follower count">
+                  <input className={inputClass} type="number" min="0" step="1" inputMode="numeric" placeholder="25000" value={profileDetails["Follower count"] ?? ""} onChange={(e) => setProfileDetail("Follower count", e.target.value)} />
+                </Field>
+                <p className="text-xs text-muted-foreground sm:col-span-2">
+                  Our membership team reviews your profile and follower count before making a decision. Follower counts may be checked.
+                </p>
                 {track === "Media" ? (
                   <>
                     <Field label="Outlet">
@@ -189,14 +206,8 @@ function RegisterPage() {
                 ) : null}
                 {track === "Creators" ? (
                   <>
-                    <Field label="Instagram">
-                      <input className={inputClass} placeholder="@handle" value={profileDetails["Instagram"] ?? ""} onChange={(e) => setProfileDetail("Instagram", e.target.value)} />
-                    </Field>
                     <Field label="TikTok / YouTube">
                       <input className={inputClass} placeholder="@handle" value={profileDetails["TikTok / YouTube"] ?? ""} onChange={(e) => setProfileDetail("TikTok / YouTube", e.target.value)} />
-                    </Field>
-                    <Field label="Follower count">
-                      <input className={inputClass} placeholder="25,000" value={profileDetails["Follower count"] ?? ""} onChange={(e) => setProfileDetail("Follower count", e.target.value)} />
                     </Field>
                     <Field label="Niche">
                       <input className={inputClass} placeholder="Fashion & lifestyle" value={profileDetails["Niche"] ?? ""} onChange={(e) => setProfileDetail("Niche", e.target.value)} />
@@ -213,9 +224,6 @@ function RegisterPage() {
                     </Field>
                     <Field label="Industry">
                       <input className={inputClass} placeholder="Hospitality" value={profileDetails["Industry"] ?? ""} onChange={(e) => setProfileDetail("Industry", e.target.value)} />
-                    </Field>
-                    <Field label="Instagram">
-                      <input className={inputClass} placeholder="@handle" value={profileDetails["Instagram"] ?? ""} onChange={(e) => setProfileDetail("Instagram", e.target.value)} />
                     </Field>
                   </>
                 ) : null}
@@ -252,7 +260,14 @@ function RegisterPage() {
                   ))}
                 </div>
               </div>
-              <Nav onBack={() => setStep(2)} onNext={() => setStep(4)} />
+              <Nav
+                onBack={() => setStep(2)}
+                onNext={() => setStep(4)}
+                disabled={
+                  !profileDetails["Instagram"]?.trim() ||
+                  !/^\d+$/.test(profileDetails["Follower count"]?.trim() ?? "")
+                }
+              />
             </div>
           ) : null}
 
@@ -283,7 +298,7 @@ function RegisterPage() {
                 <Button variant="outline" onClick={() => setStep(3)}>
                   Back
                 </Button>
-                  <Button className="flex-1" onClick={() => void submit()} disabled={submitting || !name.trim() || !email.trim() || password.length < 12}>
+                <Button className="flex-1" onClick={() => void submit()} disabled={submitting || !name.trim() || !email.trim() || password.length < 12 || !profileDetails["Instagram"]?.trim() || !/^\d+$/.test(profileDetails["Follower count"]?.trim() ?? "")}>
                   {submitting ? "Submitting…" : "Submit application"}
                 </Button>
               </div>
@@ -311,13 +326,13 @@ function RegisterPage() {
   );
 }
 
-function Nav({ onBack, onNext }: { onBack: () => void; onNext: () => void }) {
+function Nav({ onBack, onNext, disabled = false }: { onBack: () => void; onNext: () => void; disabled?: boolean }) {
   return (
     <div className="mt-7 flex gap-3">
       <Button variant="outline" onClick={onBack}>
         Back
       </Button>
-      <Button className="flex-1" onClick={onNext}>
+      <Button className="flex-1" onClick={onNext} disabled={disabled}>
         Continue
       </Button>
     </div>

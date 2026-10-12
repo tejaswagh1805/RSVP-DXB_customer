@@ -70,8 +70,9 @@ export function ScrollShowcase() {
   </section>;
 }
 
-export function EventRibbon({ title, reverse = false }: { title: string; reverse?: boolean }) {
-  const { events } = useStore();
+export function EventRibbon({ title, reverse = false, events: eventRows }: { title: string; reverse?: boolean; events?: EventItem[] }) {
+  const { events: storedEvents } = useStore();
+  const events = eventRows?.length ? eventRows : storedEvents;
   const live = events.filter(e => e.status === "published");
   if (!live.length) return null;
   const tiles = Array.from({ length: 15 }, (_, i) => live[i % live.length]).filter((e): e is EventItem => Boolean(e));

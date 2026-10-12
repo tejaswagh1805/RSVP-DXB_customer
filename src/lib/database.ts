@@ -68,7 +68,7 @@ function requireAdminRole(admin: { role: string } | null) {
   }
 }
 
-type EventRow = Omit<EventItem, "image"> & { image_key: string };
+type EventRow = Omit<EventItem, "image"> & { image_key: string; image_data: string | null };
 
 const EVENT_IMAGES: Record<string, string> = {
   "atlantis-chef-table": diningImage,
@@ -80,9 +80,10 @@ const EVENT_IMAGES: Record<string, string> = {
 };
 
 function mapEvent(row: EventRow): EventItem {
+  const { image_data, image_key, ...event } = row;
   return {
-    ...row,
-    image: EVENT_IMAGES[row.image_key] ?? EVENT_IMAGES["atlantis-chef-table"]!,
+    ...event,
+    image: image_data || EVENT_IMAGES[image_key] || EVENT_IMAGES["atlantis-chef-table"]!,
   };
 }
 
@@ -92,7 +93,7 @@ export const listPublishedEvents = createServerFn({ method: "GET" }).handler(asy
     SELECT id, title, brand, to_char(date, 'YYYY-MM-DD') AS date, time, venue, area,
       category, tracks, capacity, confirmed, dress_code AS "dressCode", about,
       included, who_is_invited AS "whoIsInvited", host_note AS "hostNote",
-      status, image_key
+      status, image_key, image_data
     FROM events WHERE status = 'published' ORDER BY date, time
   `) as unknown as EventRow[];
   return rows.map(mapEvent);
@@ -106,8 +107,8 @@ export const getEventById = createServerFn({ method: "GET" })
       SELECT id, title, brand, to_char(date, 'YYYY-MM-DD') AS date, time, venue, area,
         category, tracks, capacity, confirmed, dress_code AS "dressCode", about,
         included, who_is_invited AS "whoIsInvited", host_note AS "hostNote",
-        status, image_key
-      FROM events WHERE id = ${eventId} LIMIT 1
+        status, image_key, image_data
+      FROM events WHERE id = ${eventId} AND status IN ('published', 'closed') LIMIT 1
     `) as unknown as EventRow[];
     return rows[0] ? mapEvent(rows[0]) : null;
   });
@@ -151,7 +152,7 @@ export const updateEventRsvp = createServerFn({ method: "POST" })
   });
 
 export const submitApplication = createServerFn({ method: "POST" })
-  .validator((input: { name: string; email: string; password: string; track: Track; city: string; detail: string; followers: string }) => input)
+  .validator((input: { name: string; email: string; password: string; track: Track; city: string; detail: string; instagramProfile: string; instagramFollowers: string; mobile: string; outlet: string; applicationRole: string; platform: string; allProfiles: string }) => input)
   .handler(async ({ data }) => {
     const name = data.name.trim();
     const email = data.email.trim().toLowerCase();
@@ -160,6 +161,27 @@ export const submitApplication = createServerFn({ method: "POST" })
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) throw new Error("Enter a valid email address.");
     if (password.length < 12 || password.length > 200) throw new Error("Password must be at least 12 characters.");
     if (!["Media", "Creators", "Tastemakers", "Private Circle"].includes(data.track)) throw new Error("Choose a valid membership track.");
+    const submittedProfile = String(data.instagramProfile ?? "").trim();
+    const urlMatch = submittedProfile.match(/^(?:https?:\/\/)?(?:www\.)?instagram\.com\/([a-zA-Z0-9._]{1,30})\/?$/i);
+    const handleMatch = submittedProfile.match(/^@?([a-zA-Z0-9._]{1,30})$/);
+    const instagramHandle = urlMatch?.[1] ?? handleMatch?.[1];
+    if (!instagramHandle || instagramHandle.startsWith(".") || instagramHandle.endsWith(".")) {
+      throw new Error("Enter a valid Instagram profile or username.");
+    }
+    const followerCount = String(data.instagramFollowers ?? "").trim();
+    if (!/^\d{1,10}$/.test(followerCount)) {
+      throw new Error("Enter your Instagram follower count as a whole number.");
+    }
+    // Keep a plain numeric string because the staff API parses it as an integer on approval.
+    const followers = followerCount;
+    const profileUrl = `https://www.instagram.com/${instagramHandle}/`;
+    const handle = `@${instagramHandle}`;
+    const mobile = String(data.mobile ?? "").trim().slice(0, 100);
+    const outlet = String(data.outlet ?? "").trim().slice(0, 180);
+    const applicationRole = String(data.applicationRole ?? "").trim().slice(0, 180);
+    const platform = String(data.platform ?? "Instagram").trim().slice(0, 80) || "Instagram";
+    const allProfiles = String(data.allProfiles ?? "").trim().slice(0, 1000);
+    const detail = data.detail.trim().slice(0, 1000);
     const sql = getSql();
     const existing = await sql`SELECT id FROM applications WHERE lower(email) = ${email} AND status = 'pending' LIMIT 1`;
     if (existing.length) throw new Error("An application for this email is already under review.");
@@ -167,11 +189,15 @@ export const submitApplication = createServerFn({ method: "POST" })
     if (existingMember.length) throw new Error("An account for this email already exists. Please sign in.");
     const passwordHash = await hashPassword(password);
     const rows = (await sql`
-      INSERT INTO applications (id, name, email, track, city, detail, followers, password_hash, submitted, status)
+      INSERT INTO applications (
+        id, name, email, track, city, detail, followers, profile_url, handle, platform,
+        mobile, outlet, application_role, all_profiles, source_track, password_hash, submitted, status
+      )
       VALUES (
         ${crypto.randomUUID()}, ${name}, ${email}, ${data.track},
-        ${data.city.trim().slice(0, 100) || "Dubai"}, ${data.detail.trim().slice(0, 500)},
-        ${data.followers.trim().slice(0, 100) || "—"}, ${passwordHash}, CURRENT_DATE, 'pending'
+        ${data.city.trim().slice(0, 100) || "Dubai"}, ${detail}, ${followers},
+        ${profileUrl}, ${handle}, ${platform}, ${mobile}, ${outlet},
+        ${applicationRole}, ${allProfiles}, ${data.track}, ${passwordHash}, CURRENT_DATE, 'pending'
       )
       RETURNING id
     `) as unknown as { id: string }[];
