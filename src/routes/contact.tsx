@@ -1,0 +1,3 @@
+import { createFileRoute } from "@tanstack/react-router";
+import { CustomerInfo } from "@/components/CustomerInfo";
+export const Route = createFileRoute("/contact")({ head: () => ({ meta: [{ title: "Find us & talk to us — RSVP DXB" }, { name: "description", content: "Connect with RSVP DXB for events, partnerships and enquiries in Dubai." }, { property: "og:title", content: "Find us & talk to us — RSVP DXB" }, { property: "og:description", content: "Good conversations lead to great rooms. Connect with RSVP DXB." }, { property: "og:type", content: "website" }, { name: "twitter:card", content: "summary_large_image" }] }), component: () => <CustomerInfo page="contact" /> });

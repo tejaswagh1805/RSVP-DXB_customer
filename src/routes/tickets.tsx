@@ -1,0 +1,3 @@
+import { createFileRoute } from "@tanstack/react-router";
+import { CustomerInfo } from "@/components/CustomerInfo";
+export const Route = createFileRoute("/tickets")({ head: () => ({ meta: [{ title: "Last minute tickets & offers — RSVP DXB" }, { name: "description", content: "Discover final places and invitation-only event offers in Dubai." }, { property: "og:title", content: "Last minute tickets & offers — RSVP DXB" }, { property: "og:description", content: "Find your next place on Dubai’s curated guest list." }, { property: "og:type", content: "website" }, { name: "twitter:card", content: "summary_large_image" }] }), component: () => <CustomerInfo page="tickets" /> });

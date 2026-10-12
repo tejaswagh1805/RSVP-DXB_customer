@@ -1,0 +1,22 @@
+- [x] Add editorial imagery to public events, detail views, and member views.
+- [x] Provide a persistent light/dark switch on the public site and admin dashboard.
+- [x] Verify theme and imagery on desktop and mobile.
+- [x] Select a personality-led customer design inspired by the client's reference.
+- [x] Apply the selected customer design while preserving functions and admin appearance.
+- [x] Verify customer pages and light/dark presentations.
+- [x] Refresh customer navigation and scroll-driven video/photo banners.
+- [x] Add opposite-direction 15-tile event sliders, gallery, artist cards, offers, and WhatsApp sharing.
+- [x] Refresh customer footer and member presentation; verify existing functions and admin isolation.
+- [x] Remove the opening text block and place the supplied logo, navigation and sign-in inline.
+- [x] Apply the finalized PDF palette and supplied-logo favicon.
+- [x] Make banner scroll movement more immediate and verify desktop/mobile and admin isolation.
+- [x] Remove the homepage marketing sections (city's edit, your way in, events wall, points & ranks, house parties, closing sign-up statement) and verify footer plus remaining sections.
+- [x] Replace the first banner story with a moving video clip in a browser-safe format and verify playback on desktop and mobile.
+- [x] Place the app store icons stacked at the left of the newsletter heading; verify desktop, phone and admin.
+- [x] Remove the number badges from both event slider tiles; verify sliders and admin.
+- [x] Remove the pause button from both event sliders; verify sliders still scroll and admin is untouched.
+- [x] Center the header menu items between the logo and the buttons; verify desktop, tablet, phone and admin.
+- [x] Make the header background solid once the page is scrolled; verify top, scrolled, light mode and other pages.
+- [x] Show the pointing-hand cursor on every clickable element, and the not-allowed cursor on disabled ones; verify customer, member and admin pages.
+- [x] Add a show/hide password toggle on sign in and a forgot-password / set-new-password flow; verify the eye toggle, both pages, mobile and admin.
+- [x] Fix first-load cursor patches over the banner and verify refresh plus pointer movement.

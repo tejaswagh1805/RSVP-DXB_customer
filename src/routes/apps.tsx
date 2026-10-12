@@ -1,0 +1,3 @@
+import { createFileRoute } from "@tanstack/react-router";
+import { CustomerInfo } from "@/components/CustomerInfo";
+export const Route = createFileRoute("/apps")({ head: () => ({ meta: [{ title: "Android & iOS home-screen app — RSVP DXB" }, { name: "description", content: "Add the RSVP DXB prototype to your Android or iPhone home screen." }, { property: "og:title", content: "Android & iOS home-screen app — RSVP DXB" }, { property: "og:description", content: "Your guest list, wherever the night takes you." }, { property: "og:type", content: "website" }, { name: "twitter:card", content: "summary_large_image" }] }), component: () => <CustomerInfo page="apps" /> });

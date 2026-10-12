@@ -1,0 +1,17 @@
+import { neon } from "@neondatabase/serverless";
+import { readFile } from "node:fs/promises";
+
+process.loadEnvFile?.();
+const databaseUrl = process.env.DATABASE_URL;
+if (!databaseUrl) {
+  throw new Error("DATABASE_URL is missing. Add DATABASE_URL=... to the project .env file.");
+}
+
+const sql = neon(databaseUrl);
+for (const fileName of ["0001_events_and_rsvps.sql", "0002_applications.sql", "0003_member_sessions.sql"]) {
+  const migration = await readFile(new URL(`../drizzle/${fileName}`, import.meta.url), "utf8");
+  for (const statement of migration.split(";").map((part) => part.trim()).filter(Boolean)) {
+    await sql.query(statement);
+  }
+  console.info(`Applied ${fileName}.`);
+}
