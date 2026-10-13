@@ -315,6 +315,8 @@
 .customer-scope .ribbon-reverse { background: var(--surface); }
 .ribbon-window:hover .ribbon-track,.ribbon-window:focus-within .ribbon-track { animation-play-state: paused; }
 .ribbon-tile { width: 300px; padding: 10px 0 14px; flex-shrink: 0; }
+.ribbon-action { position: relative; z-index: 2; }
+.ribbon-action a { position: relative; pointer-events: auto; }
 .ribbon-photo { height: 330px; position: relative; overflow: hidden; border: 1px solid var(--border); transition: border-color .25s; }
 .ribbon-photo img { transition: transform .6s cubic-bezier(.2,.8,.2,1); }
 .ribbon-tile:hover .ribbon-photo { border-color: var(--primary); }
