@@ -151,6 +151,62 @@ export const updateEventRsvp = createServerFn({ method: "POST" })
     return Object.fromEntries(rows.map((row) => [row["event_id"], row["state"]]));
   });
 
+export type GuestInvitationView = {
+  guestName: string;
+  eventId: string;
+  eventTitle: string;
+  brand: string;
+  date: string;
+  time: string;
+  venue: string;
+  area: string;
+  dressCode: string;
+  tableNo: string;
+  status: "pending" | "accepted" | "declined";
+  plusOnes: number;
+};
+
+export const getGuestInvitation = createServerFn({ method: "GET" })
+  .validator((token: string) => token)
+  .handler(async ({ data: token }) => {
+    if (!/^[A-Za-z0-9_-]{32,100}$/.test(token)) return null;
+    const tokenHash = createHash("sha256").update(token).digest("hex");
+    const sql = getSql();
+    const rows = (await sql`
+      SELECT g.guest_name AS "guestName", g.event_id AS "eventId",
+        e.title AS "eventTitle", e.brand, to_char(e.date, 'YYYY-MM-DD') AS date,
+        e.time, e.venue, e.area, e.dress_code AS "dressCode", g.table_no AS "tableNo",
+        g.status, g.plus_ones AS "plusOnes"
+      FROM guest_invitations g JOIN events e ON e.id = g.event_id
+      WHERE g.token_hash = ${tokenHash} AND e.status IN ('published', 'closed')
+      LIMIT 1
+    `) as unknown as GuestInvitationView[];
+    return rows[0] ?? null;
+  });
+
+export const respondToGuestInvitation = createServerFn({ method: "POST" })
+  .validator((input: { token: string; attending: boolean; plusOnes: number }) => input)
+  .handler(async ({ data }) => {
+    if (!/^[A-Za-z0-9_-]{32,100}$/.test(data.token)) throw new Error("This invitation link is invalid.");
+    if (typeof data.attending !== "boolean" || !Number.isInteger(data.plusOnes) || data.plusOnes < 0 || data.plusOnes > 2) {
+      throw new Error("Choose a valid RSVP response.");
+    }
+    if (!data.attending && data.plusOnes !== 0) throw new Error("A declined invitation cannot include guests.");
+    const tokenHash = createHash("sha256").update(data.token).digest("hex");
+    const sql = getSql();
+    const rows = (await sql`
+      UPDATE guest_invitations g
+      SET status = ${data.attending ? "accepted" : "declined"},
+          plus_ones = ${data.attending ? data.plusOnes : 0}, responded_at = now()
+      FROM events e
+      WHERE g.event_id = e.id AND g.token_hash = ${tokenHash}
+        AND e.status = 'published'
+      RETURNING g.status, g.plus_ones AS "plusOnes"
+    `) as unknown as { status: "accepted" | "declined"; plusOnes: number }[];
+    if (!rows[0]) throw new Error("This invitation is unavailable or RSVPs are closed.");
+    return rows[0];
+  });
+
 export const submitApplication = createServerFn({ method: "POST" })
   .validator((input: { name: string; email: string; password: string; track: Track; city: string; detail: string; instagramProfile: string; instagramFollowers: string; mobile: string; outlet: string; applicationRole: string; platform: string; allProfiles: string }) => input)
   .handler(async ({ data }) => {

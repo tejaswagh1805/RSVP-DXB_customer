@@ -3,11 +3,11 @@ import { Moon, Sun } from "lucide-react";
 import { Button } from "./ui-kit";
 
 export function ThemeToggle() {
-  const [theme, setTheme] = useState<"dark" | "light">("dark");
+  const [theme, setTheme] = useState<"dark" | "light">("light");
 
   useEffect(() => {
     const saved = window.localStorage.getItem("rsvp-dxb-theme");
-    const next = saved === "light" ? "light" : "dark";
+    const next = saved === "dark" ? "dark" : "light";
     setTheme(next);
     document.documentElement.classList.toggle("light", next === "light");
     document.documentElement.classList.toggle("dark", next === "dark");

@@ -35,6 +35,7 @@ import { Route as AdminMembersRouteImport } from './routes/admin.members'
 import { Route as AdminWallRouteImport } from './routes/admin.wall'
 import { Route as EventsIndexRouteImport } from './routes/events.index'
 import { Route as EventsEventIdRouteImport } from './routes/events.$eventId'
+import { Route as RsvpTokenRouteImport } from './routes/rsvp.$token'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -166,6 +167,11 @@ const EventsEventIdRoute = EventsEventIdRouteImport.update({
   path: '/events/$eventId',
   getParentRoute: () => rootRouteImport,
 } as any)
+const RsvpTokenRoute = RsvpTokenRouteImport.update({
+  id: '/rsvp/$token',
+  path: '/rsvp/$token',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -192,6 +198,7 @@ export interface FileRoutesByFullPath {
   '/admin/members': typeof AdminMembersRoute
   '/admin/wall': typeof AdminWallRoute
   '/events/$eventId': typeof EventsEventIdRoute
+  '/rsvp/$token': typeof RsvpTokenRoute
   '/admin/': typeof AdminIndexRoute
   '/events/': typeof EventsIndexRoute
 }
@@ -219,6 +226,7 @@ export interface FileRoutesByTo {
   '/admin/members': typeof AdminMembersRoute
   '/admin/wall': typeof AdminWallRoute
   '/events/$eventId': typeof EventsEventIdRoute
+  '/rsvp/$token': typeof RsvpTokenRoute
   '/admin': typeof AdminIndexRoute
   '/events': typeof EventsIndexRoute
 }
@@ -248,6 +256,7 @@ export interface FileRoutesById {
   '/admin/members': typeof AdminMembersRoute
   '/admin/wall': typeof AdminWallRoute
   '/events/$eventId': typeof EventsEventIdRoute
+  '/rsvp/$token': typeof RsvpTokenRoute
   '/admin/': typeof AdminIndexRoute
   '/events/': typeof EventsIndexRoute
 }
@@ -278,6 +287,7 @@ export interface FileRouteTypes {
     | '/admin/members'
     | '/admin/wall'
     | '/events/$eventId'
+    | '/rsvp/$token'
     | '/admin/'
     | '/events/'
   fileRoutesByTo: FileRoutesByTo
@@ -305,6 +315,7 @@ export interface FileRouteTypes {
     | '/admin/members'
     | '/admin/wall'
     | '/events/$eventId'
+    | '/rsvp/$token'
     | '/admin'
     | '/events'
   id:
@@ -333,6 +344,7 @@ export interface FileRouteTypes {
     | '/admin/members'
     | '/admin/wall'
     | '/events/$eventId'
+    | '/rsvp/$token'
     | '/admin/'
     | '/events/'
   fileRoutesById: FileRoutesById
@@ -356,6 +368,7 @@ export interface RootRouteChildren {
   TicketsRoute: typeof TicketsRoute
   WallRoute: typeof WallRoute
   EventsEventIdRoute: typeof EventsEventIdRoute
+  RsvpTokenRoute: typeof RsvpTokenRoute
   EventsIndexRoute: typeof EventsIndexRoute
 }
 
@@ -543,6 +556,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof EventsEventIdRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/rsvp/$token': {
+      id: '/rsvp/$token'
+      path: '/rsvp/$token'
+      fullPath: '/rsvp/$token'
+      preLoaderRoute: typeof RsvpTokenRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -587,6 +607,7 @@ const rootRouteChildren: RootRouteChildren = {
   TicketsRoute: TicketsRoute,
   WallRoute: WallRoute,
   EventsEventIdRoute: EventsEventIdRoute,
+  RsvpTokenRoute: RsvpTokenRoute,
   EventsIndexRoute: EventsIndexRoute,
 }
 export const routeTree = rootRouteImport

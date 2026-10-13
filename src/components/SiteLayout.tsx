@@ -3,7 +3,6 @@ import { useEffect, useState, type ReactNode } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { useStore } from "@/lib/store";
 import { Button } from "./ui-kit";
-import { ThemeToggle } from "./ThemeToggle";
 import { Apple, MessageCircle, Play, Send, Ticket } from "lucide-react";
 import { CursorBlob } from "./GenZFx";
 import clientLogoUrl from "@/assets/rsvp-client-logo.png";
@@ -64,7 +63,6 @@ export function SiteHeader({ overlay = false }: { overlay?: boolean }) {
         </nav>
 
         <div className="header-actions flex items-center gap-2">
-          <ThemeToggle />
           <Link to="/tickets" className="header-ticket"><Button size="sm"><Ticket size={15} />Last minute ticket</Button></Link>
           {profile.signedIn ? (
             <>
@@ -146,8 +144,6 @@ export function SiteFooter() {
         <FooterCol
           title="Find us / Stay connected"
           links={[
-            ["/admin", "Admin portal"],
-            ["/admin/door", "Door app"],
             ["/contact", "Find Us"],
             ["/signin", "Members login"],
             ["/contact", "Talk to us"],
