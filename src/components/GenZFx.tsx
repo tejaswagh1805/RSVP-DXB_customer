@@ -2,17 +2,25 @@ import { useEffect, useRef, useState, type ReactNode } from "react";
 import { Link } from "@tanstack/react-router";
 import { TRACKS } from "@/lib/data";
 import { Button } from "./ui-kit";
+import clientLogoUrl from "@/assets/rsvp-client-logo.png";
 
-/** Cursor-follow ring, visible only while the pointer is on the page. */
+/** Cursor-follow ring, visible while the pointer is moving, then fades away. */
 export function CursorBlob() {
   const ref = useRef<HTMLDivElement>(null);
   useEffect(() => {
+    let hideTimer = 0;
     const move = (e: PointerEvent) => {
       if (!ref.current) return;
-      ref.current.style.transform = `translate3d(${e.clientX - 18}px, ${e.clientY - 18}px, 0)`;
+      if (e.pointerType !== "mouse") return;
+      ref.current.style.transform = `translate3d(${e.clientX - 22}px, ${e.clientY - 22}px, 0)`;
       ref.current.classList.add("is-active");
+      window.clearTimeout(hideTimer);
+      hideTimer = window.setTimeout(() => ref.current?.classList.remove("is-active"), 900);
     };
-    const hide = () => ref.current?.classList.remove("is-active");
+    const hide = () => {
+      window.clearTimeout(hideTimer);
+      ref.current?.classList.remove("is-active");
+    };
     window.addEventListener("pointermove", move);
     document.documentElement.addEventListener("pointerleave", hide);
     window.addEventListener("blur", hide);
@@ -20,9 +28,10 @@ export function CursorBlob() {
       window.removeEventListener("pointermove", move);
       document.documentElement.removeEventListener("pointerleave", hide);
       window.removeEventListener("blur", hide);
+      window.clearTimeout(hideTimer);
     };
   }, []);
-  return <div ref={ref} className="cursor-blob" aria-hidden="true" />;
+  return <div ref={ref} className="cursor-blob" aria-hidden="true"><img src={clientLogoUrl} alt="" /></div>;
 }
 
 /** Card that tilts toward the pointer. */

@@ -274,8 +274,13 @@
 
 /* Customer editorial experience */
 .customer-scope { --media-foreground: #fff6e9; --media-overlay: rgb(36 24 15 / .65); --customer-shadow: 0 20px 60px rgb(36 24 15 / .3); }
-.cursor-blob { width: 36px; height: 36px; border: 1px solid var(--primary); background: transparent; filter: none; z-index: 100; mix-blend-mode: normal; opacity: 0; transition: transform 100ms ease-out; }
+.cursor-blob { display: flex; width: 44px; height: 44px; box-sizing: border-box; align-items: center; justify-content: center; border: 1px solid rgb(112 69 31 / .7); border-radius: 50%; background: rgb(243 227 203 / .86); box-shadow: 0 3px 10px rgb(36 24 15 / .12), inset 0 0 0 3px rgb(255 246 233 / .7); filter: none; z-index: 1; mix-blend-mode: normal; opacity: 0; transition: transform 100ms ease-out, opacity 300ms ease; }
 .cursor-blob.is-active { opacity: 1; }
+.cursor-blob img { display: block; width: 32px; height: 20px; object-fit: contain; }
+@media (hover: hover) and (pointer: fine) {
+  .customer-scope:has(.cursor-blob.is-active) { cursor: none; }
+  .customer-scope:has(.cursor-blob.is-active) :is(a, button, [role="button"]) { cursor: pointer; }
+}
 .customer-header { --background: #f3e3cb; --foreground: var(--customer-ink); --primary: var(--customer-acid); --primary-foreground: #fff6e9; --border: #d2b995; }
 .header-main { display: grid; grid-template-columns: minmax(0,1fr) auto minmax(0,1fr); padding-block: 12px; gap: 20px; flex-wrap: nowrap; }
 .customer-logo { justify-self: start; }
