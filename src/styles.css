@@ -38,8 +38,8 @@
   --color-hero-foreground: var(--hero-foreground);
   --color-hero-button: var(--hero-button);
   --color-hero-button-foreground: var(--hero-button-foreground);
-  --font-display: "Instrument Serif", Georgia, serif;
-  --font-sans: "DM Sans", system-ui, sans-serif;
+  --font-display: "Garamond", Georgia, serif;
+  --font-sans: "Poppins", system-ui, sans-serif;
 }
 
 :root {
@@ -176,8 +176,8 @@
   --border: #d2b995;
   --input: var(--border);
   --ring: var(--primary);
-  --font-display: "DM Sans", system-ui, sans-serif;
-  --font-sans: "DM Sans", system-ui, sans-serif;
+  --font-display: "Garamond", Georgia, serif;
+  --font-sans: "Poppins", system-ui, sans-serif;
   font-family: var(--font-sans);
 }
 .customer-scope h1, .customer-scope h2, .customer-scope h3, .customer-scope .font-display { font-family: var(--font-display); letter-spacing: 0; }
