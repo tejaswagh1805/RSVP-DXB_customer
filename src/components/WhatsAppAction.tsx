@@ -3,7 +3,7 @@ import { Button } from "./ui-kit";
 import type { EventItem } from "@/lib/data";
 
 export function WhatsAppAction({ event }: { event: EventItem }) {
-  const url = new URL(`/events/${event.id}`, window.location.origin).href;
+  const url = `https://rsvpdxb.com/events/${event.id}`;
   const shareUrl = `https://wa.me/?text=${encodeURIComponent(`${event.title} · ${event.venue}\n${url}`)}`;
 
   return (
