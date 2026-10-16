@@ -31,7 +31,7 @@ export function CursorBlob() {
       window.clearTimeout(hideTimer);
     };
   }, []);
-  return <div ref={ref} className="cursor-blob" aria-hidden="true"><img src={clientLogoUrl} alt="" /></div>;
+  return <div ref={ref} className="cursor-blob" aria-hidden="true" />;
 }
 
 /** Card that tilts toward the pointer. */

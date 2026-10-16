@@ -42,7 +42,9 @@ export function ScrollShowcase() {
         const top = parseFloat(getComputedStyle(sticky.current).top) || 0;
         const range = section.offsetHeight - sticky.current.offsetHeight;
         const progress = Math.max(0, Math.min(1, (top - section.getBoundingClientRect().top) / Math.max(range, 1)));
-        rail.current.style.transform = `translate3d(${-progress * 80}%,0,0)`;
+        // The rail is 500% wide but each scene is one viewport wide. Translate
+        // by the viewport width so the last story ends exactly at the frame edge.
+        rail.current.style.transform = `translate3d(${-progress * 80}vw,0,0)`;
         section.style.setProperty("--story-progress", String(progress));
         rail.current.querySelectorAll<HTMLElement>(".showcase-scene").forEach((scene, i) => {
           const distance = Math.min(1, Math.abs(progress * 4 - i));
@@ -61,7 +63,7 @@ export function ScrollShowcase() {
     <div ref={sticky} className="showcase-sticky">
       <div ref={rail} className="showcase-rail">
         {SCENES.map((scene, i) => <div key={scene.title} className="showcase-scene">
-          {i === 0 ? <video ref={video} src={videoAsset.url} poster={scene.image} autoPlay muted loop playsInline preload="auto" /> : <img src={scene.image} alt={scene.label} width={1600} height={1000} loading="lazy" />}
+          {i === 0 ? <video ref={video} src={videoAsset.url} poster={scene.image} autoPlay muted loop playsInline preload="metadata" /> : <img src={scene.image} alt={scene.label} width={1600} height={1000} loading="lazy" />}
           <div className="showcase-veil" />
           <div className="showcase-copy"><p className="text-xs uppercase">{scene.label}</p>{i === 0 ? <h1>{scene.title}</h1> : <h2>{scene.title}</h2>}<Link to="/events"><Button size="lg">Explore the list <ArrowUpRight size={20} /></Button></Link></div>
         </div>)}
