@@ -366,7 +366,6 @@
 .customer-header-overlay { margin-bottom: -80px; background: color-mix(in oklab, #f3e3cb 88%, transparent); border-color: color-mix(in oklab, #2e1c10 18%, transparent); }
 .customer-header.is-scrolled { background: #f3e3cb; border-bottom-color: #d2b995; box-shadow: 0 8px 24px rgb(72 43 19 / .12); }
 .customer-banner-page .showcase-sticky { top: 0; height: calc(100svh - 24px); min-height: 0; }
-.customer-banner-page .cursor-blob { display: none; }
 .customer-banner-page .showcase-copy { bottom: 60px; }
 @media(max-width:700px) { .customer-header-overlay { margin-bottom: -80px; }.customer-banner-page .showcase-copy { bottom: 48px; } }
 @media(hover:none) { .cursor-blob { display: none; } }
