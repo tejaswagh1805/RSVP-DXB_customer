@@ -1,16 +1,27 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { SitePage } from "@/components/SiteLayout";
-import { ARTISTS, INFLUENCERS, ArtistCard } from "@/components/CustomerExperience";
+import {
+  ARTISTS,
+  INFLUENCERS,
+  ArtistCard,
+} from "@/components/CustomerExperience";
 
 export const Route = createFileRoute("/artists")({
   head: () => ({
     meta: [
       { title: "Artists & Influencers — RSVP DXB" },
-      { name: "description", content: "Meet the artists and influencers behind the RSVP DXB energy — DJs, live acts, creators and tastemakers shaping the city's rooms." },
+      {
+        name: "description",
+        content:
+          "Meet the artists and influencers behind the RSVP DXB energy — DJs, live acts, creators and tastemakers shaping the city's rooms.",
+      },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
       { property: "og:title", content: "Artists & Influencers — RSVP DXB" },
-      { property: "og:description", content: "The artists and influencers shaping RSVP DXB's rooms across Dubai." },
+      {
+        property: "og:description",
+        content: "The artists and influencers shaping RSVP DXB's rooms across Dubai.",
+      },
     ],
   }),
   component: ArtistsPage,
@@ -30,12 +41,16 @@ function ArtistsPage() {
 
         <p className="eyebrow mt-8">Artists</p>
         <div className="artist-grid mt-4">
-          {ARTISTS.map(a => <ArtistCard key={a.name} artist={a} />)}
+          {ARTISTS.map((a) => (
+            <ArtistCard key={a.name} artist={a} />
+          ))}
         </div>
 
         <p className="eyebrow mt-16">Influencers</p>
         <div className="artist-grid mt-4">
-          {INFLUENCERS.map(a => <ArtistCard key={a.name} artist={a} />)}
+          {INFLUENCERS.map((a) => (
+            <ArtistCard key={a.name} artist={a} />
+          ))}
         </div>
       </section>
     </SitePage>

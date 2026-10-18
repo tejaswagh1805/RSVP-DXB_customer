@@ -11,7 +11,6 @@
     "preview": "vite preview",
     "db:migrate": "node scripts/migrate.mjs",
     "db:seed:events": "node scripts/seed-events.mjs",
-    "db:admin:password": "node scripts/set-admin-password.mjs",
     "lint": "eslint .",
     "format": "prettier --write ."
   },
@@ -19,6 +18,7 @@
     "rolldown": "1.2.1"
   },
   "dependencies": {
+    "@aws-sdk/client-sesv2": "^3.1152.0",
     "@hookform/resolvers": "^5.2.2",
     "@neondatabase/serverless": "^1.2.0",
     "@radix-ui/react-accordion": "^1.2.12",

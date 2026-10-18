@@ -28,28 +28,6 @@ export interface EventItem {
   image: string;
 }
 
-export interface Application {
-  id: string;
-  name: string;
-  email: string;
-  track: Track;
-  city: string;
-  detail: string;
-  followers: string;
-  submitted: string;
-  status: "pending" | "approved" | "rejected";
-}
-
-export interface Member {
-  id: string;
-  name: string;
-  track: Track;
-  rank: "Bronze" | "Silver" | "Gold" | "Diamond" | "Platinum";
-  points: number;
-  events: number;
-  city: string;
-}
-
 export interface WallPost {
   id: string;
   brand: string;
@@ -59,25 +37,6 @@ export interface WallPost {
   boosted: boolean;
   status: "live" | "pending";
   eventId?: string;
-}
-
-export interface BrandAccount {
-  id: string;
-  name: string;
-  package: string;
-  credits: number;
-  events: number;
-  status: "active" | "trial";
-}
-
-export interface Guest {
-  id: string;
-  name: string;
-  track: Track;
-  eventId: string;
-  plusOnes: number;
-  code: string;
-  checkedInAt?: string;
 }
 
 export const POINT_RULES: { label: string; points: number }[] = [
@@ -248,73 +207,6 @@ export const EVENTS: EventItem[] = [
   },
 ];
 
-export const APPLICATIONS: Application[] = [
-  {
-    id: "app-1",
-    name: "Layla Haddad",
-    email: "layla@thegulfedit.com",
-    track: "Media",
-    city: "Dubai",
-    detail: "Senior editor, The Gulf Edit — food & travel",
-    followers: "—",
-    submitted: "2026-09-29",
-    status: "pending",
-  },
-  {
-    id: "app-2",
-    name: "Omar Rashid",
-    email: "omar.creates@gmail.com",
-    track: "Creators",
-    city: "Dubai",
-    detail: "Lifestyle & fashion, IG + TikTok",
-    followers: "128k",
-    submitted: "2026-09-29",
-    status: "pending",
-  },
-  {
-    id: "app-3",
-    name: "Chef Marco Vitale",
-    email: "marco@casavitale.ae",
-    track: "Tastemakers",
-    city: "Dubai",
-    detail: "Executive chef, Casa Vitale",
-    followers: "22k",
-    submitted: "2026-09-28",
-    status: "pending",
-  },
-  {
-    id: "app-4",
-    name: "A. Al Suwaidi",
-    email: "office@alsuwaidi-group.ae",
-    track: "Private Circle",
-    city: "Abu Dhabi",
-    detail: "Referred by member #0142 — assistant contact on file",
-    followers: "Private",
-    submitted: "2026-09-27",
-    status: "pending",
-  },
-  {
-    id: "app-5",
-    name: "Sofia Mendes",
-    email: "sofia@luxereport.co",
-    track: "Creators",
-    city: "Dubai",
-    detail: "Beauty creator — YouTube + IG",
-    followers: "41k",
-    submitted: "2026-09-26",
-    status: "pending",
-  },
-];
-
-export const MEMBERS: Member[] = [
-  { id: "m1", name: "Tejas Nair", track: "Creators", rank: "Gold", points: 640, events: 18, city: "Dubai" },
-  { id: "m2", name: "Hala Zayed", track: "Media", rank: "Diamond", points: 1180, events: 31, city: "Dubai" },
-  { id: "m3", name: "Rami Fawaz", track: "Tastemakers", rank: "Silver", points: 310, events: 9, city: "Sharjah" },
-  { id: "m4", name: "Private #0142", track: "Private Circle", rank: "Bronze", points: 0, events: 6, city: "Dubai" },
-  { id: "m5", name: "Nadia Khan", track: "Creators", rank: "Platinum", points: 2740, events: 58, city: "Dubai" },
-  { id: "m6", name: "Jon Abela", track: "Media", rank: "Silver", points: 220, events: 7, city: "Dubai" },
-];
-
 export const WALL_POSTS: WallPost[] = [
   {
     id: "w1",
@@ -364,22 +256,6 @@ export const WALL_POSTS: WallPost[] = [
     status: "pending",
     eventId: "difc-art-night",
   },
-];
-
-export const BRANDS: BrandAccount[] = [
-  { id: "b1", name: "Atlantis The Royal", package: "Signature", credits: 42, events: 11, status: "active" },
-  { id: "b2", name: "Maison Dalia", package: "Launch", credits: 8, events: 3, status: "active" },
-  { id: "b3", name: "Sirene Beach Club", package: "Season", credits: 26, events: 7, status: "active" },
-  { id: "b4", name: "Vantage Developments", package: "Private", credits: 15, events: 2, status: "trial" },
-  { id: "b5", name: "Nuvo Audio", package: "Launch", credits: 4, events: 1, status: "active" },
-];
-
-export const GUESTS: Guest[] = [
-  { id: "g1", name: "Tejas Nair", track: "Creators", eventId: "marina-sunset-session", plusOnes: 1, code: "RSVP-4471" },
-  { id: "g2", name: "Hala Zayed", track: "Media", eventId: "marina-sunset-session", plusOnes: 0, code: "RSVP-2208" },
-  { id: "g3", name: "Rami Fawaz", track: "Tastemakers", eventId: "marina-sunset-session", plusOnes: 1, code: "RSVP-9014" },
-  { id: "g4", name: "Nadia Khan", track: "Creators", eventId: "marina-sunset-session", plusOnes: 2, code: "RSVP-7731" },
-  { id: "g5", name: "Jon Abela", track: "Media", eventId: "marina-sunset-session", plusOnes: 0, code: "RSVP-5520" },
 ];
 
 export const PRESS = [

@@ -47,6 +47,7 @@ function RegisterPage() {
   const [city, setCity] = useState("Dubai");
   const [profileDetails, setProfileDetails] = useState<Record<string, string>>({});
   const [submitError, setSubmitError] = useState("");
+  const [emailNotice, setEmailNotice] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [interests, setInterests] = useState<string[]>(["Dining"]);
 
@@ -56,6 +57,11 @@ function RegisterPage() {
   const setProfileDetail = (key: string, value: string) =>
     setProfileDetails((current) => ({ ...current, [key]: value }));
 
+  const setPhoneNumber = (value: string) => {
+    const digits = value.replace(/\D/g, "");
+    setProfileDetail("Mobile / WhatsApp", `${value.trimStart().startsWith("+") ? "+" : ""}${digits}`);
+  };
+
   const submit = async () => {
     setSubmitting(true);
     setSubmitError("");
@@ -64,26 +70,63 @@ function RegisterPage() {
       .map(([key, value]) => `${key}: ${value.trim()}`)
       .join(" · ");
     try {
-      await submitToDatabase({ data: {
-        name,
-        email,
-        password,
-        track,
-        city,
-        detail: [detail, `Interests: ${interests.join(", ")}`].filter(Boolean).join(" · "),
-        instagramProfile: profileDetails["Instagram"] ?? "",
-        instagramFollowers: profileDetails["Follower count"] ?? "",
-        mobile: profileDetails["Mobile / WhatsApp"] ?? "",
-        outlet: profileDetails["Outlet"] ?? profileDetails["Company"] ?? profileDetails["Profession / company"] ?? "",
-        applicationRole: profileDetails["Role"] ?? profileDetails["Profession / company"] ?? "",
-        platform: ["Instagram", profileDetails["TikTok / YouTube"]?.trim() ? "TikTok / YouTube" : ""].filter(Boolean).join(", "),
-        allProfiles: Object.entries(profileDetails)
-          .filter(([key, value]) => value.trim() && !["Instagram", "Follower count", "Mobile / WhatsApp", "Outlet", "Company", "Profession / company", "Role"].includes(key))
-          .map(([key, value]) => `${key}: ${value.trim()}`).join(" | "),
-      } });
+      const result = await submitToDatabase({
+        data: {
+          name,
+          email,
+          password,
+          track,
+          city,
+          detail: [detail, `Interests: ${interests.join(", ")}`].filter(Boolean).join(" · "),
+          instagramProfile: profileDetails["Instagram"] ?? "",
+          instagramFollowers: profileDetails["Follower count"] ?? "",
+          mobile: profileDetails["Mobile / WhatsApp"] ?? "",
+          outlet:
+            profileDetails["Outlet"] ??
+            profileDetails["Company"] ??
+            profileDetails["Profession / company"] ??
+            "",
+          applicationRole: profileDetails["Role"] ?? profileDetails["Profession / company"] ?? "",
+          platform: [
+            "Instagram",
+            profileDetails["TikTok / YouTube"]?.trim() ? "TikTok / YouTube" : "",
+          ]
+            .filter(Boolean)
+            .join(", "),
+          allProfiles: Object.entries(profileDetails)
+            .filter(
+              ([key, value]) =>
+                value.trim() &&
+                ![
+                  "Instagram",
+                  "Follower count",
+                  "Mobile / WhatsApp",
+                  "Outlet",
+                  "Company",
+                  "Profession / company",
+                  "Role",
+                ].includes(key),
+            )
+            .map(([key, value]) => `${key}: ${value.trim()}`)
+            .join(" | "),
+        },
+      });
+      setEmailNotice(
+        result.emailSent && result.adminEmailSent
+          ? "Your confirmation email was sent, and the team was notified."
+          : result.emailSent
+            ? "Your confirmation email was sent. The team notification email could not be sent, but your application is saved for review."
+            : result.adminEmailSent
+              ? "Your application is saved and the team was notified. Your confirmation email could not be sent yet."
+              : "Your application is saved, but the emails could not be sent yet. The team can still review your application.",
+      );
       setStep(5);
     } catch (error) {
-      setSubmitError(error instanceof Error ? error.message : "Application could not be submitted. Please try again.");
+      setSubmitError(
+        error instanceof Error
+          ? error.message
+          : "Application could not be submitted. Please try again.",
+      );
     } finally {
       setSubmitting(false);
     }
@@ -133,9 +176,18 @@ function RegisterPage() {
                   />
                 </Field>
                 <Field label="Password">
-                  <PasswordInput value={password} onChange={setPassword} autoComplete="new-password" placeholder="At least 12 characters" />
+                  <PasswordInput
+                    value={password}
+                    onChange={setPassword}
+                    autoComplete="new-password"
+                    placeholder="At least 12 characters"
+                  />
                 </Field>
-                <Button variant="outline" disabled={!name.trim() || !email.trim() || password.length < 12} onClick={() => setStep(2)}>
+                <Button
+                  variant="outline"
+                  disabled={!name.trim() || !email.trim() || password.length < 12}
+                  onClick={() => setStep(2)}
+                >
                   Continue
                 </Button>
               </div>
@@ -174,69 +226,159 @@ function RegisterPage() {
               </p>
               <div className="mt-5 grid gap-4 sm:grid-cols-2">
                 <Field label="City">
-                  <input className={inputClass} value={city} onChange={(e) => setCity(e.target.value)} />
+                  <input
+                    className={inputClass}
+                    value={city}
+                    onChange={(e) => setCity(e.target.value)}
+                  />
                 </Field>
                 <Field label="Mobile / WhatsApp">
-                  <input className={inputClass} placeholder="+971 50 000 0000" value={profileDetails["Mobile / WhatsApp"] ?? ""} onChange={(e) => setProfileDetail("Mobile / WhatsApp", e.target.value)} />
+                  <input
+                    className={inputClass}
+                    type="tel"
+                    inputMode="tel"
+                    autoComplete="tel"
+                    maxLength={16}
+                    placeholder="+971 50 000 0000"
+                    value={profileDetails["Mobile / WhatsApp"] ?? ""}
+                    onChange={(e) => setPhoneNumber(e.target.value)}
+                  />
                 </Field>
                 <Field label="Instagram profile">
-                  <input className={inputClass} placeholder="@yourhandle or instagram.com/yourhandle" value={profileDetails["Instagram"] ?? ""} onChange={(e) => setProfileDetail("Instagram", e.target.value)} autoComplete="url" />
+                  <input
+                    className={inputClass}
+                    placeholder="@yourhandle or instagram.com/yourhandle"
+                    value={profileDetails["Instagram"] ?? ""}
+                    onChange={(e) => setProfileDetail("Instagram", e.target.value)}
+                    autoComplete="url"
+                  />
                 </Field>
                 <Field label="Instagram follower count">
-                  <input className={inputClass} type="number" min="0" step="1" inputMode="numeric" placeholder="25000" value={profileDetails["Follower count"] ?? ""} onChange={(e) => setProfileDetail("Follower count", e.target.value)} />
+                  <input
+                    className={inputClass}
+                    type="number"
+                    min="0"
+                    step="1"
+                    inputMode="numeric"
+                    pattern="[0-9]*"
+                    placeholder="25000"
+                    value={profileDetails["Follower count"] ?? ""}
+                    onChange={(e) => setProfileDetail("Follower count", e.target.value)}
+                  />
                 </Field>
                 <p className="text-xs text-muted-foreground sm:col-span-2">
-                  Our membership team reviews your profile and follower count before making a decision. Follower counts may be checked.
+                  Our membership team reviews your profile and follower count before making a
+                  decision. Follower counts may be checked.
                 </p>
                 {track === "Media" ? (
                   <>
                     <Field label="Outlet">
-                      <input className={inputClass} placeholder="Outlet" value={profileDetails["Outlet"] ?? ""} onChange={(e) => setProfileDetail("Outlet", e.target.value)} />
+                      <input
+                        className={inputClass}
+                        placeholder="Outlet"
+                        value={profileDetails["Outlet"] ?? ""}
+                        onChange={(e) => setProfileDetail("Outlet", e.target.value)}
+                      />
                     </Field>
                     <Field label="Role">
-                      <input className={inputClass} placeholder="Role" value={profileDetails["Role"] ?? ""} onChange={(e) => setProfileDetail("Role", e.target.value)} />
+                      <input
+                        className={inputClass}
+                        placeholder="Role"
+                        value={profileDetails["Role"] ?? ""}
+                        onChange={(e) => setProfileDetail("Role", e.target.value)}
+                      />
                     </Field>
                     <Field label="Subjects covered">
-                      <input className={inputClass} placeholder="Food, travel, luxury" value={profileDetails["Subjects"] ?? ""} onChange={(e) => setProfileDetail("Subjects", e.target.value)} />
+                      <input
+                        className={inputClass}
+                        placeholder="Food, travel, luxury"
+                        value={profileDetails["Subjects"] ?? ""}
+                        onChange={(e) => setProfileDetail("Subjects", e.target.value)}
+                      />
                     </Field>
                     <Field label="Link to recent work">
-                      <input className={inputClass} placeholder="Link to recent work" value={profileDetails["Recent work"] ?? ""} onChange={(e) => setProfileDetail("Recent work", e.target.value)} />
+                      <input
+                        className={inputClass}
+                        placeholder="Link to recent work"
+                        value={profileDetails["Recent work"] ?? ""}
+                        onChange={(e) => setProfileDetail("Recent work", e.target.value)}
+                      />
                     </Field>
                   </>
                 ) : null}
                 {track === "Creators" ? (
                   <>
                     <Field label="TikTok / YouTube">
-                      <input className={inputClass} placeholder="@handle" value={profileDetails["TikTok / YouTube"] ?? ""} onChange={(e) => setProfileDetail("TikTok / YouTube", e.target.value)} />
+                      <input
+                        className={inputClass}
+                        placeholder="@handle"
+                        value={profileDetails["TikTok / YouTube"] ?? ""}
+                        onChange={(e) => setProfileDetail("TikTok / YouTube", e.target.value)}
+                      />
                     </Field>
                     <Field label="Niche">
-                      <input className={inputClass} placeholder="Fashion & lifestyle" value={profileDetails["Niche"] ?? ""} onChange={(e) => setProfileDetail("Niche", e.target.value)} />
+                      <input
+                        className={inputClass}
+                        placeholder="Fashion & lifestyle"
+                        value={profileDetails["Niche"] ?? ""}
+                        onChange={(e) => setProfileDetail("Niche", e.target.value)}
+                      />
                     </Field>
                   </>
                 ) : null}
                 {track === "Tastemakers" ? (
                   <>
                     <Field label="Company">
-                      <input className={inputClass} placeholder="Company" value={profileDetails["Company"] ?? ""} onChange={(e) => setProfileDetail("Company", e.target.value)} />
+                      <input
+                        className={inputClass}
+                        placeholder="Company"
+                        value={profileDetails["Company"] ?? ""}
+                        onChange={(e) => setProfileDetail("Company", e.target.value)}
+                      />
                     </Field>
                     <Field label="Role">
-                      <input className={inputClass} placeholder="Role" value={profileDetails["Role"] ?? ""} onChange={(e) => setProfileDetail("Role", e.target.value)} />
+                      <input
+                        className={inputClass}
+                        placeholder="Role"
+                        value={profileDetails["Role"] ?? ""}
+                        onChange={(e) => setProfileDetail("Role", e.target.value)}
+                      />
                     </Field>
                     <Field label="Industry">
-                      <input className={inputClass} placeholder="Hospitality" value={profileDetails["Industry"] ?? ""} onChange={(e) => setProfileDetail("Industry", e.target.value)} />
+                      <input
+                        className={inputClass}
+                        placeholder="Hospitality"
+                        value={profileDetails["Industry"] ?? ""}
+                        onChange={(e) => setProfileDetail("Industry", e.target.value)}
+                      />
                     </Field>
                   </>
                 ) : null}
                 {track === "Private Circle" ? (
                   <>
                     <Field label="Profession / company">
-                      <input className={inputClass} placeholder="Profession / company" value={profileDetails["Profession / company"] ?? ""} onChange={(e) => setProfileDetail("Profession / company", e.target.value)} />
+                      <input
+                        className={inputClass}
+                        placeholder="Profession / company"
+                        value={profileDetails["Profession / company"] ?? ""}
+                        onChange={(e) => setProfileDetail("Profession / company", e.target.value)}
+                      />
                     </Field>
                     <Field label="Preferred events">
-                      <input className={inputClass} placeholder="Private dinners, previews" value={profileDetails["Preferred events"] ?? ""} onChange={(e) => setProfileDetail("Preferred events", e.target.value)} />
+                      <input
+                        className={inputClass}
+                        placeholder="Private dinners, previews"
+                        value={profileDetails["Preferred events"] ?? ""}
+                        onChange={(e) => setProfileDetail("Preferred events", e.target.value)}
+                      />
                     </Field>
                     <Field label="Assistant contact">
-                      <input className={inputClass} placeholder="Name & number" value={profileDetails["Assistant contact"] ?? ""} onChange={(e) => setProfileDetail("Assistant contact", e.target.value)} />
+                      <input
+                        className={inputClass}
+                        placeholder="Name & number"
+                        value={profileDetails["Assistant contact"] ?? ""}
+                        onChange={(e) => setProfileDetail("Assistant contact", e.target.value)}
+                      />
                     </Field>
                   </>
                 ) : null}
@@ -287,7 +429,11 @@ function RegisterPage() {
                     className="flex items-center justify-between rounded-md bg-surface-2 px-4 py-3 text-sm"
                   >
                     {label}
-                    <input type="checkbox" defaultChecked={Boolean(on)} className="h-4 w-4 accent-[var(--primary)]" />
+                    <input
+                      type="checkbox"
+                      defaultChecked={Boolean(on)}
+                      className="h-4 w-4 accent-[var(--primary)]"
+                    />
                   </label>
                 ))}
               </div>
@@ -298,11 +444,26 @@ function RegisterPage() {
                 <Button variant="outline" onClick={() => setStep(3)}>
                   Back
                 </Button>
-                <Button className="flex-1" onClick={() => void submit()} disabled={submitting || !name.trim() || !email.trim() || password.length < 12 || !profileDetails["Instagram"]?.trim() || !/^\d+$/.test(profileDetails["Follower count"]?.trim() ?? "")}>
+                <Button
+                  className="flex-1"
+                  onClick={() => void submit()}
+                  disabled={
+                    submitting ||
+                    !name.trim() ||
+                    !email.trim() ||
+                    password.length < 12 ||
+                    !profileDetails["Instagram"]?.trim() ||
+                    !/^\d+$/.test(profileDetails["Follower count"]?.trim() ?? "")
+                  }
+                >
                   {submitting ? "Submitting…" : "Submit application"}
                 </Button>
               </div>
-              {submitError ? <p className="mt-3 text-sm text-destructive" role="alert">{submitError}</p> : null}
+              {submitError ? (
+                <p className="mt-3 text-sm text-destructive" role="alert">
+                  {submitError}
+                </p>
+              ) : null}
             </div>
           ) : null}
 
@@ -311,8 +472,10 @@ function RegisterPage() {
               <Badge tone="amber">Pending review</Badge>
               <h2 className="mt-4 text-3xl">Application submitted</h2>
               <p className="mx-auto mt-3 max-w-md text-sm text-muted-foreground">
-                Thank you. Your {track} application is saved for the team to review. We normally respond within 48 hours.
+                Thank you. Your {track} application is saved for the team to review. We normally
+                respond within 48 hours.
               </p>
+              {emailNotice ? <p className="mx-auto mt-3 max-w-md text-sm text-muted-foreground" role="status">{emailNotice}</p> : null}
               <div className="mt-8 flex justify-center gap-3">
                 <Link to="/">
                   <Button>Back to RSVP DXB</Button>
@@ -326,7 +489,15 @@ function RegisterPage() {
   );
 }
 
-function Nav({ onBack, onNext, disabled = false }: { onBack: () => void; onNext: () => void; disabled?: boolean }) {
+function Nav({
+  onBack,
+  onNext,
+  disabled = false,
+}: {
+  onBack: () => void;
+  onNext: () => void;
+  disabled?: boolean;
+}) {
   return (
     <div className="mt-7 flex gap-3">
       <Button variant="outline" onClick={onBack}>

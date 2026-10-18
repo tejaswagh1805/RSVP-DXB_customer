@@ -1,4 +1,4 @@
-import { Link } from "@tanstack/react-router";
+import { Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState, type ReactNode } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { useStore } from "@/lib/store";
@@ -21,6 +21,7 @@ const NAV = [
 
 export function SiteHeader({ overlay = false }: { overlay?: boolean }) {
   const { profile, signOut, hydrateMember } = useStore();
+  const navigate = useNavigate();
   const readMemberSession = useServerFn(getMemberSession);
   const endMemberSession = useServerFn(signOutMember);
   const [scrolled, setScrolled] = useState(false);
@@ -71,8 +72,16 @@ export function SiteHeader({ overlay = false }: { overlay?: boolean }) {
                   My account
                 </Button>
               </Link>
-              <Button size="sm" variant="ghost" onClick={() => {
-                void endMemberSession().then(() => hydrateMember(null)).catch(() => signOut());
+              <Button size="sm" variant="ghost" onClick={async () => {
+                try {
+                  await endMemberSession();
+                } catch {
+                  // Clear the local member state and leave the protected page even if
+                  // the session cleanup request fails; the server still guards /me.
+                }
+                signOut();
+                hydrateMember(null);
+                await navigate({ to: "/" });
               }}>
                 Sign out
               </Button>

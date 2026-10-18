@@ -11,7 +11,6 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AboutRouteImport } from './routes/about'
-import { Route as AdminRouteImport } from './routes/admin'
 import { Route as AppsRouteImport } from './routes/apps'
 import { Route as ArtistsRouteImport } from './routes/artists'
 import { Route as ContactRouteImport } from './routes/contact'
@@ -26,13 +25,6 @@ import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as SigninRouteImport } from './routes/signin'
 import { Route as TicketsRouteImport } from './routes/tickets'
 import { Route as WallRouteImport } from './routes/wall'
-import { Route as AdminIndexRouteImport } from './routes/admin.index'
-import { Route as AdminApplicationsRouteImport } from './routes/admin.applications'
-import { Route as AdminClientsRouteImport } from './routes/admin.clients'
-import { Route as AdminDoorRouteImport } from './routes/admin.door'
-import { Route as AdminEventsRouteImport } from './routes/admin.events'
-import { Route as AdminMembersRouteImport } from './routes/admin.members'
-import { Route as AdminWallRouteImport } from './routes/admin.wall'
 import { Route as EventsIndexRouteImport } from './routes/events.index'
 import { Route as EventsEventIdRouteImport } from './routes/events.$eventId'
 import { Route as RsvpTokenRouteImport } from './routes/rsvp.$token'
@@ -45,11 +37,6 @@ const IndexRoute = IndexRouteImport.update({
 const AboutRoute = AboutRouteImport.update({
   id: '/about',
   path: '/about',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const AdminRoute = AdminRouteImport.update({
-  id: '/admin',
-  path: '/admin',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AppsRoute = AppsRouteImport.update({
@@ -122,41 +109,6 @@ const WallRoute = WallRouteImport.update({
   path: '/wall',
   getParentRoute: () => rootRouteImport,
 } as any)
-const AdminIndexRoute = AdminIndexRouteImport.update({
-  id: '/',
-  path: '/',
-  getParentRoute: () => AdminRoute,
-} as any)
-const AdminApplicationsRoute = AdminApplicationsRouteImport.update({
-  id: '/applications',
-  path: '/applications',
-  getParentRoute: () => AdminRoute,
-} as any)
-const AdminClientsRoute = AdminClientsRouteImport.update({
-  id: '/clients',
-  path: '/clients',
-  getParentRoute: () => AdminRoute,
-} as any)
-const AdminDoorRoute = AdminDoorRouteImport.update({
-  id: '/door',
-  path: '/door',
-  getParentRoute: () => AdminRoute,
-} as any)
-const AdminEventsRoute = AdminEventsRouteImport.update({
-  id: '/events',
-  path: '/events',
-  getParentRoute: () => AdminRoute,
-} as any)
-const AdminMembersRoute = AdminMembersRouteImport.update({
-  id: '/members',
-  path: '/members',
-  getParentRoute: () => AdminRoute,
-} as any)
-const AdminWallRoute = AdminWallRouteImport.update({
-  id: '/wall',
-  path: '/wall',
-  getParentRoute: () => AdminRoute,
-} as any)
 const EventsIndexRoute = EventsIndexRouteImport.update({
   id: '/events/',
   path: '/events/',
@@ -176,7 +128,6 @@ const RsvpTokenRoute = RsvpTokenRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
-  '/admin': typeof AdminRouteWithChildren
   '/apps': typeof AppsRoute
   '/artists': typeof ArtistsRoute
   '/contact': typeof ContactRoute
@@ -191,15 +142,8 @@ export interface FileRoutesByFullPath {
   '/signin': typeof SigninRoute
   '/tickets': typeof TicketsRoute
   '/wall': typeof WallRoute
-  '/admin/applications': typeof AdminApplicationsRoute
-  '/admin/clients': typeof AdminClientsRoute
-  '/admin/door': typeof AdminDoorRoute
-  '/admin/events': typeof AdminEventsRoute
-  '/admin/members': typeof AdminMembersRoute
-  '/admin/wall': typeof AdminWallRoute
   '/events/$eventId': typeof EventsEventIdRoute
   '/rsvp/$token': typeof RsvpTokenRoute
-  '/admin/': typeof AdminIndexRoute
   '/events/': typeof EventsIndexRoute
 }
 export interface FileRoutesByTo {
@@ -219,22 +163,14 @@ export interface FileRoutesByTo {
   '/signin': typeof SigninRoute
   '/tickets': typeof TicketsRoute
   '/wall': typeof WallRoute
-  '/admin/applications': typeof AdminApplicationsRoute
-  '/admin/clients': typeof AdminClientsRoute
-  '/admin/door': typeof AdminDoorRoute
-  '/admin/events': typeof AdminEventsRoute
-  '/admin/members': typeof AdminMembersRoute
-  '/admin/wall': typeof AdminWallRoute
   '/events/$eventId': typeof EventsEventIdRoute
   '/rsvp/$token': typeof RsvpTokenRoute
-  '/admin': typeof AdminIndexRoute
   '/events': typeof EventsIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
-  '/admin': typeof AdminRouteWithChildren
   '/apps': typeof AppsRoute
   '/artists': typeof ArtistsRoute
   '/contact': typeof ContactRoute
@@ -249,15 +185,8 @@ export interface FileRoutesById {
   '/signin': typeof SigninRoute
   '/tickets': typeof TicketsRoute
   '/wall': typeof WallRoute
-  '/admin/applications': typeof AdminApplicationsRoute
-  '/admin/clients': typeof AdminClientsRoute
-  '/admin/door': typeof AdminDoorRoute
-  '/admin/events': typeof AdminEventsRoute
-  '/admin/members': typeof AdminMembersRoute
-  '/admin/wall': typeof AdminWallRoute
   '/events/$eventId': typeof EventsEventIdRoute
   '/rsvp/$token': typeof RsvpTokenRoute
-  '/admin/': typeof AdminIndexRoute
   '/events/': typeof EventsIndexRoute
 }
 export interface FileRouteTypes {
@@ -265,7 +194,6 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/about'
-    | '/admin'
     | '/apps'
     | '/artists'
     | '/contact'
@@ -280,15 +208,8 @@ export interface FileRouteTypes {
     | '/signin'
     | '/tickets'
     | '/wall'
-    | '/admin/applications'
-    | '/admin/clients'
-    | '/admin/door'
-    | '/admin/events'
-    | '/admin/members'
-    | '/admin/wall'
     | '/events/$eventId'
     | '/rsvp/$token'
-    | '/admin/'
     | '/events/'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -308,21 +229,13 @@ export interface FileRouteTypes {
     | '/signin'
     | '/tickets'
     | '/wall'
-    | '/admin/applications'
-    | '/admin/clients'
-    | '/admin/door'
-    | '/admin/events'
-    | '/admin/members'
-    | '/admin/wall'
     | '/events/$eventId'
     | '/rsvp/$token'
-    | '/admin'
     | '/events'
   id:
     | '__root__'
     | '/'
     | '/about'
-    | '/admin'
     | '/apps'
     | '/artists'
     | '/contact'
@@ -337,22 +250,14 @@ export interface FileRouteTypes {
     | '/signin'
     | '/tickets'
     | '/wall'
-    | '/admin/applications'
-    | '/admin/clients'
-    | '/admin/door'
-    | '/admin/events'
-    | '/admin/members'
-    | '/admin/wall'
     | '/events/$eventId'
     | '/rsvp/$token'
-    | '/admin/'
     | '/events/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AboutRoute: typeof AboutRoute
-  AdminRoute: typeof AdminRouteWithChildren
   AppsRoute: typeof AppsRoute
   ArtistsRoute: typeof ArtistsRoute
   ContactRoute: typeof ContactRoute
@@ -386,13 +291,6 @@ declare module '@tanstack/react-router' {
       path: '/about'
       fullPath: '/about'
       preLoaderRoute: typeof AboutRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/admin': {
-      id: '/admin'
-      path: '/admin'
-      fullPath: '/admin'
-      preLoaderRoute: typeof AdminRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/apps': {
@@ -493,55 +391,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof WallRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/admin/': {
-      id: '/admin/'
-      path: '/'
-      fullPath: '/admin/'
-      preLoaderRoute: typeof AdminIndexRouteImport
-      parentRoute: typeof AdminRoute
-    }
-    '/admin/applications': {
-      id: '/admin/applications'
-      path: '/applications'
-      fullPath: '/admin/applications'
-      preLoaderRoute: typeof AdminApplicationsRouteImport
-      parentRoute: typeof AdminRoute
-    }
-    '/admin/clients': {
-      id: '/admin/clients'
-      path: '/clients'
-      fullPath: '/admin/clients'
-      preLoaderRoute: typeof AdminClientsRouteImport
-      parentRoute: typeof AdminRoute
-    }
-    '/admin/door': {
-      id: '/admin/door'
-      path: '/door'
-      fullPath: '/admin/door'
-      preLoaderRoute: typeof AdminDoorRouteImport
-      parentRoute: typeof AdminRoute
-    }
-    '/admin/events': {
-      id: '/admin/events'
-      path: '/events'
-      fullPath: '/admin/events'
-      preLoaderRoute: typeof AdminEventsRouteImport
-      parentRoute: typeof AdminRoute
-    }
-    '/admin/members': {
-      id: '/admin/members'
-      path: '/members'
-      fullPath: '/admin/members'
-      preLoaderRoute: typeof AdminMembersRouteImport
-      parentRoute: typeof AdminRoute
-    }
-    '/admin/wall': {
-      id: '/admin/wall'
-      path: '/wall'
-      fullPath: '/admin/wall'
-      preLoaderRoute: typeof AdminWallRouteImport
-      parentRoute: typeof AdminRoute
-    }
     '/events/': {
       id: '/events/'
       path: '/events'
@@ -566,32 +415,9 @@ declare module '@tanstack/react-router' {
   }
 }
 
-interface AdminRouteChildren {
-  AdminApplicationsRoute: typeof AdminApplicationsRoute
-  AdminClientsRoute: typeof AdminClientsRoute
-  AdminDoorRoute: typeof AdminDoorRoute
-  AdminEventsRoute: typeof AdminEventsRoute
-  AdminMembersRoute: typeof AdminMembersRoute
-  AdminWallRoute: typeof AdminWallRoute
-  AdminIndexRoute: typeof AdminIndexRoute
-}
-
-const AdminRouteChildren: AdminRouteChildren = {
-  AdminApplicationsRoute: AdminApplicationsRoute,
-  AdminClientsRoute: AdminClientsRoute,
-  AdminDoorRoute: AdminDoorRoute,
-  AdminEventsRoute: AdminEventsRoute,
-  AdminMembersRoute: AdminMembersRoute,
-  AdminWallRoute: AdminWallRoute,
-  AdminIndexRoute: AdminIndexRoute,
-}
-
-const AdminRouteWithChildren = AdminRoute._addFileChildren(AdminRouteChildren)
-
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AboutRoute: AboutRoute,
-  AdminRoute: AdminRouteWithChildren,
   AppsRoute: AppsRoute,
   ArtistsRoute: ArtistsRoute,
   ContactRoute: ContactRoute,

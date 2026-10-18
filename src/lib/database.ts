@@ -7,10 +7,10 @@ import fashionImage from "@/assets/event-fashion.jpg";
 import nightlifeImage from "@/assets/event-nightlife.jpg";
 import propertyImage from "@/assets/event-property.jpg";
 import { getSql } from "./db.server";
-import type { Application, EventItem, Track } from "./data";
+import { memberEmailHtml, sendMemberEmail } from "./email.server";
+import type { EventItem, Track } from "./data";
 
 const scrypt = promisify(scryptCallback);
-const ADMIN_COOKIE = "rsvp_admin_session";
 const MEMBER_COOKIE = "rsvp_member_session";
 const SESSION_DURATION_SECONDS = 60 * 60 * 12;
 
@@ -34,20 +34,6 @@ async function hashPassword(password: string): Promise<string> {
   return `scrypt$${salt}$${hash.toString("hex")}`;
 }
 
-async function currentAdmin() {
-  const token = cookieValue(ADMIN_COOKIE);
-  if (!token) return null;
-  const tokenHash = createHash("sha256").update(token).digest("hex");
-  const sql = getSql();
-  const rows = (await sql`
-    SELECT a.id, a.name, a.email, a.role
-    FROM admin_sessions s JOIN admin_users a ON a.id = s.admin_id
-    WHERE s.token_hash = ${tokenHash} AND s.expires_at > now() AND a.active = true
-    LIMIT 1
-  `) as unknown as { id: string; name: string; email: string; role: string }[];
-  return rows[0] ?? null;
-}
-
 async function currentMember() {
   const token = cookieValue(MEMBER_COOKIE);
   if (!token) return null;
@@ -60,12 +46,6 @@ async function currentMember() {
     LIMIT 1
   `) as unknown as { id: string; name: string; email: string; track: Track; points: number; rank: string; city: string }[];
   return rows[0] ?? null;
-}
-
-function requireAdminRole(admin: { role: string } | null) {
-  if (!admin || !["admin", "owner"].includes(admin.role.toLowerCase())) {
-    throw new Error("Admin sign-in required.");
-  }
 }
 
 type EventRow = Omit<EventItem, "image"> & { image_key: string; image_data: string | null };
@@ -255,9 +235,50 @@ export const submitApplication = createServerFn({ method: "POST" })
         ${profileUrl}, ${handle}, ${platform}, ${mobile}, ${outlet},
         ${applicationRole}, ${allProfiles}, ${data.track}, ${passwordHash}, CURRENT_DATE, 'pending'
       )
-      RETURNING id
-    `) as unknown as { id: string }[];
-    return { id: rows[0]?.["id"] ?? "", status: "pending" as const };
+      RETURNING id, name, email
+    `) as unknown as { id: string; name: string; email: string }[];
+    const application = rows[0];
+    if (!application) throw new Error("Could not save your application. Please try again.");
+    const adminEmail = process.env["RSVP_ADMIN_EMAIL"] || "vinitahirani@rsvpdxb.com";
+    const [customerEmailResult, adminEmailResult] = await Promise.all([
+      sendMemberEmail({
+        to: application.email,
+        subject: "We received your RSVP DXB application",
+        text: `Hello ${application.name},\n\nThank you for applying to RSVP DXB. Our team will review your application and normally respond within 48 hours.\n\nRegards,\nRSVP DXB`,
+        html: memberEmailHtml(application.name, "Thank you for applying to RSVP DXB. Our team will review your application and normally respond within 48 hours."),
+      }),
+      sendMemberEmail({
+        to: adminEmail,
+        subject: `New RSVP DXB application: ${application.name}`,
+        text: [
+          "A new RSVP DXB application has been submitted.",
+          "",
+          `Name: ${application.name}`,
+          `Email: ${application.email}`,
+          `Track: ${data.track}`,
+          `City: ${data.city.trim() || "Dubai"}`,
+          `Instagram: ${handle}`,
+          `Followers: ${followers}`,
+          `Mobile / WhatsApp: ${mobile || "Not provided"}`,
+          `Outlet: ${outlet || "Not provided"}`,
+          `Role: ${applicationRole || "Not provided"}`,
+          `Profile details: ${allProfiles || "Not provided"}`,
+          `Application details: ${detail || "Not provided"}`,
+          `Application ID: ${application.id}`,
+          "Status: Pending review",
+        ].join("\n"),
+        html: memberEmailHtml(
+          "RSVP DXB team",
+          `A new application was submitted by ${application.name} (${application.email}). Track: ${data.track}. City: ${data.city.trim() || "Dubai"}. Instagram: ${handle}. Followers: ${followers}. Mobile: ${mobile || "Not provided"}. Outlet: ${outlet || "Not provided"}. Role: ${applicationRole || "Not provided"}. Profile details: ${allProfiles || "Not provided"}. Application details: ${detail || "Not provided"}. Application ID: ${application.id}. Status: Pending review.`,
+        ),
+      }),
+    ]);
+    return {
+      id: application.id,
+      status: "pending" as const,
+      emailSent: customerEmailResult.sent,
+      adminEmailSent: adminEmailResult.sent,
+    };
   });
 
 export const getMemberSession = createServerFn({ method: "GET" }).handler(async () => {
@@ -305,89 +326,3 @@ export const signOutMember = createServerFn({ method: "POST" }).handler(async ()
   return { ok: true };
 });
 
-export const getAdminApplications = createServerFn({ method: "GET" }).handler(async () => {
-  const admin = await currentAdmin();
-  if (!admin || !["admin", "owner"].includes(admin.role.toLowerCase())) {
-    return { admin: null, applications: [] as Application[] };
-  }
-  const sql = getSql();
-  const rows = (await sql`
-    SELECT id, name, email, track, city, detail, followers,
-      to_char(submitted, 'YYYY-MM-DD') AS submitted, status
-    FROM applications ORDER BY created_at DESC
-  `) as unknown as Application[];
-  return { admin: { name: admin.name, email: admin.email, role: admin.role }, applications: rows };
-});
-
-export const getAdminSession = createServerFn({ method: "GET" }).handler(async () => {
-  const admin = await currentAdmin();
-  if (!admin) return null;
-  const sql = getSql();
-  const counts = (await sql`SELECT count(*)::int AS pending FROM applications WHERE status = 'pending'`) as unknown as { pending: number }[];
-  return { name: admin.name, email: admin.email, role: admin.role, pendingCount: counts[0]?.["pending"] ?? 0 };
-});
-
-export const signInAdmin = createServerFn({ method: "POST" })
-  .validator((input: { email: string; password: string }) => input)
-  .handler(async ({ data }) => {
-    const email = data.email.trim().toLowerCase();
-    if (!email || data.password.length < 1 || data.password.length > 200) {
-      throw new Error("Email or password is incorrect.");
-    }
-    const sql = getSql();
-    const admins = (await sql`
-      SELECT id, name, email, password_hash, role
-      FROM admin_users WHERE lower(email) = ${email} AND active = true LIMIT 1
-    `) as unknown as { id: string; name: string; email: string; password_hash: string; role: string }[];
-    const admin = admins[0];
-    if (!admin || !(await passwordMatches(data.password, admin.password_hash))) {
-      throw new Error("Email or password is incorrect.");
-    }
-    if (!["admin", "owner"].includes(admin.role.toLowerCase())) throw new Error("This account cannot access the admin portal.");
-    const token = randomBytes(32).toString("base64url");
-    const tokenHash = createHash("sha256").update(token).digest("hex");
-    await sql`
-      INSERT INTO admin_sessions (token_hash, admin_id, expires_at)
-      VALUES (${tokenHash}, ${admin.id}, now() + (${SESSION_DURATION_SECONDS} * interval '1 second'))
-    `;
-    const secure = process.env["NODE_ENV"] === "production" ? "; Secure" : "";
-    setResponseHeader("Set-Cookie", `${ADMIN_COOKIE}=${encodeURIComponent(token)}; Path=/admin; HttpOnly; SameSite=Lax; Max-Age=${SESSION_DURATION_SECONDS}${secure}`);
-    return { name: admin.name, email: admin.email, role: admin.role };
-  });
-
-export const signOutAdmin = createServerFn({ method: "POST" }).handler(async () => {
-  const token = cookieValue(ADMIN_COOKIE);
-  if (token) {
-    const sql = getSql();
-    const tokenHash = createHash("sha256").update(token).digest("hex");
-    await sql`DELETE FROM admin_sessions WHERE token_hash = ${tokenHash}`;
-  }
-  setResponseHeader("Set-Cookie", `${ADMIN_COOKIE}=; Path=/admin; HttpOnly; SameSite=Lax; Max-Age=0`);
-  return { ok: true };
-});
-
-export const decideApplicationInDatabase = createServerFn({ method: "POST" })
-  .validator((input: { id: string; decision: "approved" | "rejected" }) => input)
-  .handler(async ({ data }) => {
-    requireAdminRole(await currentAdmin());
-    if (!data.id || !["approved", "rejected"].includes(data.decision)) throw new Error("Invalid application decision.");
-    const sql = getSql();
-    const rows = (await sql`
-      WITH changed AS (
-      UPDATE applications SET status = ${data.decision}, updated_at = now()
-      WHERE id = ${data.id} AND status = 'pending'
-      RETURNING id, name, email, track, city, detail, followers, password_hash
-      ), created_member AS (
-        INSERT INTO members (id, name, email, track, source_track, rank, points, events, city, status, joined, password_hash)
-        SELECT 'mem-' || changed.id, changed.name, changed.email, changed.track,
-          changed.track, 'Bronze', 25, 0, changed.city, 'approved', CURRENT_DATE, changed.password_hash
-        FROM changed WHERE ${data.decision} = 'approved'
-        ON CONFLICT DO NOTHING
-        RETURNING id
-      )
-      SELECT id FROM changed
-    `) as unknown as Pick<Application, "id" | "name" | "email" | "track" | "city" | "detail" | "followers">[];
-    const application = rows[0];
-    if (!application) throw new Error("This application is no longer pending.");
-    return { id: application.id, status: data.decision };
-  });
