@@ -60,7 +60,7 @@ export function EventCard({ event }: { event: EventItem }) {
             {saved.includes(event.id) ? "Saved" : "Save"}
           </Button>
         </div>
-        <div className="mt-3"><WhatsAppAction event={event} /></div>
+        <div className="mt-3 flex flex-wrap items-center gap-2">{import.meta.env.VITE_RSVP_WHATSAPP_NUMBER ? <a className="inline-flex h-9 items-center justify-center rounded-md bg-primary px-3 text-sm font-medium text-primary-foreground" href={`https://wa.me/${import.meta.env.VITE_RSVP_WHATSAPP_NUMBER}?text=${encodeURIComponent("RSVPDXB events")}`} target="_blank" rel="noreferrer">Request a ticket on WhatsApp</a> : null}<WhatsAppAction event={event} /></div>
       </div>
     </article>
   );
