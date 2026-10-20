@@ -10,7 +10,7 @@ export function WhatsAppAction({ event }: { event: EventItem }) {
   }
   if (!phoneNumber) return null;
 
-  const requestUrl = `https://wa.me/${phoneNumber}?text=${encodeURIComponent(`RSVPDXB event ${event.id}`)}`;
+  const requestUrl = `https://wa.me/${phoneNumber}?text=${encodeURIComponent(`RSVPDXB event ${event.title}`)}`;
   return (
     <a
       href={requestUrl}
