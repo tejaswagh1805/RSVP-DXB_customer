@@ -40,11 +40,12 @@ async function currentMember() {
   const tokenHash = createHash("sha256").update(token).digest("hex");
   const sql = getSql();
   const rows = (await sql`
-    SELECT m.id, m.name, m.email, m.track, m.points, m.rank, m.city
+    SELECT m.id, m.name, m.email, m.track, m.points, m.rank, m.city,
+      m.mobile, m.handle, m.followers
     FROM member_sessions s JOIN members m ON m.id = s.member_id
     WHERE s.token_hash = ${tokenHash} AND s.expires_at > now() AND m.status = 'approved'
     LIMIT 1
-  `) as unknown as { id: string; name: string; email: string; track: Track; points: number; rank: string; city: string }[];
+  `) as unknown as { id: string; name: string; email: string; track: Track; points: number; rank: string; city: string; mobile: string; handle: string; followers: number }[];
   return rows[0] ?? null;
 }
 
@@ -287,6 +288,37 @@ export const getMemberSession = createServerFn({ method: "GET" }).handler(async 
   const member = await currentMember();
   return member ? { ...member, signedIn: true as const, approved: true as const } : null;
 });
+
+export const updateMemberProfile = createServerFn({ method: "POST" })
+  .validator((input: { name: string; city: string; mobile: string; instagram: string; followers: string }) => input)
+  .handler(async ({ data }) => {
+    const member = await currentMember();
+    if (!member) throw new Error("Sign in to update your profile.");
+
+    const name = data.name.trim().slice(0, 120);
+    const city = data.city.trim().slice(0, 100);
+    const digits = data.mobile.replace(/\D/g, "");
+    const mobile = `${data.mobile.trim().startsWith("+") ? "+" : ""}${digits}`;
+    const instagram = data.instagram.trim().replace(/^@+/, "").slice(0, 100);
+    const followers = Number(data.followers.replace(/[ ,]/g, ""));
+
+    if (!name) throw new Error("Enter your name.");
+    if (!city) throw new Error("Enter your city.");
+    if (digits.length < 8 || digits.length > 15) throw new Error("Enter a WhatsApp number with 8 to 15 digits, including the country code.");
+    if (!Number.isSafeInteger(followers) || followers < 0) throw new Error("Enter a valid follower count.");
+
+    const profileUrl = instagram ? `https://www.instagram.com/${encodeURIComponent(instagram)}/` : "";
+    const sql = getSql();
+    const rows = (await sql`
+      UPDATE members
+      SET name = ${name}, city = ${city}, mobile = ${mobile}, handle = ${instagram},
+          profile_url = ${profileUrl}, followers = ${followers}
+      WHERE id = ${member.id} AND status = 'approved'
+      RETURNING id, name, email, track, points, rank, city, mobile, handle, followers
+    `) as unknown as { id: string; name: string; email: string; track: Track; points: number; rank: string; city: string; mobile: string; handle: string; followers: number }[];
+    if (!rows[0]) throw new Error("Your member profile could not be found.");
+    return rows[0];
+  });
 
 export const signInMember = createServerFn({ method: "POST" })
   .validator((input: { email: string; password: string }) => input)

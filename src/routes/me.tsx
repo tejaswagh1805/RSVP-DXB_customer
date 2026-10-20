@@ -8,7 +8,7 @@ import { EventImage } from "@/components/EventImage";
 import { Badge, Button, Card, Field, PasswordInput, Stat, inputClass } from "@/components/ui-kit";
 import { POINT_RULES, RANKS, formatDate, rankFor } from "@/lib/data";
 import { useStore } from "@/lib/store";
-import { getMemberRsvps, getMemberSession, updateEventRsvp } from "@/lib/database";
+import { getMemberRsvps, getMemberSession, updateEventRsvp, updateMemberProfile } from "@/lib/database";
 import { useServerFn } from "@tanstack/react-start";
 
 export const Route = createFileRoute("/me")({
@@ -66,6 +66,7 @@ function MemberArea() {
   const loaderData = Route.useLoaderData();
   const databaseRsvps = loaderData.rsvps;
   const persistRsvp = useServerFn(updateEventRsvp);
+  const persistProfile = useServerFn(updateMemberProfile);
   const rsvps = { ...demoRsvps, ...databaseRsvps };
   const toggleRsvp = (eventId: string) => {
     if (!profile.signedIn) return;
@@ -79,6 +80,14 @@ function MemberArea() {
   const [pwMsg, setPwMsg] = useState<{ ok: boolean; text: string } | null>(null);
   const [avatarMsg, setAvatarMsg] = useState("");
   const [profileMsg, setProfileMsg] = useState("");
+  const [profileSaving, setProfileSaving] = useState(false);
+  const [profileForm, setProfileForm] = useState(() => ({
+    name: loaderData.member.name,
+    city: loaderData.member.city || "",
+    mobile: loaderData.member.mobile || "",
+    instagram: loaderData.member.handle || "",
+    followers: String(loaderData.member.followers ?? 0),
+  }));
   useEffect(() => { hydrateMember(loaderData.member); }, [hydrateMember, loaderData.member]);
   useEffect(() => { setAvatar(localStorage.getItem("rsvp-dxb-avatar")); }, []);
   const initials = profile.name.split(" ").map((n) => n[0]).join("");
@@ -105,6 +114,27 @@ function MemberArea() {
     if (pw.next !== pw.confirm) return setPwMsg({ ok: false, text: "New passwords don't match." });
     setPw({ current: "", next: "", confirm: "" });
     setPwMsg({ ok: true, text: "Password updated." });
+  };
+  const onSaveProfile = async (ev: React.FormEvent<HTMLFormElement>) => {
+    ev.preventDefault();
+    setProfileSaving(true);
+    setProfileMsg("");
+    try {
+      const updated = await persistProfile({ data: profileForm });
+      setProfileForm({
+        name: updated.name,
+        city: updated.city,
+        mobile: updated.mobile,
+        instagram: updated.handle,
+        followers: String(updated.followers),
+      });
+      hydrateMember({ id: updated.id, name: updated.name, email: updated.email, track: updated.track, points: updated.points, approved: true });
+      setProfileMsg("Profile saved to your account.");
+    } catch (error) {
+      setProfileMsg(error instanceof Error ? error.message : "Could not save your profile. Please try again.");
+    } finally {
+      setProfileSaving(false);
+    }
   };
 
   const myEvents = events.filter((e) => (rsvps[e.id] ?? "none") !== "none");
@@ -367,30 +397,32 @@ function MemberArea() {
           </Card>
           <Card>
             <h2 className="text-2xl">Profile & settings</h2>
-            <div className="mt-5 grid gap-4 sm:grid-cols-2">
+            <form className="mt-5" onSubmit={onSaveProfile}>
+            <div className="grid gap-4 sm:grid-cols-2">
               <Field label="Name">
-                <input className={inputClass} defaultValue={profile.name} />
+                <input className={inputClass} autoComplete="name" value={profileForm.name} onChange={(e) => setProfileForm({ ...profileForm, name: e.target.value })} required maxLength={120} />
               </Field>
               <Field label="Email">
-                <input className={inputClass} defaultValue={profile.email} />
+                <input className={inputClass} type="email" value={profile.email} readOnly aria-readonly="true" />
               </Field>
               <Field label="WhatsApp">
-                <input className={inputClass} defaultValue="+971 50 123 4567" />
+                <input className={inputClass} type="tel" autoComplete="tel" placeholder="Include country code, e.g. +971…" value={profileForm.mobile} onChange={(e) => setProfileForm({ ...profileForm, mobile: e.target.value })} required />
               </Field>
               <Field label="City">
-                <input className={inputClass} defaultValue="Dubai" />
+                <input className={inputClass} autoComplete="address-level2" value={profileForm.city} onChange={(e) => setProfileForm({ ...profileForm, city: e.target.value })} required maxLength={100} />
               </Field>
               <Field label="Instagram">
-                <input className={inputClass} defaultValue="@tejas" />
+                <input className={inputClass} autoComplete="off" placeholder="Instagram username" value={profileForm.instagram} onChange={(e) => setProfileForm({ ...profileForm, instagram: e.target.value })} maxLength={100} />
               </Field>
               <Field label="Follower count">
-                <input className={inputClass} defaultValue="128,000" />
+                <input className={inputClass} inputMode="numeric" value={profileForm.followers} onChange={(e) => setProfileForm({ ...profileForm, followers: e.target.value })} required />
               </Field>
             </div>
             <div className="mt-6 flex flex-wrap items-center gap-4">
-              <Button onClick={() => setProfileMsg("Changes saved.")}>Save changes</Button>
-              {profileMsg ? <span className="text-sm text-primary">{profileMsg}</span> : null}
+              <Button type="submit" disabled={profileSaving}>{profileSaving ? "Saving…" : "Save changes"}</Button>
+              {profileMsg ? <span className={`text-sm ${profileMsg.startsWith("Profile saved") ? "text-primary" : "text-destructive"}`} role="status">{profileMsg}</span> : null}
             </div>
+            </form>
           </Card>
           <Card>
             <h2 className="text-2xl">Update password</h2>
