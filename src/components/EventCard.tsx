@@ -11,6 +11,7 @@ export function EventCard({ event }: { event: EventItem }) {
   const full = event.confirmed >= event.capacity;
   const left = Math.max(event.capacity - event.confirmed, 0);
   const eligible = event.tracks.includes(profile.track);
+  const ticketRequestOpen = event.status === "published" && event.date >= new Date().toISOString().slice(0, 10);
 
   return (
     <article className="group flex flex-col overflow-hidden rounded-md border border-border bg-card transition-colors hover:border-primary/50">
@@ -60,7 +61,7 @@ export function EventCard({ event }: { event: EventItem }) {
             {saved.includes(event.id) ? "Saved" : "Save"}
           </Button>
         </div>
-        <div className="mt-3 flex flex-wrap items-center gap-2">{import.meta.env.VITE_RSVP_WHATSAPP_NUMBER ? <a className="inline-flex h-9 items-center justify-center rounded-md bg-primary px-3 text-sm font-medium text-primary-foreground" href={`https://wa.me/${import.meta.env.VITE_RSVP_WHATSAPP_NUMBER}?text=${encodeURIComponent("RSVPDXB events")}`} target="_blank" rel="noreferrer">Request a ticket on WhatsApp</a> : null}<WhatsAppAction event={event} /></div>
+        <div className="mt-3 flex flex-wrap items-center gap-2">{import.meta.env.VITE_RSVP_WHATSAPP_NUMBER && ticketRequestOpen ? <a className="inline-flex h-9 items-center justify-center rounded-md bg-primary px-3 text-sm font-medium text-primary-foreground" href={`https://wa.me/${import.meta.env.VITE_RSVP_WHATSAPP_NUMBER}?text=${encodeURIComponent(`RSVPDXB event ${event.id}`)}`} target="_blank" rel="noreferrer">Request a ticket on WhatsApp</a> : ticketRequestOpen ? null : <span className="text-xs text-muted-foreground">Ticket requests closed</span>}<WhatsAppAction event={event} /></div>
       </div>
     </article>
   );
