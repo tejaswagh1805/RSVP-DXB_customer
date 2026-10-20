@@ -26,6 +26,7 @@ export interface EventItem {
   hostNote: string;
   status: "published" | "pending" | "closed";
   image: string;
+  images?: string[];
 }
 
 export interface WallPost {

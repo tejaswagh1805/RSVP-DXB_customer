@@ -104,8 +104,8 @@ function EventDetail() {
             <div>
               <p className="eyebrow">Photos</p>
               <div className="mt-3 grid grid-cols-3 gap-3">
-                {[0, 1, 2].map((i) => (
-                  <EventImage key={i} event={event} className="h-24 w-full rounded-md" />
+                {(event.images?.length ? event.images : [event.image]).map((image, i) => (
+                  <img key={`${i}-${image.slice(-16)}`} src={image} alt={`${event.title} photo ${i + 1}`} loading="lazy" className="h-24 w-full rounded-md object-cover" />
                 ))}
               </div>
             </div>

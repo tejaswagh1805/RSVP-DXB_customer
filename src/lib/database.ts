@@ -48,7 +48,7 @@ async function currentMember() {
   return rows[0] ?? null;
 }
 
-type EventRow = Omit<EventItem, "image"> & { image_key: string; image_data: string | null };
+type EventRow = Omit<EventItem, "image" | "images"> & { image_key: string; image_data: string | null; image_gallery?: string[] | null };
 
 const EVENT_IMAGES: Record<string, string> = {
   "atlantis-chef-table": diningImage,
@@ -60,10 +60,12 @@ const EVENT_IMAGES: Record<string, string> = {
 };
 
 function mapEvent(row: EventRow): EventItem {
-  const { image_data, image_key, ...event } = row;
+  const { image_data, image_key, image_gallery, ...event } = row;
+  const images = image_gallery?.length ? image_gallery : image_data ? [image_data] : [];
   return {
     ...event,
-    image: image_data || EVENT_IMAGES[image_key] || EVENT_IMAGES["atlantis-chef-table"]!,
+    image: images[0] || EVENT_IMAGES[image_key] || EVENT_IMAGES["atlantis-chef-table"]!,
+    images,
   };
 }
 
@@ -73,7 +75,7 @@ export const listPublishedEvents = createServerFn({ method: "GET" }).handler(asy
     SELECT id, title, brand, to_char(date, 'YYYY-MM-DD') AS date, time, venue, area,
       category, tracks, capacity, confirmed, dress_code AS "dressCode", about,
       included, who_is_invited AS "whoIsInvited", host_note AS "hostNote",
-      status, image_key, image_data
+      status, image_key, image_data, image_gallery
     FROM events WHERE status = 'published' ORDER BY date, time
   `) as unknown as EventRow[];
   return rows.map(mapEvent);
@@ -87,7 +89,7 @@ export const getEventById = createServerFn({ method: "GET" })
       SELECT id, title, brand, to_char(date, 'YYYY-MM-DD') AS date, time, venue, area,
         category, tracks, capacity, confirmed, dress_code AS "dressCode", about,
         included, who_is_invited AS "whoIsInvited", host_note AS "hostNote",
-        status, image_key, image_data
+        status, image_key, image_data, image_gallery
       FROM events WHERE id = ${eventId} AND status IN ('published', 'closed') LIMIT 1
     `) as unknown as EventRow[];
     return rows[0] ? mapEvent(rows[0]) : null;

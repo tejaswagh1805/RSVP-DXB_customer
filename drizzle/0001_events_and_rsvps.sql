@@ -17,7 +17,8 @@ CREATE TABLE IF NOT EXISTS events (
   host_note text NOT NULL,
   status text NOT NULL CHECK (status IN ('published', 'pending', 'closed')),
   image_key text NOT NULL,
-  image_data text NOT NULL DEFAULT ''
+  image_data text NOT NULL DEFAULT '',
+  image_gallery text[] NOT NULL DEFAULT '{}'
 );
 
 ALTER TABLE events ADD COLUMN IF NOT EXISTS dress_code text NOT NULL DEFAULT '';
@@ -27,6 +28,7 @@ ALTER TABLE events ADD COLUMN IF NOT EXISTS who_is_invited text NOT NULL DEFAULT
 ALTER TABLE events ADD COLUMN IF NOT EXISTS host_note text NOT NULL DEFAULT '';
 ALTER TABLE events ADD COLUMN IF NOT EXISTS image_key text NOT NULL DEFAULT '';
 ALTER TABLE events ADD COLUMN IF NOT EXISTS image_data text NOT NULL DEFAULT '';
+ALTER TABLE events ADD COLUMN IF NOT EXISTS image_gallery text[] NOT NULL DEFAULT '{}';
 ALTER TABLE events ADD COLUMN IF NOT EXISTS created_at timestamptz NOT NULL DEFAULT now();
 ALTER TABLE events ADD COLUMN IF NOT EXISTS updated_at timestamptz NOT NULL DEFAULT now();
 ALTER TABLE events DROP CONSTRAINT IF EXISTS events_status_check;
