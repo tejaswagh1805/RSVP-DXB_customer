@@ -4,6 +4,7 @@ import { SitePage, PageHero } from "./SiteLayout";
 import { Button } from "./ui-kit";
 import { EventCard } from "./EventCard";
 import { useStore } from "@/lib/store";
+import type { EventItem } from "@/lib/data";
 import { ArrowUpRight, Smartphone, MapPin, MessageCircle } from "lucide-react";
 
 const FAQ = [
@@ -14,13 +15,15 @@ const FAQ = [
   ["How do ticket payment and delivery work?", "When paid ticket checkout is enabled for an event, request a ticket through WhatsApp, complete secure checkout, and receive the PDF ticket in the same chat after payment is confirmed."],
 ];
 
-export function CustomerInfo({ page }: { page: "contact" | "apps" | "faq" | "tickets" }) {
+export function CustomerInfo({ page, ticketEvents }: { page: "contact" | "apps" | "faq" | "tickets"; ticketEvents?: EventItem[] }) {
   const { events } = useStore();
   const [platform, setPlatform] = useState("Android");
   const [sent, setSent] = useState(false);
   const titles = { contact: "Find Us. Talk to us.", apps: "RSVP DXB, on your phone.", faq: "A few good questions.", tickets: "Last minute ticket" };
   const intros = { contact: "Good conversations lead to great rooms.", apps: "Your guest list, wherever the night takes you.", faq: "The details before you step inside.", tickets: "The final places on the list. Your next night starts here." };
-  const available = events.filter(e => e.status === "published" && e.confirmed < e.capacity).sort((a,b) => (a.capacity-a.confirmed)-(b.capacity-b.confirmed));
+  // WhatsApp ticket requests are independent of member RSVP capacity. Keep
+  // future published events visible here even when the guest list is full.
+  const available = (ticketEvents?.length ? ticketEvents : events).filter(e => e.status === "published" && e.date >= new Date().toISOString().slice(0, 10)).sort((a,b) => a.date.localeCompare(b.date));
   return <SitePage><PageHero eyebrow="RSVP DXB" title={titles[page]} intro={intros[page]} /><section className="experience-section">
     {page === "tickets" ? <><p className="mb-6 text-sm text-muted-foreground">Choose an event and request a ticket through WhatsApp. For paid events with checkout enabled, the PDF ticket is sent after payment is confirmed.</p><div className="grid gap-6 md:grid-cols-3">{available.map(e => <EventCard key={e.id} event={e} />)}</div>{!available.length ? <p>No places open right now. Check the event waitlists.</p> : null}</> : null}
     {page === "faq" ? <div className="faq-list">{FAQ.map(([q,a]) => <details key={q}><summary>{q}</summary><p>{a}</p></details>)}</div> : null}
