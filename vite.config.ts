@@ -7,7 +7,7 @@
 import { defineConfig } from "@lovable.dev/vite-tanstack-config";
 
 export default defineConfig({
-  // Render runs the app as a Node web service; the template's default target is Cloudflare.
+  // AWS Lambda runs the generated Node server through the Lambda Web Adapter.
   nitro: { preset: "node-server" },
   tanstackStart: {
     // Redirect TanStack Start's bundled server entry to src/server.ts (our SSR error wrapper).

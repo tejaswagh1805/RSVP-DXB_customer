@@ -46,6 +46,10 @@ function isH3SwallowedErrorBody(body: string): boolean {
 
 export default {
   async fetch(request: Request, env: unknown, ctx: unknown) {
+    const originSecret = process.env["CLOUDFRONT_ORIGIN_SECRET"];
+    if (originSecret && request.headers.get("x-origin-verify") !== originSecret) {
+      return new Response("Forbidden", { status: 403 });
+    }
     try {
       const handler = await getServerEntry();
       const response = await handler.fetch(request, env, ctx);

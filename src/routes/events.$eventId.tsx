@@ -109,6 +109,7 @@ function EventDetail() {
                 ))}
               </div>
             </div>
+            {event.video ? <video className="w-full rounded-lg" controls playsInline preload="metadata" poster={event.image}><source src={event.video} />Your browser does not support video playback.</video> : null}
             <Card className="border-primary/30">
               <p className="eyebrow">Host note</p>
               <p className="mt-2 text-sm text-muted-foreground">{event.hostNote}</p>

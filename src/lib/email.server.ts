@@ -1,6 +1,6 @@
 import { SESv2Client, SendEmailCommand } from "@aws-sdk/client-sesv2";
 
-const ses = new SESv2Client({ region: process.env["AWS_REGION"] || "eu-north-1" });
+const ses = new SESv2Client({ region: process.env["SES_REGION"] || process.env["AWS_REGION"] || "eu-north-1" });
 
 function escapeHtml(value: string): string {
   return value.replace(/[&<>"']/g, (character) => {

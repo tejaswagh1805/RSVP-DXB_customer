@@ -27,6 +27,7 @@ export interface EventItem {
   status: "published" | "pending" | "closed";
   image: string;
   images?: string[];
+  video?: string;
 }
 
 export interface WallPost {

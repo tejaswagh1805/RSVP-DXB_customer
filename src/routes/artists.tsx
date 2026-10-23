@@ -4,9 +4,12 @@ import {
   ARTISTS,
   INFLUENCERS,
   ArtistCard,
+  peopleProfileCard,
 } from "@/components/CustomerExperience";
+import { listPeopleProfiles } from "@/lib/database";
 
 export const Route = createFileRoute("/artists")({
+  loader: () => listPeopleProfiles(),
   head: () => ({
     meta: [
       { title: "Artists & Influencers — RSVP DXB" },
@@ -28,6 +31,9 @@ export const Route = createFileRoute("/artists")({
 });
 
 function ArtistsPage() {
+  const profiles = Route.useLoaderData();
+  const artists = profiles.length ? profiles.filter((profile) => profile.category === "artist").map(peopleProfileCard) : ARTISTS;
+  const influencers = profiles.length ? profiles.filter((profile) => profile.category === "influencer").map(peopleProfileCard) : INFLUENCERS;
   return (
     <SitePage>
       <section className="experience-section">
@@ -36,20 +42,20 @@ function ArtistsPage() {
             <p className="eyebrow">The people behind the energy</p>
             <h1>Artist's & Influencers</h1>
           </div>
-          <p className="text-xs text-muted-foreground">Demo spotlight profiles</p>
+          <p className="text-xs text-muted-foreground">Featured RSVP community</p>
         </div>
 
         <p className="eyebrow mt-8">Artists</p>
         <div className="artist-grid mt-4">
-          {ARTISTS.map((a) => (
-            <ArtistCard key={a.name} artist={a} />
+          {artists.map((a) => (
+            <ArtistCard key={a.id || a.name} artist={a} />
           ))}
         </div>
 
         <p className="eyebrow mt-16">Influencers</p>
         <div className="artist-grid mt-4">
-          {INFLUENCERS.map((a) => (
-            <ArtistCard key={a.name} artist={a} />
+          {influencers.map((a) => (
+            <ArtistCard key={a.id || a.name} artist={a} />
           ))}
         </div>
       </section>

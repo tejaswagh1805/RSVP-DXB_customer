@@ -10,6 +10,9 @@ import { getSql } from "./db.server";
 import { memberEmailHtml, sendMemberEmail } from "./email.server";
 import type { EventItem, Track } from "./data";
 
+export type HomepageMediaItem = { id: string; slot: "gallery" | "top_pick"; title: string; caption: string; imageUrl: string; linkUrl: string; displayOrder: number };
+export type PeopleProfile = { id: string; category: "artist" | "influencer"; name: string; role: string; bio: string; imageUrl: string; instagramUrl: string; tiktokUrl: string; youtubeUrl: string; xUrl: string; displayOrder: number };
+
 const scrypt = promisify(scryptCallback);
 const MEMBER_COOKIE = "rsvp_member_session";
 const SESSION_DURATION_SECONDS = 60 * 60 * 12;
@@ -49,7 +52,7 @@ async function currentMember() {
   return rows[0] ?? null;
 }
 
-type EventRow = Omit<EventItem, "image" | "images"> & { image_key: string; image_data: string | null; image_gallery?: string[] | null };
+type EventRow = Omit<EventItem, "image" | "images" | "video"> & { image_key: string; image_data: string | null; image_gallery?: string[] | null; video_url?: string | null };
 
 const EVENT_IMAGES: Record<string, string> = {
   "atlantis-chef-table": diningImage,
@@ -61,12 +64,13 @@ const EVENT_IMAGES: Record<string, string> = {
 };
 
 function mapEvent(row: EventRow): EventItem {
-  const { image_data, image_key, image_gallery, ...event } = row;
+  const { image_data, image_key, image_gallery, video_url, ...event } = row;
   const images = image_gallery?.length ? image_gallery : image_data ? [image_data] : [];
   return {
     ...event,
     image: images[0] || EVENT_IMAGES[image_key] || EVENT_IMAGES["atlantis-chef-table"]!,
     images,
+    video: video_url || undefined,
   };
 }
 
@@ -76,7 +80,7 @@ export const listPublishedEvents = createServerFn({ method: "GET" }).handler(asy
     SELECT id, title, brand, to_char(date, 'YYYY-MM-DD') AS date, time, venue, area,
       category, tracks, capacity, confirmed, dress_code AS "dressCode", about,
       included, who_is_invited AS "whoIsInvited", host_note AS "hostNote",
-      status, image_key, image_data, image_gallery
+      status, image_key, image_data, image_gallery, video_url
     FROM events WHERE status = 'published' ORDER BY date, time
   `) as unknown as EventRow[];
   return rows.map(mapEvent);
@@ -90,11 +94,31 @@ export const getEventById = createServerFn({ method: "GET" })
       SELECT id, title, brand, to_char(date, 'YYYY-MM-DD') AS date, time, venue, area,
         category, tracks, capacity, confirmed, dress_code AS "dressCode", about,
         included, who_is_invited AS "whoIsInvited", host_note AS "hostNote",
-        status, image_key, image_data, image_gallery
+        status, image_key, image_data, image_gallery, video_url
       FROM events WHERE id = ${eventId} AND status IN ('published', 'closed') LIMIT 1
     `) as unknown as EventRow[];
     return rows[0] ? mapEvent(rows[0]) : null;
   });
+
+export const listHomepageMedia = createServerFn({ method: "GET" }).handler(async () => {
+  const sql = getSql();
+  const rows = (await sql`
+    SELECT id, slot, title, caption, image_url AS "imageUrl", link_url AS "linkUrl", display_order AS "displayOrder"
+    FROM site_media WHERE active = TRUE ORDER BY slot, display_order, created_at DESC
+  `) as unknown as HomepageMediaItem[];
+  return rows;
+});
+
+export const listPeopleProfiles = createServerFn({ method: "GET" }).handler(async () => {
+  const sql = getSql();
+  const rows = (await sql`
+    SELECT id, category, name, role, bio, image_url AS "imageUrl",
+      instagram_url AS "instagramUrl", tiktok_url AS "tiktokUrl",
+      youtube_url AS "youtubeUrl", x_url AS "xUrl", display_order AS "displayOrder"
+    FROM people_profiles WHERE active = TRUE ORDER BY category, display_order, created_at DESC
+  `) as unknown as PeopleProfile[];
+  return rows;
+});
 
 export const getMemberRsvps = createServerFn({ method: "GET" }).handler(async () => {
     const member = await currentMember();

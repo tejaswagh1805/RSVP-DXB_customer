@@ -16,6 +16,8 @@ import { EventImage } from "./EventImage";
 import { WhatsAppAction } from "./WhatsAppAction";
 import { useStore } from "@/lib/store";
 import { formatDate, type EventItem } from "@/lib/data";
+import type { HomepageMediaItem } from "@/lib/database";
+import type { PeopleProfile } from "@/lib/database";
 import videoUrl from "@/assets/banner-clip.webm";
 const videoAsset = { url: videoUrl };
 import creators from "@/assets/community-creators.jpg";
@@ -186,10 +188,16 @@ export function EventRibbon({
   );
 }
 
-export function EventGallery() {
+export function SiteMediaRibbon({ media }: { media: HomepageMediaItem[] }) {
+  if (!media.length) return null;
+  const tiles = Array.from({ length: 12 }, (_, i) => media[i % media.length]).filter((item): item is HomepageMediaItem => Boolean(item));
+  return <section className="event-ribbon ribbon-reverse"><div className="experience-heading"><div><p className="eyebrow">Selected for the spotlight</p><h2>RSVP TOP Pick</h2></div><Link to="/events"><Button variant="outline" size="sm">Explore events <ArrowUpRight size={16} /></Button></Link></div><div className="ribbon-window"><div className="ribbon-track">{[0, 1].map((copy) => <div key={copy} className="ribbon-set" aria-hidden={copy === 1 ? true : undefined} inert={copy === 1 ? true : undefined}>{tiles.map((item, i) => <article className="ribbon-tile" key={`${copy}-${item.id}-${i}`}><a href={item.linkUrl || "/events"} target={item.linkUrl ? "_blank" : undefined} rel={item.linkUrl ? "noreferrer" : undefined}><div className="ribbon-photo"><img src={item.imageUrl} alt={item.title} className="h-full w-full object-cover" /><span className="tile-category">RSVP TOP Pick</span><ArrowUpRight className="tile-arrow" /></div><h3 className="mt-3 text-2xl">{item.title}</h3>{item.caption ? <p className="mt-1 text-sm text-muted-foreground">{item.caption}</p> : null}</a></article>)}</div>)}</div></div></section>;
+}
+
+export function EventGallery({ media = [] }: { media?: HomepageMediaItem[] }) {
   const { events } = useStore();
   const [category, setCategory] = useState("All");
-  const [selected, setSelected] = useState<EventItem | null>(null);
+  const [selected, setSelected] = useState<EventItem | HomepageMediaItem | null>(null);
   const categories = [
     "All",
     ...new Set(events.filter((e) => e.status === "published").map((e) => e.category)),
@@ -212,7 +220,7 @@ export function EventGallery() {
           <p className="eyebrow">Inside the room</p>
           <h2>Latest events gallery</h2>
         </div>
-        <div className="flex flex-wrap gap-2">
+        {!media.length ? <div className="flex flex-wrap gap-2">
           {categories.map((c) => (
             <Button
               key={c}
@@ -223,10 +231,17 @@ export function EventGallery() {
               {c}
             </Button>
           ))}
-        </div>
+        </div> : null}
       </div>
       <div className="event-gallery">
-        {gallery.map((e) => (
+        {media.length ? media.map((item) => (
+          <div className="gallery-item" key={item.id}>
+            <Button variant="ghost" className="gallery-photo" onClick={() => setSelected(item)}>
+              <img src={item.imageUrl} alt={item.title} className="h-full w-full object-cover" />
+              <span className="gallery-label">{item.title}<ArrowUpRight size={20} /></span>
+            </Button>
+          </div>
+        )) : gallery.map((e) => (
           <div className="gallery-item" key={e.id}>
             <Button variant="ghost" className="gallery-photo" onClick={() => setSelected(e)}>
               <EventImage event={e} className="h-full w-full" />
@@ -243,7 +258,7 @@ export function EventGallery() {
           className="gallery-dialog"
           role="dialog"
           aria-modal="true"
-          aria-label={selected.title}
+            aria-label={selected.title}
           onClick={() => setSelected(null)}
         >
           <div className="gallery-dialog-inner" onClick={(e) => e.stopPropagation()}>
@@ -251,13 +266,13 @@ export function EventGallery() {
               <X size={20} />
               <span className="sr-only">Close photo</span>
             </Button>
-            <EventImage event={selected} className="max-h-[65vh] w-full" />
+            {"imageUrl" in selected ? <img src={selected.imageUrl} alt={selected.title} className="max-h-[65vh] w-full object-contain" /> : <EventImage event={selected} className="max-h-[65vh] w-full" />}
             <h3 className="mt-4 text-3xl">{selected.title}</h3>
-            <Link to="/events/$eventId" params={{ eventId: selected.id }}>
+            {"imageUrl" in selected ? (selected.caption ? <p className="mt-2 text-muted-foreground">{selected.caption}</p> : null) : <Link to="/events/$eventId" params={{ eventId: selected.id }}>
               <Button className="mt-4">
                 View event <ArrowUpRight size={18} />
               </Button>
-            </Link>
+            </Link>}
           </div>
         </div>
       ) : null}
@@ -277,7 +292,9 @@ export const INFLUENCERS = [
   { name: "The muse", genre: "Beauty / Fashion", image: influencerBeauty },
 ];
 
-export function ArtistCard({ artist }: { artist: (typeof ARTISTS)[number] }) {
+export type ArtistCardData = { id?: string; name: string; genre: string; image: string; bio?: string; instagramUrl?: string; tiktokUrl?: string; youtubeUrl?: string; xUrl?: string };
+export const peopleProfileCard = (profile: PeopleProfile): ArtistCardData => ({ id: profile.id, name: profile.name, genre: profile.role, image: profile.imageUrl, bio: profile.bio, instagramUrl: profile.instagramUrl, tiktokUrl: profile.tiktokUrl, youtubeUrl: profile.youtubeUrl, xUrl: profile.xUrl });
+export function ArtistCard({ artist }: { artist: ArtistCardData }) {
   const [open, setOpen] = useState(false);
   const [url, setUrl] = useState("");
   const [videoId, setVideoId] = useState("");
@@ -328,15 +345,18 @@ export function ArtistCard({ artist }: { artist: (typeof ARTISTS)[number] }) {
         </div>
         <div className="flex gap-3 pt-2">
           <a
-            href="https://www.instagram.com/"
+            href={artist.instagramUrl || "#"}
+            style={{ display: artist.instagramUrl ? undefined : "none" }}
             target="_blank"
             rel="noreferrer"
             aria-label={`${artist.name} Instagram`}
           >
             <Instagram size={18} />
           </a>
+          <a href={artist.tiktokUrl || "#"} target="_blank" rel="noreferrer" aria-label={`${artist.name} TikTok`} style={{ display: artist.tiktokUrl ? undefined : "none" }}>♪</a>
           <a
-            href="https://x.com/"
+            href={artist.xUrl || "#"}
+            style={{ display: artist.xUrl ? undefined : "none" }}
             target="_blank"
             rel="noreferrer"
             aria-label={`${artist.name} Twitter`}
@@ -344,7 +364,8 @@ export function ArtistCard({ artist }: { artist: (typeof ARTISTS)[number] }) {
             𝕏
           </a>
           <a
-            href="https://www.youtube.com/"
+            href={artist.youtubeUrl || "#"}
+            style={{ display: artist.youtubeUrl ? undefined : "none" }}
             target="_blank"
             rel="noreferrer"
             aria-label={`${artist.name} YouTube`}
@@ -353,6 +374,7 @@ export function ArtistCard({ artist }: { artist: (typeof ARTISTS)[number] }) {
           </a>
         </div>
       </div>
+      {artist.bio ? <p className="mt-3 text-sm text-muted-foreground">{artist.bio}</p> : null}
       {open ? (
         <div className="mt-4 flex flex-wrap gap-2">
           <input
@@ -375,7 +397,10 @@ export function ArtistCard({ artist }: { artist: (typeof ARTISTS)[number] }) {
     </article>
   );
 }
-export function ArtistGallery() {
+export function ArtistGallery({ profiles = [] }: { profiles?: PeopleProfile[] }) {
+  const artists: ArtistCardData[] = profiles.length
+    ? profiles.slice(0, 6).map(peopleProfileCard)
+    : [...ARTISTS, ...INFLUENCERS];
   return (
     <section className="experience-section">
       <div className="experience-heading">
@@ -390,8 +415,8 @@ export function ArtistGallery() {
         </Link>
       </div>
       <div className="artist-grid">
-        {ARTISTS.map((a) => (
-          <ArtistCard key={a.name} artist={a} />
+        {artists.map((a) => (
+          <ArtistCard key={a.id || a.name} artist={a} />
         ))}
       </div>
     </section>
