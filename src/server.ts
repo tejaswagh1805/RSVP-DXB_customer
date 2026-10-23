@@ -50,6 +50,12 @@ export default {
     if (originSecret && request.headers.get("x-origin-verify") !== originSecret) {
       return new Response("Forbidden", { status: 403 });
     }
+    if (new URL(request.url).pathname === "/health") {
+      return new Response("ok", {
+        status: 200,
+        headers: { "content-type": "text/plain; charset=utf-8", "cache-control": "no-store" },
+      });
+    }
     try {
       const handler = await getServerEntry();
       const response = await handler.fetch(request, env, ctx);

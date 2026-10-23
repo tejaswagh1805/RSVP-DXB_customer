@@ -91,7 +91,7 @@ jobs:
             exit 1
           fi
           curl --fail --silent --show-error --retry 12 --retry-all-errors --retry-delay 5 \
-            -H "X-Origin-Verify: $ORIGIN_SECRET" "$FUNCTION_URL/" -o /dev/null
+            -H "X-Origin-Verify: $ORIGIN_SECRET" "$FUNCTION_URL/health" -o /dev/null
           aws cloudfront get-distribution-config --id "$DISTRIBUTION_ID" --output json > /tmp/cf-config-response.json
           ETAG="$(jq -r '.ETag' /tmp/cf-config-response.json)"
           jq --arg origin "$ORIGIN_ID" --arg domain "$ORIGIN_DOMAIN" --arg secret "$ORIGIN_SECRET" \
@@ -100,4 +100,4 @@ jobs:
           aws cloudfront update-distribution --id "$DISTRIBUTION_ID" --if-match "$ETAG" --distribution-config file:///tmp/cf-config.json >/dev/null
           aws cloudfront wait distribution-deployed --id "$DISTRIBUTION_ID"
           curl --fail --silent --show-error --retry 12 --retry-all-errors --retry-delay 5 \
-            "https://d25iiefhi451d5.cloudfront.net/" -o /dev/null
+            "https://d25iiefhi451d5.cloudfront.net/health" -o /dev/null
