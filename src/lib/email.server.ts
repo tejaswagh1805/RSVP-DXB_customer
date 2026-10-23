@@ -54,7 +54,7 @@ function emailShell(options: { eyebrow: string; title: string; greeting: string;
 export function applicationConfirmationEmail(name: string): string {
   return emailShell({
     eyebrow: "Application received",
-    title: "You’re on our radar.",
+    title: "Welcome to RSVP DXB.",
     greeting: `Hello ${name},`,
     message: "Thank you for applying to RSVP DXB. Your application is safely with our team, and we’ll review your profile and get back to you, usually within 48 hours.",
     footer: "You received this email because an RSVP DXB application was submitted using this address.",
