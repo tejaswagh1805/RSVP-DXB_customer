@@ -7,7 +7,7 @@ import fashionImage from "@/assets/event-fashion.jpg";
 import nightlifeImage from "@/assets/event-nightlife.jpg";
 import propertyImage from "@/assets/event-property.jpg";
 import { getSql } from "./db.server";
-import { memberEmailHtml, sendMemberEmail } from "./email.server";
+import { applicationAdminEmail, applicationConfirmationEmail, sendMemberEmail } from "./email.server";
 import type { EventItem, Track } from "./data";
 
 export type HomepageMediaItem = { id: string; slot: "gallery" | "top_pick"; title: string; caption: string; imageUrl: string; linkUrl: string; displayOrder: number };
@@ -272,7 +272,7 @@ export const submitApplication = createServerFn({ method: "POST" })
         to: application.email,
         subject: "We received your RSVP DXB application",
         text: `Hello ${application.name},\n\nThank you for applying to RSVP DXB. Our team will review your application and normally respond within 48 hours.\n\nRegards,\nRSVP DXB`,
-        html: memberEmailHtml(application.name, "Thank you for applying to RSVP DXB. Our team will review your application and normally respond within 48 hours."),
+        html: applicationConfirmationEmail(application.name),
       }),
       sendMemberEmail({
         to: adminEmail,
@@ -294,10 +294,21 @@ export const submitApplication = createServerFn({ method: "POST" })
           `Application ID: ${application.id}`,
           "Status: Pending review",
         ].join("\n"),
-        html: memberEmailHtml(
-          "RSVP DXB team",
-          `A new application was submitted by ${application.name} (${application.email}). Track: ${data.track}. City: ${data.city.trim() || "Dubai"}. Instagram: ${handle}. Followers: ${followers}. Mobile: ${mobile || "Not provided"}. Outlet: ${outlet || "Not provided"}. Role: ${applicationRole || "Not provided"}. Profile details: ${allProfiles || "Not provided"}. Application details: ${detail || "Not provided"}. Application ID: ${application.id}. Status: Pending review.`,
-        ),
+        html: applicationAdminEmail({
+          name: application.name,
+          email: application.email,
+          track: data.track,
+          city: data.city.trim() || "Dubai",
+          handle,
+          followers,
+          mobile,
+          outlet,
+          role: applicationRole,
+          profiles: allProfiles,
+          detail,
+          id: application.id,
+          dashboardUrl: process.env["ADMIN_DASHBOARD_URL"],
+        }),
       }),
     ]);
     return {

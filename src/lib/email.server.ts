@@ -1,16 +1,11 @@
 import { SESv2Client, SendEmailCommand } from "@aws-sdk/client-sesv2";
 
 const ses = new SESv2Client({ region: process.env["SES_REGION"] || process.env["AWS_REGION"] || "eu-north-1" });
+const brand = "#80512f";
 
 function escapeHtml(value: string): string {
-  return value.replace(/[&<>"']/g, (character) => {
-    const entities: Record<string, string> = {
-      "&": "&amp;",
-      "<": "&lt;",
-      ">": "&gt;",
-      '"': "&quot;",
-      "'": "&#39;",
-    };
+  return value.replace(/[&<>\"']/g, (character) => {
+    const entities: Record<string, string> = { "&": "&amp;", "<": "&lt;", ">": "&gt;", "\"": "&quot;", "'": "&#39;" };
     return entities[character] ?? character;
   });
 }
@@ -25,21 +20,19 @@ export async function sendMemberEmail(input: {
   if (!from) return { sent: false, reason: "not_configured" };
 
   try {
-    await ses.send(
-      new SendEmailCommand({
-        FromEmailAddress: from,
-        Destination: { ToAddresses: [input.to] },
-        Content: {
-          Simple: {
-            Subject: { Data: input.subject, Charset: "UTF-8" },
-            Body: {
-              Text: { Data: input.text, Charset: "UTF-8" },
-              Html: { Data: input.html, Charset: "UTF-8" },
-            },
+    await ses.send(new SendEmailCommand({
+      FromEmailAddress: from,
+      Destination: { ToAddresses: [input.to] },
+      Content: {
+        Simple: {
+          Subject: { Data: input.subject, Charset: "UTF-8" },
+          Body: {
+            Text: { Data: input.text, Charset: "UTF-8" },
+            Html: { Data: input.html, Charset: "UTF-8" },
           },
         },
-      }),
-    );
+      },
+    }));
     return { sent: true };
   } catch (error) {
     console.error("SES member email failed", error);
@@ -47,6 +40,53 @@ export async function sendMemberEmail(input: {
   }
 }
 
+type EmailField = { label: string; value: string };
+
+function emailShell(options: { eyebrow: string; title: string; greeting: string; message: string; fields?: EmailField[]; actionLabel?: string; actionUrl?: string; footer?: string }): string {
+  const details = options.fields?.length ? `
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border-collapse:collapse;margin:22px 0 8px;background:#fbf9f6;border:1px solid #eee7de;border-radius:10px;overflow:hidden">
+      ${options.fields.map((field) => `<tr><td style="padding:12px 14px;border-bottom:1px solid #eee7de;color:#766b60;font-size:13px;width:36%;vertical-align:top">${escapeHtml(field.label)}</td><td style="padding:12px 14px;border-bottom:1px solid #eee7de;color:#2d241d;font-size:14px;font-weight:600;vertical-align:top;overflow-wrap:anywhere">${escapeHtml(field.value || "Not provided")}</td></tr>`).join("")}
+    </table>` : "";
+  const action = options.actionLabel && options.actionUrl ? `<p style="margin:26px 0 8px"><a href="${escapeHtml(options.actionUrl)}" style="display:inline-block;background:${brand};color:#fff;text-decoration:none;padding:13px 21px;border-radius:6px;font-weight:700;font-size:14px">${escapeHtml(options.actionLabel)} &nbsp;→</a></p>` : "";
+  return `<!doctype html><html><head><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="color-scheme" content="light"></head><body style="margin:0;padding:0;background:#f4f1ed;font-family:Arial,Helvetica,sans-serif;color:#2d241d;-webkit-text-size-adjust:100%"><div style="display:none;max-height:0;overflow:hidden;opacity:0">${escapeHtml(options.message)}</div><table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f4f1ed;padding:30px 12px"><tr><td align="center"><table role="presentation" width="600" cellpadding="0" cellspacing="0" style="width:100%;max-width:600px;background:#fff;border:1px solid #e9e2da;border-radius:12px;overflow:hidden"><tr><td style="padding:25px 32px;background:#211b17"><div style="font-family:Georgia,'Times New Roman',serif;color:#d6b47a;font-size:26px;letter-spacing:2px;font-weight:700">RSVP DXB</div><div style="margin-top:5px;color:#c5b9a9;font-size:10px;letter-spacing:2px;text-transform:uppercase">Private events · Dubai</div></td></tr><tr><td style="height:4px;background:${brand};font-size:0;line-height:0">&nbsp;</td></tr><tr><td style="padding:34px 32px 28px"><div style="font-size:11px;line-height:1.4;letter-spacing:1.6px;text-transform:uppercase;color:${brand};font-weight:700">${escapeHtml(options.eyebrow)}</div><h1 style="margin:10px 0 22px;font-family:Georgia,'Times New Roman',serif;font-size:29px;line-height:1.2;font-weight:500;color:#261d17">${escapeHtml(options.title)}</h1><p style="margin:0 0 13px;font-size:16px;line-height:1.65">${escapeHtml(options.greeting)}</p><p style="margin:0;font-size:15px;line-height:1.75;color:#544a42">${escapeHtml(options.message)}</p>${details}${action}<p style="margin:27px 0 0;font-size:14px;line-height:1.7;color:#544a42">Warm regards,<br><strong style="color:#2d241d">The RSVP DXB team</strong></p></td></tr><tr><td style="padding:18px 32px;background:#faf8f5;border-top:1px solid #eee7de;color:#82776d;font-size:11px;line-height:1.6">${escapeHtml(options.footer || "This is an automated message from RSVP DXB. Please keep this email for your records.")}<br><span style="color:#a0978e">© RSVP DXB · Dubai, UAE</span></td></tr></table></td></tr></table></body></html>`;
+}
+
+export function applicationConfirmationEmail(name: string): string {
+  return emailShell({
+    eyebrow: "Application received",
+    title: "You’re on our radar.",
+    greeting: `Hello ${name},`,
+    message: "Thank you for applying to RSVP DXB. Your application is safely with our team, and we’ll review your profile and get back to you, usually within 48 hours.",
+    footer: "You received this email because an RSVP DXB application was submitted using this address.",
+  });
+}
+
+export function applicationAdminEmail(input: { name: string; email: string; track: string; city: string; handle: string; followers: string; mobile: string; outlet: string; role: string; profiles: string; detail: string; id: string; dashboardUrl?: string }): string {
+  return emailShell({
+    eyebrow: "New membership application",
+    title: input.name,
+    greeting: "A new profile is ready for your review.",
+    message: "The application has been added to the review queue. Here’s a quick look at the submitted details:",
+    fields: [
+      { label: "Applicant email", value: input.email },
+      { label: "Membership track", value: input.track },
+      { label: "City", value: input.city },
+      { label: "Instagram", value: input.handle },
+      { label: "Followers", value: Number(input.followers).toLocaleString("en-US") },
+      { label: "Mobile / WhatsApp", value: input.mobile },
+      { label: "Outlet / company", value: input.outlet },
+      { label: "Role", value: input.role },
+      { label: "Other profiles", value: input.profiles },
+      { label: "About", value: input.detail },
+      { label: "Application ID", value: input.id },
+      { label: "Status", value: "Pending review" },
+    ],
+    actionLabel: input.dashboardUrl ? "Open admin dashboard" : undefined,
+    actionUrl: input.dashboardUrl,
+    footer: "Internal RSVP DXB notification · Please review this application in the admin dashboard.",
+  });
+}
+
 export function memberEmailHtml(name: string, message: string): string {
-  return `<div style="font-family:Arial,sans-serif;color:#24170f;line-height:1.6;max-width:600px;margin:auto"><h1 style="color:#7b4d24">RSVP DXB</h1><p>Hello ${escapeHtml(name)},</p><p>${escapeHtml(message)}</p><p>Regards,<br>RSVP DXB</p></div>`;
+  return emailShell({ eyebrow: "A note from RSVP DXB", title: "A little update for you.", greeting: `Hello ${name},`, message });
 }
