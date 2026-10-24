@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Outlet, useRouterState } from "@tanstack/react-router";
 import { SitePage } from "@/components/SiteLayout";
 import {
   ARTISTS,
@@ -32,6 +32,10 @@ export const Route = createFileRoute("/artists")({
 
 function ArtistsPage() {
   const profiles = Route.useLoaderData();
+  const profileRouteActive = useRouterState({
+    select: (state) => state.matches.some((match) => match.routeId === "/artists/$profileId"),
+  });
+  if (profileRouteActive) return <Outlet />;
   const artists = profiles.length ? profiles.filter((profile) => profile.category === "artist").map(peopleProfileCard) : ARTISTS;
   const influencers = profiles.length ? profiles.filter((profile) => profile.category === "influencer").map(peopleProfileCard) : INFLUENCERS;
   return (
@@ -48,14 +52,14 @@ function ArtistsPage() {
         <p className="eyebrow mt-8">Artists</p>
         <div className={`artist-grid mt-4${artists.length === 1 ? " artist-grid-single" : ""}`}>
           {artists.map((a) => (
-            <ArtistCard key={a.name} artist={a} fullBio />
+            <ArtistCard key={a.id || a.name} artist={a} homeInteractive />
           ))}
         </div>
 
         <p className="eyebrow mt-16">Influencers</p>
         <div className={`artist-grid mt-4${influencers.length === 1 ? " artist-grid-single" : ""}`}>
           {influencers.map((a) => (
-            <ArtistCard key={a.name} artist={a} fullBio />
+            <ArtistCard key={a.id || a.name} artist={a} homeInteractive />
           ))}
         </div>
       </section>
