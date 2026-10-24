@@ -1,4 +1,4 @@
-import { createContext, useCallback, useContext, useMemo, useState, type ReactNode } from "react";
+import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
 import { EVENTS, WALL_POSTS, type EventItem, type RsvpState, type Track, type WallPost } from "./data";
 
 interface Profile {
@@ -42,7 +42,23 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   const [rsvps, setRsvps] = useState<Record<string, RsvpState>>({
     "marina-sunset-session": "going",
   });
-  const [saved, setSaved] = useState<string[]>(["difc-art-night"]);
+  const [saved, setSaved] = useState<string[]>([]);
+  const [savedInitialized, setSavedInitialized] = useState(false);
+
+  useEffect(() => {
+    try {
+      const stored = JSON.parse(localStorage.getItem("rsvp-dxb-saved-events") ?? "[]");
+      if (Array.isArray(stored)) setSaved(stored.filter((id): id is string => typeof id === "string"));
+    } catch {
+      setSaved([]);
+    }
+    setSavedInitialized(true);
+  }, []);
+
+  useEffect(() => {
+    if (!savedInitialized) return;
+    try { localStorage.setItem("rsvp-dxb-saved-events", JSON.stringify(saved)); } catch { /* storage unavailable */ }
+  }, [saved, savedInitialized]);
 
   const hydrateMember = useCallback((member: { id: string; name: string; email: string; track: Track; points: number; approved: boolean } | null) => {
     setProfile((profile) => member ? {

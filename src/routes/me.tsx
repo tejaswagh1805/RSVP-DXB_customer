@@ -1,21 +1,22 @@
 import { createFileRoute, Link, redirect } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import type React from "react";
 import { QRCodeSVG } from "qrcode.react";
-import { LayoutDashboard, CalendarDays, QrCode, Video, Award, UserRound, ArrowUpRight, Camera, Trash2, Bell, Settings, Crown, LockKeyhole, MapPin, MessageCircle, WalletCards, TrendingUp, Ticket, Clock3, Headphones, Mail, Home } from "lucide-react";
+import { LayoutDashboard, CalendarDays, QrCode, Video, Award, UserRound, ArrowUpRight, Camera, Trash2, Bell, Settings, Crown, LockKeyhole, MapPin, MessageCircle, WalletCards, TrendingUp, Ticket, Clock3, Headphones, Mail, Home, ChevronDown, X } from "lucide-react";
 import { SitePage } from "@/components/SiteLayout";
 import { EventImage } from "@/components/EventImage";
 import { Badge, Button, Card, Field, PasswordInput, Stat, inputClass } from "@/components/ui-kit";
 import { POINT_RULES, RANKS, formatDate, rankFor } from "@/lib/data";
 import { useStore } from "@/lib/store";
-import { getMemberRsvps, getMemberSession, updateMemberProfile } from "@/lib/database";
+import { getMemberRsvps, getMemberSession, listPublishedEvents, updateMemberProfile } from "@/lib/database";
 import { useServerFn } from "@tanstack/react-start";
 
 export const Route = createFileRoute("/me")({
   loader: async () => {
     const member = await getMemberSession();
     if (!member) throw redirect({ to: "/signin" });
-    return { member, rsvps: await getMemberRsvps() };
+    const [rsvps, events] = await Promise.all([getMemberRsvps(), listPublishedEvents()]);
+    return { member, rsvps, events };
   },
   head: () => ({
     meta: [
@@ -62,11 +63,12 @@ function AnimatedNumber({ value, prefix = "", compact = false }: { value: number
 }
 
 function MemberArea() {
-  const { profile, events, rsvps: demoRsvps, saved, hydrateMember } = useStore();
+  const { profile, saved, hydrateMember } = useStore();
   const loaderData = Route.useLoaderData();
   const databaseRsvps = loaderData.rsvps;
+  const dashboardEvents = loaderData.events;
   const persistProfile = useServerFn(updateMemberProfile);
-  const rsvps = { ...demoRsvps, ...databaseRsvps };
+  const rsvps = databaseRsvps;
   const [tab, setTab] = useState("Dashboard");
   const [avatar, setAvatar] = useState<string | null>(null);
   const [avatarError, setAvatarError] = useState("");
@@ -75,6 +77,8 @@ function MemberArea() {
   const [avatarMsg, setAvatarMsg] = useState("");
   const [profileMsg, setProfileMsg] = useState("");
   const [profileSaving, setProfileSaving] = useState(false);
+  const [notificationsOpen, setNotificationsOpen] = useState(false);
+  const [accountMenuOpen, setAccountMenuOpen] = useState(false);
   const [profileForm, setProfileForm] = useState(() => ({
     name: loaderData.member.name,
     city: loaderData.member.city || "",
@@ -131,14 +135,16 @@ function MemberArea() {
     }
   };
 
-  const myEvents = events.filter((e) => (rsvps[e.id] ?? "none") !== "none");
+  const myEvents = dashboardEvents.filter((e) => (rsvps[e.id] ?? "none") !== "none");
   const rank = rankFor(profile.points);
   const nextRank = RANKS.find((r) => r.at > profile.points);
-  const matched = events.filter(
-    (e) => e.status === "published" && e.tracks.includes(profile.track) && !rsvps[e.id],
+  const matched = dashboardEvents.filter(
+    (e) => e.status === "published" && e.tracks.includes(profile.track) && (!rsvps[e.id] || rsvps[e.id] === "declined"),
   );
-  const upcomingEvent = matched[0] ?? events.find((e) => e.status === "published");
-  const inviteCount = Object.values(rsvps).filter((status) => status === "none").length || matched.length;
+  const wishlistEvents = useMemo(() => dashboardEvents.filter((event) => saved.includes(event.id)), [dashboardEvents, saved]);
+  const upcomingEvent = wishlistEvents[0] ?? matched[0] ?? dashboardEvents.find((e) => e.status === "published");
+  const activityEvents = useMemo(() => myEvents.slice().sort((a, b) => b.date.localeCompare(a.date)), [myEvents]);
+  const inviteCount = matched.length;
 
   return (
     <SitePage>
@@ -154,7 +160,7 @@ function MemberArea() {
           <div className="member-since-card"><span>Member since</span><strong>January 2023</strong><Badge tone="gold">Tier: {rank.toUpperCase()}</Badge></div>
         </aside>
         <div className="member-content">
-          {tab === "Dashboard" ? <div className="member-topbar"><div className="member-search"><span>⌕</span>Search guests, events, venues...</div><div className="member-top-actions"><button aria-label="Notifications"><Bell size={20} /><i>9</i></button><button aria-label="Settings" onClick={() => setTab("Profile")}><Settings size={20} /></button><span className="member-top-avatar">{avatar ? <img src={avatar} alt="" /> : initials.slice(0, 1)}</span><strong>{profile.name.split(" ")[0]}</strong><span>⌄</span></div></div> : null}
+          {tab === "Dashboard" ? <div className="member-topbar"><div className="member-search"><span>⌕</span>Search guests, events, venues...</div><div className="member-top-actions"><div className="member-popover-anchor"><button className="member-icon-action" aria-label="Notifications" aria-expanded={notificationsOpen} onClick={() => { setNotificationsOpen((open) => !open); setAccountMenuOpen(false); }}><Bell size={20} />{activityEvents.length > 0 ? <i>{activityEvents.length}</i> : null}</button>{notificationsOpen ? <div className="member-popover member-notifications" role="dialog" aria-label="Recent RSVP activity"><div className="member-popover-heading"><strong>Recent RSVP activity</strong><button aria-label="Close notifications" onClick={() => setNotificationsOpen(false)}><X size={16} /></button></div>{activityEvents.length ? activityEvents.slice(0, 5).map((event) => <button className="member-notification-item" key={event.id} onClick={() => { setTab("My RSVPs"); setNotificationsOpen(false); }}><span><b>{event.title}</b><small>{({ pending: "Request pending", accepted: "Request accepted", waitlisted: "Added to waitlist", declined: "Request declined", going: "You're attending", waitlist: "Added to waitlist" } as Record<string, string>)[rsvps[event.id] ?? ""] ?? "RSVP updated"} · {formatDate(event.date)}</small></span><ArrowUpRight size={15} /></button>) : <p className="member-notification-empty">No RSVP updates yet. Your event request updates will appear here.</p>}<button className="member-popover-link" onClick={() => { setTab("My RSVPs"); setNotificationsOpen(false); }}>View my RSVPs <ArrowUpRight size={14} /></button></div> : null}</div><button className="member-icon-action" aria-label="Settings" onClick={() => setTab("Profile")}><Settings size={20} /></button><div className="member-popover-anchor"><button className="member-account-trigger" aria-expanded={accountMenuOpen} onClick={() => { setAccountMenuOpen((open) => !open); setNotificationsOpen(false); }}><span className="member-top-avatar">{avatar ? <img src={avatar} alt="" /> : initials.slice(0, 1)}</span><strong>{profile.name.split(" ")[0]}</strong><ChevronDown size={15} /></button>{accountMenuOpen ? <div className="member-popover member-account-menu" role="menu"><div className="member-account-summary"><b>{profile.name}</b><small>{profile.email}</small></div><button role="menuitem" onClick={() => { setTab("Profile"); setAccountMenuOpen(false); }}>My profile</button><button role="menuitem" onClick={() => { setTab("My RSVPs"); setAccountMenuOpen(false); }}>My RSVPs</button><button role="menuitem" onClick={() => { setTab("My Pass"); setAccountMenuOpen(false); }}>My pass</button></div> : null}</div></div></div> : null}
           <div className="member-content-heading"><div><p className="eyebrow">{tab === "Dashboard" ? "RSVP DXB  •  Exclusive Client Dashboard  •  Dubai, UAE  •  22 Oct 2024 — 19:32 GST" : `Member area / ${tab}`}</p><h2 className="mt-2 text-4xl">{tab === "Dashboard" ? `Welcome back, ${profile.name}.` : tab}</h2></div>{tab === "Dashboard" ? <div className="member-heading-actions"><Link to="/events"><Button>＋ New Invite</Button></Link><a href="https://wa.me/?text=Hi%20RSVP%20DXB" target="_blank" rel="noreferrer"><Button variant="outline"><MessageCircle size={17} />Private Concierge Chat</Button></a></div> : <Link to="/events"><Button variant="outline">Discover events <ArrowUpRight size={18} /></Button></Link>}</div>
         {tab === "Dashboard" ? (
           <div className="member-overview space-y-8">
@@ -168,7 +174,7 @@ function MemberArea() {
                 </div>
                 <div className="member-feature-grid">
                   <Card className="member-black-card"><h3>✦ VIP BLACK CARD</h3><div className="member-card-art"><span>RSVP DXB</span><strong>{profile.name.toUpperCase()} · {rank.toUpperCase()}</strong><small>•••• 9924</small><i>◉ NFC TAP · VALID 09/27</i></div><p className="member-auth-note">Tap to authenticate · Secure · Wallet Enabled</p><b>{rank.toUpperCase()} #4 CHAMPAGNE PEARL DROP —</b><div className="member-pearl-row"><span>🟤</span><p>Unlock #4 available —<br />1 of 5 Pearl Drops</p><strong>80%</strong></div><progress value="80" max="100" /><small>Unlocks in 02:14:33 · <button onClick={() => setTab("Points")}>Unlock Now</button></small></Card>
-                  <Card className="member-locked-card"><h3><LockKeyhole size={17} /> INVITE-ONLY LOCKED EVENTS</h3><div className="member-event-art" style={{ backgroundImage: `linear-gradient(90deg, rgba(66,43,23,.78), rgba(66,43,23,.04)), url(${upcomingEvent?.image ?? ""})` }}><b>{upcomingEvent?.title ?? "Secret Supper"}</b><span>{upcomingEvent?.venue ?? "Palace Beach, Palm Jumeirah"}</span><em>LOCKED · REQUIRES {rank.toUpperCase()}</em><small>Date: {upcomingEvent ? formatDate(upcomingEvent.date) : "28 Oct"} · {upcomingEvent?.time ?? "20:00"} · 12/12 spots</small></div>{upcomingEvent ? <Link to="/events/$eventId" params={{ eventId: upcomingEvent.id }}><Button>Request Access</Button></Link> : null}</Card>
+                  <Card className="member-locked-card"><h3><LockKeyhole size={17} /> {wishlistEvents.length ? "SAVED TO YOUR WISHLIST" : "INVITE-ONLY LOCKED EVENTS"}</h3>{upcomingEvent ? <><div className="member-event-art" style={{ backgroundImage: `linear-gradient(90deg, rgba(30,20,12,.78), rgba(30,20,12,.08)), url(${upcomingEvent.image})` }}><b>{upcomingEvent.title}</b><span>{upcomingEvent.venue}</span><em>{wishlistEvents.some((event) => event.id === upcomingEvent.id) ? "SAVED EVENT" : `MATCHED FOR ${profile.track.toUpperCase()}`}</em><small>Date: {formatDate(upcomingEvent.date)} · {upcomingEvent.time} · {Math.max(0, upcomingEvent.capacity - upcomingEvent.confirmed)} spots left</small></div><div className="member-request-footer"><Link to="/events/$eventId" params={{ eventId: upcomingEvent.id }}><Button>{rsvps[upcomingEvent.id] && rsvps[upcomingEvent.id] !== "declined" ? "View request" : "Request Access"}<ArrowUpRight size={16} /></Button></Link></div></> : <div className="member-empty-event"><p>No published events are available right now.</p><Link to="/events"><Button variant="outline">Browse events <ArrowUpRight size={15} /></Button></Link></div>}</Card>
                 </div>
                 <p className="member-skyline-caption">DUBAI SKYLINE <span>•</span> UPCOMING: {upcomingEvent?.title ?? "Gala Night 30 Oct"}</p>
               </div>
