@@ -18,7 +18,7 @@ export const Route = createFileRoute("/register")({
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
       { property: "og:title", content: "Register — RSVP DXB" },
-      { property: "og:description", content: "Apply for RSVP DXB membership in four short steps." },
+      { property: "og:description", content: "Apply for RSVP DXB membership in three short steps." },
     ],
   }),
   component: RegisterPage,
@@ -137,13 +137,13 @@ function RegisterPage() {
       <div className="mx-auto w-full max-w-2xl px-5 py-20">
         <div className="flex items-center justify-between">
           <h1 className="text-4xl">Register</h1>
-          {step < 5 ? <Badge tone="gold">Step {step} of 4</Badge> : null}
+          {step < 5 ? <Badge tone="gold">Step {step} of 3</Badge> : null}
         </div>
 
         <div className="mt-6 h-1 w-full overflow-hidden rounded-full bg-surface-2">
           <div
             className="h-full bg-primary transition-all"
-            style={{ width: `${(Math.min(step, 5) / 5) * 100}%` }}
+            style={{ width: `${(Math.min(step, 3) / 3) * 100}%` }}
           />
         </div>
 
@@ -404,61 +404,15 @@ function RegisterPage() {
               </div>
               <Nav
                 onBack={() => setStep(2)}
-                onNext={() => setStep(4)}
+                onNext={() => void submit()}
+                nextLabel="Submit application"
+                busy={submitting}
+                busyLabel="Submitting…"
                 disabled={
                   !profileDetails["Instagram"]?.trim() ||
                   !/^\d+$/.test(profileDetails["Follower count"]?.trim() ?? "")
                 }
               />
-            </div>
-          ) : null}
-
-          {step === 4 ? (
-            <div>
-              <h2 className="text-2xl">How should we reach you?</h2>
-              <div className="mt-5 space-y-3">
-                {[
-                  ["Email invitations", true],
-                  ["WhatsApp invitations", true],
-                  ["Event reminders", true],
-                  ["Press releases (Media only)", track === "Media"],
-                  ["Member offers", true],
-                ].map(([label, on]) => (
-                  <label
-                    key={String(label)}
-                    className="flex items-center justify-between rounded-md bg-surface-2 px-4 py-3 text-sm"
-                  >
-                    {label}
-                    <input
-                      type="checkbox"
-                      defaultChecked={Boolean(on)}
-                      className="h-4 w-4 accent-[var(--primary)]"
-                    />
-                  </label>
-                ))}
-              </div>
-              <p className="mt-5 text-xs text-muted-foreground">
-                Every profile is reviewed by our team. We normally answer within 48 hours.
-              </p>
-              <div className="mt-6 flex gap-3">
-                <Button variant="outline" onClick={() => setStep(3)}>
-                  Back
-                </Button>
-                <Button
-                  className="flex-1"
-                  onClick={() => void submit()}
-                  disabled={
-                    submitting ||
-                    !name.trim() ||
-                    !email.trim() ||
-                    password.length < 12 ||
-                    !profileDetails["Instagram"]?.trim() ||
-                    !/^\d+$/.test(profileDetails["Follower count"]?.trim() ?? "")
-                  }
-                >
-                  {submitting ? "Submitting…" : "Submit application"}
-                </Button>
-              </div>
               {submitError ? (
                 <p className="mt-3 text-sm text-destructive" role="alert">
                   {submitError}
@@ -493,18 +447,24 @@ function Nav({
   onBack,
   onNext,
   disabled = false,
+  nextLabel = "Continue",
+  busy = false,
+  busyLabel = "Please wait…",
 }: {
   onBack: () => void;
   onNext: () => void;
   disabled?: boolean;
+  nextLabel?: string;
+  busy?: boolean;
+  busyLabel?: string;
 }) {
   return (
     <div className="mt-7 flex gap-3">
       <Button variant="outline" onClick={onBack}>
         Back
       </Button>
-      <Button className="flex-1" onClick={onNext} disabled={disabled}>
-        Continue
+      <Button className="flex-1" onClick={onNext} disabled={disabled || busy}>
+        {busy ? busyLabel : nextLabel}
       </Button>
     </div>
   );
