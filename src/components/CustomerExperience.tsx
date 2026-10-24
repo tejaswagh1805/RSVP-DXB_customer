@@ -14,7 +14,7 @@ import { Button } from "./ui-kit";
 import { EventImage } from "./EventImage";
 import { WhatsAppAction } from "./WhatsAppAction";
 import { useStore } from "@/lib/store";
-import { formatDate, type EventItem } from "@/lib/data";
+import { formatDate, profileSlug, type EventItem } from "@/lib/data";
 import type { HomepageMediaItem } from "@/lib/database";
 import type { PeopleProfile } from "@/lib/database";
 import videoUrl from "@/assets/banner-clip.webm";
@@ -292,7 +292,6 @@ export const INFLUENCERS = [
 ];
 
 export type ArtistCardData = { id?: string; name: string; genre: string; subtitle?: string; image: string; bio?: string; instagramUrl?: string; tiktokUrl?: string; youtubeUrl?: string; xUrl?: string };
-const profileSlug = (name: string) => name.trim().toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") || "talent";
 export const peopleProfileCard = (profile: PeopleProfile): ArtistCardData => ({ id: profile.id, name: profile.name, genre: profile.role, subtitle: profile.subtitle, image: profile.imageUrl, bio: profile.bio, instagramUrl: profile.instagramUrl, tiktokUrl: profile.tiktokUrl, youtubeUrl: profile.youtubeUrl, xUrl: profile.xUrl });
 export function ArtistCard({ artist, fullBio = false, homeInteractive = false }: { artist: ArtistCardData; fullBio?: boolean; homeInteractive?: boolean }) {
   return (

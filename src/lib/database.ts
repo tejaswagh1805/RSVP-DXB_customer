@@ -8,7 +8,7 @@ import nightlifeImage from "@/assets/event-nightlife.jpg";
 import propertyImage from "@/assets/event-property.jpg";
 import { getSql } from "./db.server";
 import { applicationAdminEmail, applicationConfirmationEmail, memberEmailHtml, sendMemberEmail } from "./email.server";
-import type { EventItem, Track } from "./data";
+import { profileSlug, type EventItem, type Track } from "./data";
 
 export type HomepageMediaItem = { id: string; slot: "gallery" | "top_pick"; title: string; caption: string; imageUrl: string; linkUrl: string; displayOrder: number };
 export type PeopleProfile = { id: string; category: "artist" | "influencer"; name: string; role: string; subtitle: string; bio: string; imageUrl: string; instagramUrl: string; tiktokUrl: string; youtubeUrl: string; xUrl: string; displayOrder: number };
@@ -133,16 +133,23 @@ export const getPeopleProfileById = createServerFn({ method: "GET" })
   .validator((profileKey: string) => profileKey)
   .handler(async ({ data: profileKey }) => {
     const sql = getSql();
-    const rows = (await sql`
+    const byId = (await sql`
+      SELECT id, category, name, role, subtitle, bio, image_url AS "imageUrl",
+        instagram_url AS "instagramUrl", tiktok_url AS "tiktokUrl",
+        youtube_url AS "youtubeUrl", x_url AS "xUrl", display_order AS "displayOrder"
+      FROM people_profiles WHERE active = TRUE AND id = ${profileKey} LIMIT 1
+    `) as unknown as PeopleProfile[];
+    if (byId[0]) return byId[0];
+
+    // Use the same slug normalization as the profile links so punctuation,
+    // accents, and whitespace cannot make a valid name URL miss its record.
+    const profiles = (await sql`
       SELECT id, category, name, role, subtitle, bio, image_url AS "imageUrl",
         instagram_url AS "instagramUrl", tiktok_url AS "tiktokUrl",
         youtube_url AS "youtubeUrl", x_url AS "xUrl", display_order AS "displayOrder"
       FROM people_profiles WHERE active = TRUE
-        AND (id = ${profileKey} OR lower(regexp_replace(trim(name), '[^a-zA-Z0-9]+', '-', 'g')) = ${profileKey})
-      ORDER BY CASE WHEN id = ${profileKey} THEN 0 ELSE 1 END
-      LIMIT 1
     `) as unknown as PeopleProfile[];
-    return rows[0] ?? null;
+    return profiles.find((profile) => profileSlug(profile.name) === profileKey) ?? null;
   });
 
 export const getMemberRsvps = createServerFn({ method: "GET" }).handler(async () => {

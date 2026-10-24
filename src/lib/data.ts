@@ -36,6 +36,8 @@ export interface EventItem {
   video?: string;
 }
 
+export const profileSlug = (name: string) => name.trim().toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") || "talent";
+
 export interface WallPost {
   id: string;
   brand: string;
