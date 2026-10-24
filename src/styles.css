@@ -4171,18 +4171,21 @@ textarea {
   }
 }
 
-/* Homepage venue cards use a navigable slider; the original event ribbon remains separate. */
-.venue-home-heading-actions { position:relative; z-index:2; display:flex; align-items:center; gap:12px; }
-.venue-slider-controls { position:relative; z-index:3; display:flex; gap:7px; pointer-events:auto; }
-.venue-slider-controls button { position:relative; z-index:1; display:grid; place-items:center; width:40px; height:40px; flex:none; padding:0; border:1px solid var(--border); border-radius:50%; background:transparent; color:var(--foreground); cursor:pointer; pointer-events:auto; touch-action:manipulation; transition:background .2s,color .2s,transform .2s,border-color .2s; }
-.venue-slider-controls button:hover { transform:translateY(-2px); border-color:var(--primary); background:var(--primary); color:var(--primary-foreground); }
-.venue-home-grid { display:flex; gap:18px; overflow-x:auto; padding:0 1px 10px; scroll-behavior:smooth; scroll-snap-type:x mandatory; scrollbar-width:none; overscroll-behavior-inline:contain; }
-.venue-home-grid::-webkit-scrollbar { display:none; }
-.venue-home-grid .venue-guide-card-featured { flex:0 0 calc((100% - 36px) / 3); min-width:270px; scroll-snap-align:start; }
-@media(max-width:1000px) { .venue-home-grid .venue-guide-card-featured { flex-basis:calc((100% - 18px) / 2); } }
+/* Homepage venue picks auto-scroll through every featured venue. */
+.venue-home-window { overflow:hidden; }
+.venue-home-track { display:flex; width:max-content; will-change:transform; animation:venue-picks-flow 70s linear infinite; }
+.venue-home-set { display:flex; flex:none; align-items:stretch; gap:18px; padding-right:18px; }
+.venue-home-set .venue-guide-card-featured { flex:0 0 clamp(280px, 31vw, 550px); }
+@keyframes venue-picks-flow { to { transform:translate3d(-50%, 0, 0); } }
+.venue-home-window:hover .venue-home-track,
+.venue-home-window:focus-within .venue-home-track { animation-play-state:paused; }
 @media(max-width:700px) {
-  .venue-home-heading-actions { width:100%; justify-content:space-between; }
-  .venue-slider-controls button { width:37px; height:37px; }
-  .venue-home-grid { gap:13px; margin-right:-20px; padding-right:20px; }
-  .venue-home-grid .venue-guide-card-featured { flex-basis:82vw; min-width:0; }
+  .venue-home-set { gap:13px; padding-right:13px; }
+  .venue-home-set .venue-guide-card-featured { flex-basis:82vw; }
+}
+@media(prefers-reduced-motion:reduce) {
+  .venue-home-window { overflow-x:auto; scrollbar-width:none; }
+  .venue-home-window::-webkit-scrollbar { display:none; }
+  .venue-home-track { width:max-content; animation:none; }
+  .venue-home-set[aria-hidden="true"] { display:none; }
 }
