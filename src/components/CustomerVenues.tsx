@@ -60,7 +60,11 @@ export function VenueTopPicks({ venues }: { venues: Venue[] }) {
     const slider = sliderRef.current;
     if (!slider) return;
     const card = slider.querySelector<HTMLElement>(".venue-guide-card-featured");
-    slider.scrollBy({ left: direction * ((card?.getBoundingClientRect().width ?? slider.clientWidth) + 18), behavior: "smooth" });
+    const gap = Number.parseFloat(getComputedStyle(slider).columnGap) || 18;
+    const step = (card?.getBoundingClientRect().width ?? slider.clientWidth) + gap;
+    const maxScroll = Math.max(0, slider.scrollWidth - slider.clientWidth);
+    const target = Math.max(0, Math.min(maxScroll, slider.scrollLeft + direction * step));
+    slider.scrollTo({ left: target, behavior: "smooth" });
   };
   if (!venues.length) return null;
   return (
@@ -77,8 +81,8 @@ export function VenueTopPicks({ venues }: { venues: Venue[] }) {
             Explore the venue guide <ArrowUpRight size={16} />
           </Link>
           <div className="venue-slider-controls" aria-label="Venue slider controls">
-            <button type="button" aria-label="Previous venues" onClick={() => moveSlider(-1)}><ArrowLeft size={17} /></button>
-            <button type="button" aria-label="Next venues" onClick={() => moveSlider(1)}><ArrowRight size={17} /></button>
+            <button type="button" aria-label="Previous venues" title="Previous venues" onClick={() => moveSlider(-1)}><ArrowLeft size={17} /></button>
+            <button type="button" aria-label="Next venues" title="Next venues" onClick={() => moveSlider(1)}><ArrowRight size={17} /></button>
           </div>
         </div>
       </div>
