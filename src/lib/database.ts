@@ -12,6 +12,12 @@ import { profileSlug, type EventItem, type Track } from "./data";
 
 export type HomepageMediaItem = { id: string; slot: "gallery" | "top_pick"; title: string; caption: string; imageUrl: string; linkUrl: string; displayOrder: number };
 export type PeopleProfile = { id: string; category: "artist" | "influencer"; name: string; role: string; subtitle: string; bio: string; imageUrl: string; instagramUrl: string; tiktokUrl: string; youtubeUrl: string; xUrl: string; displayOrder: number };
+export type Venue = { id: string; slug: string; category: string; name: string; tagline: string; description: string; location: string; highlights: string[]; offer: string; featuredDate: string | null; imageUrl: string; websiteUrl: string; moreInfoUrl: string; displayOrder: number; featured: boolean };
+
+function isMissingVenueTable(error: unknown): boolean {
+  const message = error instanceof Error ? error.message.toLowerCase() : "";
+  return message.includes("venues") && message.includes("does not exist");
+}
 
 const scrypt = promisify(scryptCallback);
 const MEMBER_COOKIE = "rsvp_member_session";
@@ -128,6 +134,61 @@ export const listPeopleProfiles = createServerFn({ method: "GET" }).handler(asyn
   `) as unknown as PeopleProfile[];
   return rows;
 });
+
+export const listVenues = createServerFn({ method: "GET" }).handler(async () => {
+  try {
+    const sql = getSql();
+    const rows = (await sql`
+      SELECT id, slug, category, name, tagline, description, location, highlights, offer,
+        to_char(featured_date, 'YYYY-MM-DD') AS "featuredDate", image_url AS "imageUrl",
+        website_url AS "websiteUrl", more_info_url AS "moreInfoUrl",
+        display_order AS "displayOrder", featured
+      FROM venues WHERE active = TRUE ORDER BY CASE category
+        WHEN 'Our partners' THEN 1 WHEN 'Desi luxe' THEN 2 WHEN 'Dinner to party' THEN 3
+        WHEN 'Bars & night culture' THEN 4 WHEN 'Coffee' THEN 5 ELSE 6 END, display_order, name
+    `) as unknown as Venue[];
+    return rows;
+  } catch (error) {
+    if (isMissingVenueTable(error)) return [];
+    throw error;
+  }
+});
+
+export const listFeaturedVenues = createServerFn({ method: "GET" }).handler(async () => {
+  try {
+    const sql = getSql();
+    const rows = (await sql`
+      SELECT id, slug, category, name, tagline, description, location, highlights, offer,
+        to_char(featured_date, 'YYYY-MM-DD') AS "featuredDate", image_url AS "imageUrl",
+        website_url AS "websiteUrl", more_info_url AS "moreInfoUrl",
+        display_order AS "displayOrder", featured
+      FROM venues WHERE active = TRUE AND featured = TRUE ORDER BY display_order, name LIMIT 12
+    `) as unknown as Venue[];
+    return rows;
+  } catch (error) {
+    if (isMissingVenueTable(error)) return [];
+    throw error;
+  }
+});
+
+export const getVenueBySlug = createServerFn({ method: "GET" })
+  .validator((slug: string) => slug)
+  .handler(async ({ data: slug }) => {
+    try {
+      const sql = getSql();
+      const rows = (await sql`
+        SELECT id, slug, category, name, tagline, description, location, highlights, offer,
+          to_char(featured_date, 'YYYY-MM-DD') AS "featuredDate", image_url AS "imageUrl",
+          website_url AS "websiteUrl", more_info_url AS "moreInfoUrl",
+          display_order AS "displayOrder", featured
+        FROM venues WHERE active = TRUE AND slug = ${slug} LIMIT 1
+      `) as unknown as Venue[];
+      return rows[0] ?? null;
+    } catch (error) {
+      if (isMissingVenueTable(error)) return null;
+      throw error;
+    }
+  });
 
 export const getPeopleProfileById = createServerFn({ method: "GET" })
   .validator((profileKey: string) => profileKey)

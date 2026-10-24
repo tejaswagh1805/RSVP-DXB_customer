@@ -136,6 +136,7 @@ export function SiteFooter() {
           title="Platform"
           links={[
             ["/events", "What is on"],
+            ["/top-picks", "Top Picks"],
             ["/wall", "Events Wall"],
             ["/membership", "Membership"],
             ["/me", "Member area"],

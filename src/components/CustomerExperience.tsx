@@ -189,8 +189,60 @@ export function EventRibbon({
 
 export function SiteMediaRibbon({ media }: { media: HomepageMediaItem[] }) {
   if (!media.length) return null;
-  const tiles = Array.from({ length: 12 }, (_, i) => media[i % media.length]).filter((item): item is HomepageMediaItem => Boolean(item));
-  return <section className="event-ribbon ribbon-reverse"><div className="experience-heading"><div><p className="eyebrow">Selected for the spotlight</p><h2>RSVP TOP Pick</h2></div><Link to="/events"><Button variant="outline" size="sm">Explore events <ArrowUpRight size={16} /></Button></Link></div><div className="ribbon-window"><div className="ribbon-track">{[0, 1].map((copy) => <div key={copy} className="ribbon-set" aria-hidden={copy === 1 ? true : undefined} inert={copy === 1 ? true : undefined}>{tiles.map((item, i) => <article className="ribbon-tile" key={`${copy}-${item.id}-${i}`}><a href={item.linkUrl || "/events"} target={item.linkUrl ? "_blank" : undefined} rel={item.linkUrl ? "noreferrer" : undefined}><div className="ribbon-photo"><img src={item.imageUrl} alt={item.title} className="h-full w-full object-cover" /><span className="tile-category">RSVP TOP Pick</span><ArrowUpRight className="tile-arrow" /></div><h3 className="mt-3 text-2xl">{item.title}</h3>{item.caption ? <p className="mt-1 text-sm text-muted-foreground">{item.caption}</p> : null}</a></article>)}</div>)}</div></div></section>;
+  const tiles = Array.from({ length: 12 }, (_, i) => media[i % media.length]).filter(
+    (item): item is HomepageMediaItem => Boolean(item),
+  );
+  return (
+    <section className="event-ribbon ribbon-reverse">
+      <div className="experience-heading">
+        <div>
+          <p className="eyebrow">Selected for the spotlight</p>
+          <h2>RSVP TOP Pick</h2>
+        </div>
+        <Link to="/top-picks">
+          <Button variant="outline" size="sm">
+            Explore the venue guide <ArrowUpRight size={16} />
+          </Button>
+        </Link>
+      </div>
+      <div className="ribbon-window">
+        <div className="ribbon-track">
+          {[0, 1].map((copy) => (
+            <div
+              key={copy}
+              className="ribbon-set"
+              aria-hidden={copy === 1 ? true : undefined}
+              inert={copy === 1 ? true : undefined}
+            >
+              {tiles.map((item, i) => (
+                <article className="ribbon-tile" key={`${copy}-${item.id}-${i}`}>
+                  <a
+                    href={item.linkUrl || "/top-picks"}
+                    target={item.linkUrl ? "_blank" : undefined}
+                    rel={item.linkUrl ? "noreferrer" : undefined}
+                  >
+                    <div className="ribbon-photo">
+                      <img
+                        src={item.imageUrl}
+                        alt={item.title}
+                        className="h-full w-full object-cover"
+                      />
+                      <span className="tile-category">RSVP TOP Pick</span>
+                      <ArrowUpRight className="tile-arrow" />
+                    </div>
+                    <h3 className="mt-3 text-2xl">{item.title}</h3>
+                    {item.caption ? (
+                      <p className="mt-1 text-sm text-muted-foreground">{item.caption}</p>
+                    ) : null}
+                  </a>
+                </article>
+              ))}
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
 }
 
 export function EventGallery({ media = [] }: { media?: HomepageMediaItem[] }) {
@@ -219,45 +271,56 @@ export function EventGallery({ media = [] }: { media?: HomepageMediaItem[] }) {
           <p className="eyebrow">Inside the room</p>
           <h2>Latest events gallery</h2>
         </div>
-        {!media.length ? <div className="flex flex-wrap gap-2">
-          {categories.map((c) => (
-            <Button
-              key={c}
-              size="sm"
-              variant={category === c ? "primary" : "outline"}
-              onClick={() => setCategory(c)}
-            >
-              {c}
-            </Button>
-          ))}
-        </div> : null}
+        {!media.length ? (
+          <div className="flex flex-wrap gap-2">
+            {categories.map((c) => (
+              <Button
+                key={c}
+                size="sm"
+                variant={category === c ? "primary" : "outline"}
+                onClick={() => setCategory(c)}
+              >
+                {c}
+              </Button>
+            ))}
+          </div>
+        ) : null}
       </div>
       <div className="event-gallery">
-        {media.length ? media.map((item) => (
-          <div className="gallery-item" key={item.id}>
-            <Button variant="ghost" className="gallery-photo" onClick={() => setSelected(item)}>
-              <img src={item.imageUrl} alt={item.title} className="h-full w-full object-cover" />
-              <span className="gallery-label">{item.title}<ArrowUpRight size={20} /></span>
-            </Button>
-          </div>
-        )) : gallery.map((e) => (
-          <div className="gallery-item" key={e.id}>
-            <Button variant="ghost" className="gallery-photo" onClick={() => setSelected(e)}>
-              <EventImage event={e} className="h-full w-full" />
-              <span className="gallery-label">
-                {e.title}
-                <ArrowUpRight size={20} />
-              </span>
-            </Button>
-          </div>
-        ))}
+        {media.length
+          ? media.map((item) => (
+              <div className="gallery-item" key={item.id}>
+                <Button variant="ghost" className="gallery-photo" onClick={() => setSelected(item)}>
+                  <img
+                    src={item.imageUrl}
+                    alt={item.title}
+                    className="h-full w-full object-cover"
+                  />
+                  <span className="gallery-label">
+                    {item.title}
+                    <ArrowUpRight size={20} />
+                  </span>
+                </Button>
+              </div>
+            ))
+          : gallery.map((e) => (
+              <div className="gallery-item" key={e.id}>
+                <Button variant="ghost" className="gallery-photo" onClick={() => setSelected(e)}>
+                  <EventImage event={e} className="h-full w-full" />
+                  <span className="gallery-label">
+                    {e.title}
+                    <ArrowUpRight size={20} />
+                  </span>
+                </Button>
+              </div>
+            ))}
       </div>
       {selected ? (
         <div
           className="gallery-dialog"
           role="dialog"
           aria-modal="true"
-            aria-label={selected.title}
+          aria-label={selected.title}
           onClick={() => setSelected(null)}
         >
           <div className="gallery-dialog-inner" onClick={(e) => e.stopPropagation()}>
@@ -265,13 +328,27 @@ export function EventGallery({ media = [] }: { media?: HomepageMediaItem[] }) {
               <X size={20} />
               <span className="sr-only">Close photo</span>
             </Button>
-            {"imageUrl" in selected ? <img src={selected.imageUrl} alt={selected.title} className="max-h-[65vh] w-full object-contain" /> : <EventImage event={selected} className="max-h-[65vh] w-full" />}
+            {"imageUrl" in selected ? (
+              <img
+                src={selected.imageUrl}
+                alt={selected.title}
+                className="max-h-[65vh] w-full object-contain"
+              />
+            ) : (
+              <EventImage event={selected} className="max-h-[65vh] w-full" />
+            )}
             <h3 className="mt-4 text-3xl">{selected.title}</h3>
-            {"imageUrl" in selected ? (selected.caption ? <p className="mt-2 text-muted-foreground">{selected.caption}</p> : null) : <Link to="/events/$eventId" params={{ eventId: selected.id }}>
-              <Button className="mt-4">
-                View event <ArrowUpRight size={18} />
-              </Button>
-            </Link>}
+            {"imageUrl" in selected ? (
+              selected.caption ? (
+                <p className="mt-2 text-muted-foreground">{selected.caption}</p>
+              ) : null
+            ) : (
+              <Link to="/events/$eventId" params={{ eventId: selected.id }}>
+                <Button className="mt-4">
+                  View event <ArrowUpRight size={18} />
+                </Button>
+              </Link>
+            )}
           </div>
         </div>
       ) : null}
@@ -291,9 +368,39 @@ export const INFLUENCERS = [
   { name: "The muse", genre: "Beauty / Fashion", image: influencerBeauty },
 ];
 
-export type ArtistCardData = { id?: string; name: string; genre: string; subtitle?: string; image: string; bio?: string; instagramUrl?: string; tiktokUrl?: string; youtubeUrl?: string; xUrl?: string };
-export const peopleProfileCard = (profile: PeopleProfile): ArtistCardData => ({ id: profile.id, name: profile.name, genre: profile.role, subtitle: profile.subtitle, image: profile.imageUrl, bio: profile.bio, instagramUrl: profile.instagramUrl, tiktokUrl: profile.tiktokUrl, youtubeUrl: profile.youtubeUrl, xUrl: profile.xUrl });
-export function ArtistCard({ artist, fullBio = false, homeInteractive = false }: { artist: ArtistCardData; fullBio?: boolean; homeInteractive?: boolean }) {
+export type ArtistCardData = {
+  id?: string;
+  name: string;
+  genre: string;
+  subtitle?: string;
+  image: string;
+  bio?: string;
+  instagramUrl?: string;
+  tiktokUrl?: string;
+  youtubeUrl?: string;
+  xUrl?: string;
+};
+export const peopleProfileCard = (profile: PeopleProfile): ArtistCardData => ({
+  id: profile.id,
+  name: profile.name,
+  genre: profile.role,
+  subtitle: profile.subtitle,
+  image: profile.imageUrl,
+  bio: profile.bio,
+  instagramUrl: profile.instagramUrl,
+  tiktokUrl: profile.tiktokUrl,
+  youtubeUrl: profile.youtubeUrl,
+  xUrl: profile.xUrl,
+});
+export function ArtistCard({
+  artist,
+  fullBio = false,
+  homeInteractive = false,
+}: {
+  artist: ArtistCardData;
+  fullBio?: boolean;
+  homeInteractive?: boolean;
+}) {
   return (
     <article className="artist-card">
       <div className="artist-photo">
@@ -310,10 +417,16 @@ export function ArtistCard({ artist, fullBio = false, homeInteractive = false }:
                 <span className="artist-home-hover-heading">
                   <span className="artist-home-hover-role">{artist.genre}</span>
                   <span className="artist-home-hover-name">{artist.name}</span>
-                  {artist.subtitle ? <span className="artist-home-hover-subtitle">{artist.subtitle}</span> : null}
+                  {artist.subtitle ? (
+                    <span className="artist-home-hover-subtitle">{artist.subtitle}</span>
+                  ) : null}
                 </span>
-                <span className="artist-home-hover-bio">{artist.bio || `Meet ${artist.name}, part of the RSVP DXB community.`}</span>
-                <span className="artist-home-hover-action">Explore profile <ArrowUpRight size={16} /></span>
+                <span className="artist-home-hover-bio">
+                  {artist.bio || `Meet ${artist.name}, part of the RSVP DXB community.`}
+                </span>
+                <span className="artist-home-hover-action">
+                  Explore profile <ArrowUpRight size={16} />
+                </span>
               </span>
             ) : null}
           </Link>
@@ -321,50 +434,70 @@ export function ArtistCard({ artist, fullBio = false, homeInteractive = false }:
           <img src={artist.image} alt={artist.name} width={768} height={1024} loading="lazy" />
         )}
       </div>
-      {!homeInteractive ? <>
-      <div className="flex items-start justify-between gap-3 pt-5">
-        <div>
-          <p className="text-xs text-muted-foreground">{artist.genre}</p>
-          {artist.id ? (
-            <Link to="/artists/$profileId" params={{ profileId: profileSlug(artist.name) }} className="artist-card-name-link">
-              <h3 className="mt-1 text-3xl">{artist.name}</h3>
-            </Link>
-          ) : <h3 className="mt-1 text-3xl">{artist.name}</h3>}
+      {!homeInteractive ? (
+        <>
+          <div className="flex items-start justify-between gap-3 pt-5">
+            <div>
+              <p className="text-xs text-muted-foreground">{artist.genre}</p>
+              {artist.id ? (
+                <Link
+                  to="/artists/$profileId"
+                  params={{ profileId: profileSlug(artist.name) }}
+                  className="artist-card-name-link"
+                >
+                  <h3 className="mt-1 text-3xl">{artist.name}</h3>
+                </Link>
+              ) : (
+                <h3 className="mt-1 text-3xl">{artist.name}</h3>
+              )}
               {artist.subtitle ? <p className="artist-card-subtitle">{artist.subtitle}</p> : null}
-        </div>
-        <div className="flex gap-3 pt-2">
-          <a
-            href={artist.instagramUrl || "#"}
-            style={{ display: artist.instagramUrl ? undefined : "none" }}
-            target="_blank"
-            rel="noreferrer"
-            aria-label={`${artist.name} Instagram`}
-          >
-            <Instagram size={18} />
-          </a>
-          <a href={artist.tiktokUrl || "#"} target="_blank" rel="noreferrer" aria-label={`${artist.name} TikTok`} style={{ display: artist.tiktokUrl ? undefined : "none" }}>♪</a>
-          <a
-            href={artist.xUrl || "#"}
-            style={{ display: artist.xUrl ? undefined : "none" }}
-            target="_blank"
-            rel="noreferrer"
-            aria-label={`${artist.name} Twitter`}
-          >
-            𝕏
-          </a>
-          <a
-            href={artist.youtubeUrl || "#"}
-            style={{ display: artist.youtubeUrl ? undefined : "none" }}
-            target="_blank"
-            rel="noreferrer"
-            aria-label={`${artist.name} YouTube`}
-          >
-            <Youtube size={20} />
-          </a>
-        </div>
-      </div>
-      {artist.bio ? <p className={`artist-card-bio${fullBio ? " artist-card-bio-full" : ""}`}>{artist.bio}</p> : null}
-      </> : null}
+            </div>
+            <div className="flex gap-3 pt-2">
+              <a
+                href={artist.instagramUrl || "#"}
+                style={{ display: artist.instagramUrl ? undefined : "none" }}
+                target="_blank"
+                rel="noreferrer"
+                aria-label={`${artist.name} Instagram`}
+              >
+                <Instagram size={18} />
+              </a>
+              <a
+                href={artist.tiktokUrl || "#"}
+                target="_blank"
+                rel="noreferrer"
+                aria-label={`${artist.name} TikTok`}
+                style={{ display: artist.tiktokUrl ? undefined : "none" }}
+              >
+                ♪
+              </a>
+              <a
+                href={artist.xUrl || "#"}
+                style={{ display: artist.xUrl ? undefined : "none" }}
+                target="_blank"
+                rel="noreferrer"
+                aria-label={`${artist.name} Twitter`}
+              >
+                𝕏
+              </a>
+              <a
+                href={artist.youtubeUrl || "#"}
+                style={{ display: artist.youtubeUrl ? undefined : "none" }}
+                target="_blank"
+                rel="noreferrer"
+                aria-label={`${artist.name} YouTube`}
+              >
+                <Youtube size={20} />
+              </a>
+            </div>
+          </div>
+          {artist.bio ? (
+            <p className={`artist-card-bio${fullBio ? " artist-card-bio-full" : ""}`}>
+              {artist.bio}
+            </p>
+          ) : null}
+        </>
+      ) : null}
     </article>
   );
 }

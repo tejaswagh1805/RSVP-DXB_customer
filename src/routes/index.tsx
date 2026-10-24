@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { SitePage } from "@/components/SiteLayout";
-import { listHomepageMedia, listPeopleProfiles, listPublishedEvents } from "@/lib/database";
+import { listFeaturedVenues, listHomepageMedia, listPeopleProfiles, listPublishedEvents } from "@/lib/database";
 import {
   ScrollShowcase,
   EventRibbon,
@@ -9,11 +9,12 @@ import {
   ArtistGallery,
   TicketOffers,
 } from "@/components/CustomerExperience";
+import { VenueTopPicks } from "@/components/CustomerVenues";
 
 export const Route = createFileRoute("/")({
   loader: async () => {
-    const [events, media, profiles] = await Promise.all([listPublishedEvents(), listHomepageMedia(), listPeopleProfiles()]);
-    return { events, media, profiles };
+    const [events, media, profiles, venues] = await Promise.all([listPublishedEvents(), listHomepageMedia(), listPeopleProfiles(), listFeaturedVenues()]);
+    return { events, media, profiles, venues };
   },
   head: () => ({
     meta: [
@@ -36,12 +37,12 @@ export const Route = createFileRoute("/")({
 });
 
 function Home() {
-  const { events: databaseEvents, media, profiles } = Route.useLoaderData();
+  const { events: databaseEvents, media, profiles, venues } = Route.useLoaderData();
   return (
     <SitePage overlayHeader>
       <ScrollShowcase />
       <EventRibbon title="Latest events" events={databaseEvents} />
-      {media.some((item) => item.slot === "top_pick") ? <SiteMediaRibbon media={media.filter((item) => item.slot === "top_pick")} /> : <EventRibbon title="RSVP TOP Pick" reverse events={databaseEvents} />}
+      {venues.length ? <VenueTopPicks venues={venues} /> : media.some((item) => item.slot === "top_pick") ? <SiteMediaRibbon media={media.filter((item) => item.slot === "top_pick")} /> : <EventRibbon title="RSVP TOP Pick" reverse events={databaseEvents} />}
       <EventGallery media={media.filter((item) => item.slot === "gallery")} />
       <ArtistGallery profiles={profiles} />
       <TicketOffers />

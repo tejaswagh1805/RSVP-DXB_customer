@@ -24,11 +24,13 @@ import { Route as RegisterRouteImport } from './routes/register'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as SigninRouteImport } from './routes/signin'
 import { Route as TicketsRouteImport } from './routes/tickets'
+import { Route as TopPicksRouteImport } from './routes/top-picks'
 import { Route as WallRouteImport } from './routes/wall'
 import { Route as ArtistsProfileIdRouteImport } from './routes/artists.$profileId'
 import { Route as EventsIndexRouteImport } from './routes/events.index'
 import { Route as EventsEventIdRouteImport } from './routes/events.$eventId'
 import { Route as RsvpTokenRouteImport } from './routes/rsvp.$token'
+import { Route as TopPicksVenueSlugRouteImport } from './routes/top-picks.$venueSlug'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -105,6 +107,11 @@ const TicketsRoute = TicketsRouteImport.update({
   path: '/tickets',
   getParentRoute: () => rootRouteImport,
 } as any)
+const TopPicksRoute = TopPicksRouteImport.update({
+  id: '/top-picks',
+  path: '/top-picks',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const WallRoute = WallRouteImport.update({
   id: '/wall',
   path: '/wall',
@@ -130,6 +137,11 @@ const RsvpTokenRoute = RsvpTokenRouteImport.update({
   path: '/rsvp/$token',
   getParentRoute: () => rootRouteImport,
 } as any)
+const TopPicksVenueSlugRoute = TopPicksVenueSlugRouteImport.update({
+  id: '/$venueSlug',
+  path: '/$venueSlug',
+  getParentRoute: () => TopPicksRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -147,10 +159,12 @@ export interface FileRoutesByFullPath {
   '/reset-password': typeof ResetPasswordRoute
   '/signin': typeof SigninRoute
   '/tickets': typeof TicketsRoute
+  '/top-picks': typeof TopPicksRouteWithChildren
   '/wall': typeof WallRoute
   '/artists/$profileId': typeof ArtistsProfileIdRoute
   '/events/$eventId': typeof EventsEventIdRoute
   '/rsvp/$token': typeof RsvpTokenRoute
+  '/top-picks/$venueSlug': typeof TopPicksVenueSlugRoute
   '/events/': typeof EventsIndexRoute
 }
 export interface FileRoutesByTo {
@@ -169,10 +183,12 @@ export interface FileRoutesByTo {
   '/reset-password': typeof ResetPasswordRoute
   '/signin': typeof SigninRoute
   '/tickets': typeof TicketsRoute
+  '/top-picks': typeof TopPicksRouteWithChildren
   '/wall': typeof WallRoute
   '/artists/$profileId': typeof ArtistsProfileIdRoute
   '/events/$eventId': typeof EventsEventIdRoute
   '/rsvp/$token': typeof RsvpTokenRoute
+  '/top-picks/$venueSlug': typeof TopPicksVenueSlugRoute
   '/events': typeof EventsIndexRoute
 }
 export interface FileRoutesById {
@@ -192,10 +208,12 @@ export interface FileRoutesById {
   '/reset-password': typeof ResetPasswordRoute
   '/signin': typeof SigninRoute
   '/tickets': typeof TicketsRoute
+  '/top-picks': typeof TopPicksRouteWithChildren
   '/wall': typeof WallRoute
   '/artists/$profileId': typeof ArtistsProfileIdRoute
   '/events/$eventId': typeof EventsEventIdRoute
   '/rsvp/$token': typeof RsvpTokenRoute
+  '/top-picks/$venueSlug': typeof TopPicksVenueSlugRoute
   '/events/': typeof EventsIndexRoute
 }
 export interface FileRouteTypes {
@@ -216,10 +234,12 @@ export interface FileRouteTypes {
     | '/reset-password'
     | '/signin'
     | '/tickets'
+    | '/top-picks'
     | '/wall'
     | '/artists/$profileId'
     | '/events/$eventId'
     | '/rsvp/$token'
+    | '/top-picks/$venueSlug'
     | '/events/'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -238,10 +258,12 @@ export interface FileRouteTypes {
     | '/reset-password'
     | '/signin'
     | '/tickets'
+    | '/top-picks'
     | '/wall'
     | '/artists/$profileId'
     | '/events/$eventId'
     | '/rsvp/$token'
+    | '/top-picks/$venueSlug'
     | '/events'
   id:
     | '__root__'
@@ -260,10 +282,12 @@ export interface FileRouteTypes {
     | '/reset-password'
     | '/signin'
     | '/tickets'
+    | '/top-picks'
     | '/wall'
     | '/artists/$profileId'
     | '/events/$eventId'
     | '/rsvp/$token'
+    | '/top-picks/$venueSlug'
     | '/events/'
   fileRoutesById: FileRoutesById
 }
@@ -283,6 +307,7 @@ export interface RootRouteChildren {
   ResetPasswordRoute: typeof ResetPasswordRoute
   SigninRoute: typeof SigninRoute
   TicketsRoute: typeof TicketsRoute
+  TopPicksRoute: typeof TopPicksRouteWithChildren
   WallRoute: typeof WallRoute
   EventsEventIdRoute: typeof EventsEventIdRoute
   RsvpTokenRoute: typeof RsvpTokenRoute
@@ -396,6 +421,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof TicketsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/top-picks': {
+      id: '/top-picks'
+      path: '/top-picks'
+      fullPath: '/top-picks'
+      preLoaderRoute: typeof TopPicksRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/wall': {
       id: '/wall'
       path: '/wall'
@@ -431,6 +463,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof RsvpTokenRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/top-picks/$venueSlug': {
+      id: '/top-picks/$venueSlug'
+      path: '/$venueSlug'
+      fullPath: '/top-picks/$venueSlug'
+      preLoaderRoute: typeof TopPicksVenueSlugRouteImport
+      parentRoute: typeof TopPicksRoute
+    }
   }
 }
 
@@ -444,6 +483,18 @@ const ArtistsRouteChildren: ArtistsRouteChildren = {
 
 const ArtistsRouteWithChildren =
   ArtistsRoute._addFileChildren(ArtistsRouteChildren)
+
+interface TopPicksRouteChildren {
+  TopPicksVenueSlugRoute: typeof TopPicksVenueSlugRoute
+}
+
+const TopPicksRouteChildren: TopPicksRouteChildren = {
+  TopPicksVenueSlugRoute: TopPicksVenueSlugRoute,
+}
+
+const TopPicksRouteWithChildren = TopPicksRoute._addFileChildren(
+  TopPicksRouteChildren,
+)
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
@@ -461,6 +512,7 @@ const rootRouteChildren: RootRouteChildren = {
   ResetPasswordRoute: ResetPasswordRoute,
   SigninRoute: SigninRoute,
   TicketsRoute: TicketsRoute,
+  TopPicksRoute: TopPicksRouteWithChildren,
   WallRoute: WallRoute,
   EventsEventIdRoute: EventsEventIdRoute,
   RsvpTokenRoute: RsvpTokenRoute,
