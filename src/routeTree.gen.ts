@@ -25,6 +25,7 @@ import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as SigninRouteImport } from './routes/signin'
 import { Route as TicketsRouteImport } from './routes/tickets'
 import { Route as WallRouteImport } from './routes/wall'
+import { Route as ArtistsProfileIdRouteImport } from './routes/artists.$profileId'
 import { Route as EventsIndexRouteImport } from './routes/events.index'
 import { Route as EventsEventIdRouteImport } from './routes/events.$eventId'
 import { Route as RsvpTokenRouteImport } from './routes/rsvp.$token'
@@ -109,6 +110,11 @@ const WallRoute = WallRouteImport.update({
   path: '/wall',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ArtistsProfileIdRoute = ArtistsProfileIdRouteImport.update({
+  id: '/$profileId',
+  path: '/$profileId',
+  getParentRoute: () => ArtistsRoute,
+} as any)
 const EventsIndexRoute = EventsIndexRouteImport.update({
   id: '/events/',
   path: '/events/',
@@ -129,7 +135,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
   '/apps': typeof AppsRoute
-  '/artists': typeof ArtistsRoute
+  '/artists': typeof ArtistsRouteWithChildren
   '/contact': typeof ContactRoute
   '/faq': typeof FaqRoute
   '/forgot-password': typeof ForgotPasswordRoute
@@ -142,6 +148,7 @@ export interface FileRoutesByFullPath {
   '/signin': typeof SigninRoute
   '/tickets': typeof TicketsRoute
   '/wall': typeof WallRoute
+  '/artists/$profileId': typeof ArtistsProfileIdRoute
   '/events/$eventId': typeof EventsEventIdRoute
   '/rsvp/$token': typeof RsvpTokenRoute
   '/events/': typeof EventsIndexRoute
@@ -150,7 +157,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
   '/apps': typeof AppsRoute
-  '/artists': typeof ArtistsRoute
+  '/artists': typeof ArtistsRouteWithChildren
   '/contact': typeof ContactRoute
   '/faq': typeof FaqRoute
   '/forgot-password': typeof ForgotPasswordRoute
@@ -163,6 +170,7 @@ export interface FileRoutesByTo {
   '/signin': typeof SigninRoute
   '/tickets': typeof TicketsRoute
   '/wall': typeof WallRoute
+  '/artists/$profileId': typeof ArtistsProfileIdRoute
   '/events/$eventId': typeof EventsEventIdRoute
   '/rsvp/$token': typeof RsvpTokenRoute
   '/events': typeof EventsIndexRoute
@@ -172,7 +180,7 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
   '/apps': typeof AppsRoute
-  '/artists': typeof ArtistsRoute
+  '/artists': typeof ArtistsRouteWithChildren
   '/contact': typeof ContactRoute
   '/faq': typeof FaqRoute
   '/forgot-password': typeof ForgotPasswordRoute
@@ -185,6 +193,7 @@ export interface FileRoutesById {
   '/signin': typeof SigninRoute
   '/tickets': typeof TicketsRoute
   '/wall': typeof WallRoute
+  '/artists/$profileId': typeof ArtistsProfileIdRoute
   '/events/$eventId': typeof EventsEventIdRoute
   '/rsvp/$token': typeof RsvpTokenRoute
   '/events/': typeof EventsIndexRoute
@@ -208,6 +217,7 @@ export interface FileRouteTypes {
     | '/signin'
     | '/tickets'
     | '/wall'
+    | '/artists/$profileId'
     | '/events/$eventId'
     | '/rsvp/$token'
     | '/events/'
@@ -229,6 +239,7 @@ export interface FileRouteTypes {
     | '/signin'
     | '/tickets'
     | '/wall'
+    | '/artists/$profileId'
     | '/events/$eventId'
     | '/rsvp/$token'
     | '/events'
@@ -250,6 +261,7 @@ export interface FileRouteTypes {
     | '/signin'
     | '/tickets'
     | '/wall'
+    | '/artists/$profileId'
     | '/events/$eventId'
     | '/rsvp/$token'
     | '/events/'
@@ -259,7 +271,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AboutRoute: typeof AboutRoute
   AppsRoute: typeof AppsRoute
-  ArtistsRoute: typeof ArtistsRoute
+  ArtistsRoute: typeof ArtistsRouteWithChildren
   ContactRoute: typeof ContactRoute
   FaqRoute: typeof FaqRoute
   ForgotPasswordRoute: typeof ForgotPasswordRoute
@@ -391,6 +403,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof WallRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/artists/$profileId': {
+      id: '/artists/$profileId'
+      path: '/$profileId'
+      fullPath: '/artists/$profileId'
+      preLoaderRoute: typeof ArtistsProfileIdRouteImport
+      parentRoute: typeof ArtistsRoute
+    }
     '/events/': {
       id: '/events/'
       path: '/events'
@@ -415,11 +434,22 @@ declare module '@tanstack/react-router' {
   }
 }
 
+interface ArtistsRouteChildren {
+  ArtistsProfileIdRoute: typeof ArtistsProfileIdRoute
+}
+
+const ArtistsRouteChildren: ArtistsRouteChildren = {
+  ArtistsProfileIdRoute: ArtistsProfileIdRoute,
+}
+
+const ArtistsRouteWithChildren =
+  ArtistsRoute._addFileChildren(ArtistsRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AboutRoute: AboutRoute,
   AppsRoute: AppsRoute,
-  ArtistsRoute: ArtistsRoute,
+  ArtistsRoute: ArtistsRouteWithChildren,
   ContactRoute: ContactRoute,
   FaqRoute: FaqRoute,
   ForgotPasswordRoute: ForgotPasswordRoute,

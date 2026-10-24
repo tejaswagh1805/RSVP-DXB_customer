@@ -120,6 +120,19 @@ export const listPeopleProfiles = createServerFn({ method: "GET" }).handler(asyn
   return rows;
 });
 
+export const getPeopleProfileById = createServerFn({ method: "GET" })
+  .validator((profileId: string) => profileId)
+  .handler(async ({ data: profileId }) => {
+    const sql = getSql();
+    const rows = (await sql`
+      SELECT id, category, name, role, bio, image_url AS "imageUrl",
+        instagram_url AS "instagramUrl", tiktok_url AS "tiktokUrl",
+        youtube_url AS "youtubeUrl", x_url AS "xUrl", display_order AS "displayOrder"
+      FROM people_profiles WHERE id = ${profileId} AND active = TRUE LIMIT 1
+    `) as unknown as PeopleProfile[];
+    return rows[0] ?? null;
+  });
+
 export const getMemberRsvps = createServerFn({ method: "GET" }).handler(async () => {
     const member = await currentMember();
     if (!member) return {};

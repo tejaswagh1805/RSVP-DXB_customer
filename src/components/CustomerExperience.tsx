@@ -318,7 +318,18 @@ export function ArtistCard({ artist }: { artist: ArtistCardData }) {
   return (
     <article className="artist-card">
       <div className="artist-photo">
-        <img src={artist.image} alt={artist.name} width={768} height={1024} loading="lazy" />
+        {artist.id ? (
+          <Link
+            to="/artists/$profileId"
+            params={{ profileId: artist.id }}
+            aria-label={`View ${artist.name}'s profile`}
+            className="artist-photo-link"
+          >
+            <img src={artist.image} alt={artist.name} width={768} height={1024} loading="lazy" />
+          </Link>
+        ) : (
+          <img src={artist.image} alt={artist.name} width={768} height={1024} loading="lazy" />
+        )}
         {videoId ? (
           <iframe
             src={`https://www.youtube-nocookie.com/embed/${videoId}`}
