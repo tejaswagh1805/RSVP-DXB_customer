@@ -42,7 +42,8 @@ function Home() {
     <SitePage overlayHeader>
       <ScrollShowcase />
       <EventRibbon title="Latest events" events={databaseEvents} />
-      {venues.length ? <VenueTopPicks venues={venues} /> : media.some((item) => item.slot === "top_pick") ? <SiteMediaRibbon media={media.filter((item) => item.slot === "top_pick")} /> : <EventRibbon title="RSVP TOP Pick" reverse events={databaseEvents} />}
+      <EventRibbon title="RSVP TOP Pick" reverse events={databaseEvents} />
+      {venues.length ? <VenueTopPicks venues={venues} /> : media.some((item) => item.slot === "top_pick") ? <SiteMediaRibbon media={media.filter((item) => item.slot === "top_pick")} /> : null}
       <EventGallery media={media.filter((item) => item.slot === "gallery")} />
       <ArtistGallery profiles={profiles} />
       <TicketOffers />

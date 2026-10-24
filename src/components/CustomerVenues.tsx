@@ -1,6 +1,6 @@
 import { Link } from "@tanstack/react-router";
-import { ArrowLeft, ArrowUpRight, CalendarDays, MapPin, Sparkles, Star } from "lucide-react";
-import { useState } from "react";
+import { ArrowLeft, ArrowRight, ArrowUpRight, CalendarDays, MapPin, Sparkles, Star } from "lucide-react";
+import { useRef, useState } from "react";
 import { Button } from "@/components/ui-kit";
 import { SitePage } from "@/components/SiteLayout";
 import type { Venue } from "@/lib/database";
@@ -55,6 +55,13 @@ function VenueCard({ venue, featured = false }: { venue: Venue; featured?: boole
 }
 
 export function VenueTopPicks({ venues }: { venues: Venue[] }) {
+  const sliderRef = useRef<HTMLDivElement>(null);
+  const moveSlider = (direction: -1 | 1) => {
+    const slider = sliderRef.current;
+    if (!slider) return;
+    const card = slider.querySelector<HTMLElement>(".venue-guide-card-featured");
+    slider.scrollBy({ left: direction * ((card?.getBoundingClientRect().width ?? slider.clientWidth) + 18), behavior: "smooth" });
+  };
   if (!venues.length) return null;
   return (
     <section className="venue-home-picks">
@@ -63,13 +70,19 @@ export function VenueTopPicks({ venues }: { venues: Venue[] }) {
           <p className="eyebrow">
             <Sparkles size={13} /> CURATED FOR YOUR NEXT RSVP
           </p>
-          <h2>RSVP Top Picks</h2>
+          <h2>Venue Top Picks</h2>
         </div>
-        <Link to="/top-picks" className="venue-guide-cta">
-          Explore the venue guide <ArrowUpRight size={16} />
-        </Link>
+        <div className="venue-home-heading-actions">
+          <Link to="/top-picks" className="venue-guide-cta">
+            Explore the venue guide <ArrowUpRight size={16} />
+          </Link>
+          <div className="venue-slider-controls" aria-label="Venue slider controls">
+            <button type="button" aria-label="Previous venues" onClick={() => moveSlider(-1)}><ArrowLeft size={17} /></button>
+            <button type="button" aria-label="Next venues" onClick={() => moveSlider(1)}><ArrowRight size={17} /></button>
+          </div>
+        </div>
       </div>
-      <div className="venue-home-grid">
+      <div className="venue-home-grid" ref={sliderRef} aria-label="Featured venue picks">
         {venues.slice(0, 4).map((venue) => (
           <VenueCard key={venue.id} venue={venue} featured />
         ))}
