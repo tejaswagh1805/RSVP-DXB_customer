@@ -8,7 +8,7 @@ import { EventImage } from "@/components/EventImage";
 import { Badge, Button, Card, Field, PasswordInput, Stat, inputClass } from "@/components/ui-kit";
 import { POINT_RULES, RANKS, formatDate, rankFor } from "@/lib/data";
 import { useStore } from "@/lib/store";
-import { getMemberRsvps, getMemberSession, updateEventRsvp, updateMemberProfile } from "@/lib/database";
+import { getMemberRsvps, getMemberSession, updateMemberProfile } from "@/lib/database";
 import { useServerFn } from "@tanstack/react-start";
 
 export const Route = createFileRoute("/me")({
@@ -65,14 +65,8 @@ function MemberArea() {
   const { profile, events, rsvps: demoRsvps, saved, hydrateMember } = useStore();
   const loaderData = Route.useLoaderData();
   const databaseRsvps = loaderData.rsvps;
-  const persistRsvp = useServerFn(updateEventRsvp);
   const persistProfile = useServerFn(updateMemberProfile);
   const rsvps = { ...demoRsvps, ...databaseRsvps };
-  const toggleRsvp = (eventId: string) => {
-    if (!profile.signedIn) return;
-    void persistRsvp({ data: { eventId, wantsGoing: rsvps[eventId] === "none" || !rsvps[eventId] } })
-      .then(() => window.location.reload());
-  };
   const [tab, setTab] = useState("Dashboard");
   const [avatar, setAvatar] = useState<string | null>(null);
   const [avatarError, setAvatarError] = useState("");
@@ -174,7 +168,7 @@ function MemberArea() {
                 </div>
                 <div className="member-feature-grid">
                   <Card className="member-black-card"><h3>✦ VIP BLACK CARD</h3><div className="member-card-art"><span>RSVP DXB</span><strong>{profile.name.toUpperCase()} · {rank.toUpperCase()}</strong><small>•••• 9924</small><i>◉ NFC TAP · VALID 09/27</i></div><p className="member-auth-note">Tap to authenticate · Secure · Wallet Enabled</p><b>{rank.toUpperCase()} #4 CHAMPAGNE PEARL DROP —</b><div className="member-pearl-row"><span>🟤</span><p>Unlock #4 available —<br />1 of 5 Pearl Drops</p><strong>80%</strong></div><progress value="80" max="100" /><small>Unlocks in 02:14:33 · <button onClick={() => setTab("Points")}>Unlock Now</button></small></Card>
-                  <Card className="member-locked-card"><h3><LockKeyhole size={17} /> INVITE-ONLY LOCKED EVENTS</h3><div className="member-event-art" style={{ backgroundImage: `linear-gradient(90deg, rgba(66,43,23,.78), rgba(66,43,23,.04)), url(${upcomingEvent?.image ?? ""})` }}><b>{upcomingEvent?.title ?? "Secret Supper"}</b><span>{upcomingEvent?.venue ?? "Palace Beach, Palm Jumeirah"}</span><em>LOCKED · REQUIRES {rank.toUpperCase()}</em><small>Date: {upcomingEvent ? formatDate(upcomingEvent.date) : "28 Oct"} · {upcomingEvent?.time ?? "20:00"} · 12/12 spots</small></div><Button onClick={() => upcomingEvent && toggleRsvp(upcomingEvent.id)}>Request Access</Button></Card>
+                  <Card className="member-locked-card"><h3><LockKeyhole size={17} /> INVITE-ONLY LOCKED EVENTS</h3><div className="member-event-art" style={{ backgroundImage: `linear-gradient(90deg, rgba(66,43,23,.78), rgba(66,43,23,.04)), url(${upcomingEvent?.image ?? ""})` }}><b>{upcomingEvent?.title ?? "Secret Supper"}</b><span>{upcomingEvent?.venue ?? "Palace Beach, Palm Jumeirah"}</span><em>LOCKED · REQUIRES {rank.toUpperCase()}</em><small>Date: {upcomingEvent ? formatDate(upcomingEvent.date) : "28 Oct"} · {upcomingEvent?.time ?? "20:00"} · 12/12 spots</small></div>{upcomingEvent ? <Link to="/events/$eventId" params={{ eventId: upcomingEvent.id }}><Button>Request Access</Button></Link> : null}</Card>
                 </div>
                 <p className="member-skyline-caption">DUBAI SKYLINE <span>•</span> UPCOMING: {upcomingEvent?.title ?? "Gala Night 30 Oct"}</p>
               </div>
@@ -200,12 +194,9 @@ function MemberArea() {
                         {formatDate(e.date)} · {e.time} · {e.area}
                       </p>
                     </div>
-                    <Button size="sm" onClick={() => toggleRsvp(e.id)}>
-                      RSVP
-                    </Button>
                     <Link to="/events/$eventId" params={{ eventId: e.id }}>
-                      <Button size="sm" variant="ghost">
-                        Details
+                      <Button size="sm">
+                        Request RSVP
                       </Button>
                     </Link>
                   </Card>
@@ -229,15 +220,10 @@ function MemberArea() {
                     {formatDate(e.date)} · {e.time} · {e.venue}
                   </p>
                 </div>
-                <Badge tone={rsvps[e.id] === "going" ? "green" : "amber"}>
-                  {rsvps[e.id] === "going" ? "Confirmed" : "Waitlist"}
+                <Badge tone={rsvps[e.id] === "accepted" || rsvps[e.id] === "going" ? "green" : rsvps[e.id] === "declined" ? "red" : "amber"}>
+                  {{ pending: "Pending review", accepted: "Accepted", waitlisted: "Waitlisted", declined: "Declined", going: "Accepted", waitlist: "Waitlisted" }[rsvps[e.id] ?? "pending"] ?? "Pending review"}
                 </Badge>
-                <Button size="sm" variant="outline">
-                  Add to calendar
-                </Button>
-                <Button size="sm" variant="ghost" onClick={() => toggleRsvp(e.id)}>
-                  Cancel
-                </Button>
+                <Link to="/events/$eventId" params={{ eventId: e.id }}><Button size="sm" variant="outline">Event details</Button></Link>
               </Card>
             ))}
             {myEvents.length === 0 ? (
@@ -262,12 +248,12 @@ function MemberArea() {
               <p className="mt-4 text-sm">{rank} member</p>
               <p className="text-xs text-muted-foreground">Show at the door · RSVP-TEJAS</p>
             </Card>
-            {myEvents.map((e) => (
+            {myEvents.filter((event) => rsvps[event.id] === "accepted" || rsvps[event.id] === "going").map((e) => (
               <Card key={e.id} className="text-center">
                 <p className="eyebrow">{e.brand}</p>
                 <h3 className="mt-1 text-lg">{e.title}</h3>
                 <div className="mx-auto mt-5 inline-block rounded-md bg-white p-2">
-                  <QRCodeSVG value={`RSVP-DXB|${e.id}|${profile.email}|RSVP-4471`} size={128} />
+                  <span className="px-5 py-10 text-sm font-semibold text-primary">RSVP ACCEPTED</span>
                 </div>
                 <p className="mt-4 text-sm">{profile.name}</p>
                 <p className="text-xs text-muted-foreground">
@@ -283,7 +269,7 @@ function MemberArea() {
                 </div>
               </Card>
             ))}
-            {myEvents.length === 0 ? (
+            {!myEvents.some((event) => rsvps[event.id] === "accepted" || rsvps[event.id] === "going") ? (
               <p className="text-sm text-muted-foreground">Your pass appears once you RSVP.</p>
             ) : null}
           </div>

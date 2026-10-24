@@ -6,8 +6,7 @@ import { EventImage } from "./EventImage";
 import { WhatsAppAction } from "./WhatsAppAction";
 
 export function EventCard({ event }: { event: EventItem }) {
-  const { rsvps, toggleRsvp, saved, toggleSave, profile } = useStore();
-  const state = rsvps[event.id] ?? "none";
+  const { saved, toggleSave, profile } = useStore();
   const full = event.confirmed >= event.capacity;
   const left = Math.max(event.capacity - event.confirmed, 0);
   const eligible = event.tracks.includes(profile.track);
@@ -43,19 +42,9 @@ export function EventCard({ event }: { event: EventItem }) {
               Not on your list
             </Button>
           ) : (
-            <Button
-              size="sm"
-              variant={state === "none" ? "primary" : "outline"}
-              onClick={() => toggleRsvp(event.id)}
-            >
-              {state === "going"
-                ? "You are in"
-                : state === "waitlist"
-                  ? "On waitlist"
-                  : full
-                    ? "Join waitlist"
-                    : "RSVP"}
-            </Button>
+            <Link to="/events/$eventId" params={{ eventId: event.id }}>
+              <Button size="sm" variant="primary">Request RSVP</Button>
+            </Link>
           )}
           <Button size="sm" variant="ghost" onClick={() => toggleSave(event.id)}>
             {saved.includes(event.id) ? "Saved" : "Save"}

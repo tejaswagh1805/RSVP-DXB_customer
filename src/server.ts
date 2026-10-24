@@ -1,5 +1,14 @@
 import "./lib/error-capture";
 
+// The customer SSR server reads SES credentials from the project's local .env
+// in development. Hosted environments should provide these as environment
+// variables or use an attached IAM role.
+try {
+  process.loadEnvFile?.();
+} catch (error) {
+  if ((error as NodeJS.ErrnoException).code !== "ENOENT") throw error;
+}
+
 import { consumeLastCapturedError } from "./lib/error-capture";
 import { renderErrorPage } from "./lib/error-page";
 

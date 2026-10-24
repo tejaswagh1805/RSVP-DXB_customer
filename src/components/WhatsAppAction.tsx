@@ -2,7 +2,7 @@ import { MessageCircle } from "lucide-react";
 import type { EventItem } from "@/lib/data";
 
 export function WhatsAppAction({ event }: { event: EventItem }) {
-  const phoneNumber = String(import.meta.env.VITE_RSVP_WHATSAPP_NUMBER || "").replace(/\D/g, "");
+  const phoneNumber = String(import.meta.env["VITE_RSVP_WHATSAPP_NUMBER"] || "").replace(/\D/g, "");
   const ticketRequestOpen = event.status === "published" && event.date >= new Date().toISOString().slice(0, 10);
 
   if (!ticketRequestOpen) {

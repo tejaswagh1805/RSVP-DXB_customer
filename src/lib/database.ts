@@ -7,11 +7,11 @@ import fashionImage from "@/assets/event-fashion.jpg";
 import nightlifeImage from "@/assets/event-nightlife.jpg";
 import propertyImage from "@/assets/event-property.jpg";
 import { getSql } from "./db.server";
-import { applicationAdminEmail, applicationConfirmationEmail, sendMemberEmail } from "./email.server";
+import { applicationAdminEmail, applicationConfirmationEmail, memberEmailHtml, sendMemberEmail } from "./email.server";
 import type { EventItem, Track } from "./data";
 
 export type HomepageMediaItem = { id: string; slot: "gallery" | "top_pick"; title: string; caption: string; imageUrl: string; linkUrl: string; displayOrder: number };
-export type PeopleProfile = { id: string; category: "artist" | "influencer"; name: string; role: string; bio: string; imageUrl: string; instagramUrl: string; tiktokUrl: string; youtubeUrl: string; xUrl: string; displayOrder: number };
+export type PeopleProfile = { id: string; category: "artist" | "influencer"; name: string; role: string; subtitle: string; bio: string; imageUrl: string; instagramUrl: string; tiktokUrl: string; youtubeUrl: string; xUrl: string; displayOrder: number };
 
 const scrypt = promisify(scryptCallback);
 const MEMBER_COOKIE = "rsvp_member_session";
@@ -52,7 +52,7 @@ async function currentMember() {
   return rows[0] ?? null;
 }
 
-type EventRow = Omit<EventItem, "image" | "images" | "video"> & { image_key: string; image_data: string | null; image_gallery?: string[] | null; video_url?: string | null };
+type EventRow = Omit<EventItem, "image" | "images" | "video"> & { image_key: string; image_data: string | null; image_gallery?: string[] | null; video_url?: string | null; track_capacities?: Partial<Record<Track, number>> | null; influencer_deliverables?: string | null; map_url?: string | null; endDate?: string | null; end_time?: string | null; gates_open_time?: string | null };
 
 const EVENT_IMAGES: Record<string, string> = {
   "atlantis-chef-table": diningImage,
@@ -64,13 +64,18 @@ const EVENT_IMAGES: Record<string, string> = {
 };
 
 function mapEvent(row: EventRow): EventItem {
-  const { image_data, image_key, image_gallery, video_url, ...event } = row;
+  const { image_data, image_key, image_gallery, video_url, influencer_deliverables, map_url, endDate, end_time, gates_open_time, ...event } = row;
   const images = image_gallery?.length ? image_gallery : image_data ? [image_data] : [];
   return {
     ...event,
     image: images[0] || EVENT_IMAGES[image_key] || EVENT_IMAGES["atlantis-chef-table"]!,
     images,
-    video: video_url || undefined,
+    influencerDeliverables: influencer_deliverables ?? "",
+    mapUrl: map_url ?? "",
+    endDate: endDate ?? undefined,
+    endTime: end_time ?? "",
+    gatesOpenTime: gates_open_time ?? "",
+    ...(video_url ? { video: video_url } : {}),
   };
 }
 
@@ -80,6 +85,8 @@ export const listPublishedEvents = createServerFn({ method: "GET" }).handler(asy
     SELECT id, title, brand, to_char(date, 'YYYY-MM-DD') AS date, time, venue, area,
       category, tracks, capacity, confirmed, dress_code AS "dressCode", about,
       included, who_is_invited AS "whoIsInvited", host_note AS "hostNote",
+      track_capacities AS "trackCapacities", influencer_deliverables, map_url,
+      to_char(end_date, 'YYYY-MM-DD') AS "endDate", end_time, gates_open_time,
       status, image_key, image_data, image_gallery, video_url
     FROM events WHERE status = 'published' ORDER BY date, time
   `) as unknown as EventRow[];
@@ -94,6 +101,8 @@ export const getEventById = createServerFn({ method: "GET" })
       SELECT id, title, brand, to_char(date, 'YYYY-MM-DD') AS date, time, venue, area,
         category, tracks, capacity, confirmed, dress_code AS "dressCode", about,
         included, who_is_invited AS "whoIsInvited", host_note AS "hostNote",
+        track_capacities AS "trackCapacities", influencer_deliverables, map_url,
+        to_char(end_date, 'YYYY-MM-DD') AS "endDate", end_time, gates_open_time,
         status, image_key, image_data, image_gallery, video_url
       FROM events WHERE id = ${eventId} AND status IN ('published', 'closed') LIMIT 1
     `) as unknown as EventRow[];
@@ -112,7 +121,7 @@ export const listHomepageMedia = createServerFn({ method: "GET" }).handler(async
 export const listPeopleProfiles = createServerFn({ method: "GET" }).handler(async () => {
   const sql = getSql();
   const rows = (await sql`
-    SELECT id, category, name, role, bio, image_url AS "imageUrl",
+    SELECT id, category, name, role, subtitle, bio, image_url AS "imageUrl",
       instagram_url AS "instagramUrl", tiktok_url AS "tiktokUrl",
       youtube_url AS "youtubeUrl", x_url AS "xUrl", display_order AS "displayOrder"
     FROM people_profiles WHERE active = TRUE ORDER BY category, display_order, created_at DESC
@@ -121,54 +130,85 @@ export const listPeopleProfiles = createServerFn({ method: "GET" }).handler(asyn
 });
 
 export const getPeopleProfileById = createServerFn({ method: "GET" })
-  .validator((profileId: string) => profileId)
-  .handler(async ({ data: profileId }) => {
+  .validator((profileKey: string) => profileKey)
+  .handler(async ({ data: profileKey }) => {
     const sql = getSql();
     const rows = (await sql`
-      SELECT id, category, name, role, bio, image_url AS "imageUrl",
+      SELECT id, category, name, role, subtitle, bio, image_url AS "imageUrl",
         instagram_url AS "instagramUrl", tiktok_url AS "tiktokUrl",
         youtube_url AS "youtubeUrl", x_url AS "xUrl", display_order AS "displayOrder"
-      FROM people_profiles WHERE id = ${profileId} AND active = TRUE LIMIT 1
+      FROM people_profiles WHERE active = TRUE
+        AND (id = ${profileKey} OR lower(regexp_replace(trim(name), '[^a-zA-Z0-9]+', '-', 'g')) = ${profileKey})
+      ORDER BY CASE WHEN id = ${profileKey} THEN 0 ELSE 1 END
+      LIMIT 1
     `) as unknown as PeopleProfile[];
     return rows[0] ?? null;
   });
 
 export const getMemberRsvps = createServerFn({ method: "GET" }).handler(async () => {
-    const member = await currentMember();
-    if (!member) return {};
-    const sql = getSql();
-    const rows = (await sql`
-      SELECT event_id, state FROM event_rsvps WHERE guest_key = ${member.id}
-    `) as unknown as { event_id: string; state: "going" | "waitlist" }[];
-    return Object.fromEntries(rows.map((row) => [row["event_id"], row["state"]]));
-  });
+  const member = await currentMember();
+  if (!member) return {};
+  const sql = getSql();
+  const rows = (await sql`
+    SELECT event_id, status AS state FROM event_rsvp_requests WHERE member_id = ${member.id}
+  `) as unknown as { event_id: string; state: "pending" | "accepted" | "waitlisted" | "declined" }[];
+  return Object.fromEntries(rows.map((row) => [row.event_id, row.state]));
+});
 
-export const updateEventRsvp = createServerFn({ method: "POST" })
-  .validator((input: { eventId: string; wantsGoing: boolean }) => input)
+export const submitEventRsvpRequest = createServerFn({ method: "POST" })
+  .validator((input: { eventId: string; track: Track; guestNames: string[]; deliverablesAgreed: boolean }) => input)
   .handler(async ({ data }) => {
     const member = await currentMember();
     if (!member) throw new Error("Sign in with an approved member account to RSVP.");
-    const sql = getSql();
-    if (!data.wantsGoing) {
-      await sql`DELETE FROM event_rsvps WHERE event_id = ${data.eventId} AND guest_key = ${member.id}`;
-      await sql`UPDATE events SET confirmed = GREATEST(confirmed - 1, 0) WHERE id = ${data.eventId}`;
-    } else {
-      const result = (await sql`
-        INSERT INTO event_rsvps (event_id, guest_key, state)
-        SELECT e.id, ${member.id},
-          CASE WHEN e.confirmed < e.capacity THEN 'going' ELSE 'waitlist' END
-        FROM events e WHERE e.id = ${data.eventId}
-        ON CONFLICT (event_id, guest_key) DO NOTHING
-        RETURNING state
-      `) as unknown as { state: "going" | "waitlist" }[];
-      if (result[0]?.["state"] === "going") {
-        await sql`UPDATE events SET confirmed = confirmed + 1 WHERE id = ${data.eventId}`;
-      }
+    if (!Array.isArray(data.guestNames) || data.guestNames.length > 2 || data.guestNames.some((name) => typeof name !== "string" || name.trim().length < 2 || name.trim().length > 120)) {
+      throw new Error("Add the full name for each guest, up to two guests.");
     }
+    if (!(["Media", "Creators", "Tastemakers", "Private Circle"] as string[]).includes(data.track) || data.track !== member.track) {
+      throw new Error("Choose the audience track on your approved member profile.");
+    }
+    const sql = getSql();
+    const events = (await sql`
+      SELECT id, title, date::text AS date, time, venue, tracks, status, influencer_deliverables
+      FROM events WHERE id = ${data.eventId} LIMIT 1
+    `) as unknown as { id: string; title: string; date: string; time: string; venue: string; tracks: Track[]; status: string; influencer_deliverables: string }[];
+    const event = events[0];
+    if (!event || event.status !== "published") throw new Error("This event is not accepting RSVP requests.");
+    if (!event.tracks.includes(data.track)) throw new Error("This event is not open to your track.");
+    if (data.track === "Creators" && event.influencer_deliverables.trim() && !data.deliverablesAgreed) {
+      throw new Error("Please agree to the creator deliverables before submitting.");
+    }
+    const guestNames = data.guestNames.map((name) => name.trim());
     const rows = (await sql`
-      SELECT event_id, state FROM event_rsvps WHERE guest_key = ${member.id}
-    `) as unknown as { event_id: string; state: "going" | "waitlist" }[];
-    return Object.fromEntries(rows.map((row) => [row["event_id"], row["state"]]));
+      INSERT INTO event_rsvp_requests (
+        id, event_id, member_id, member_email, track, guest_names, deliverables_agreed, status
+      ) VALUES (
+        ${`rsvp-${randomBytes(16).toString("hex")}`}, ${event.id}, ${member.id}, ${member.email},
+        ${data.track}, ${guestNames}, ${data.track === "Creators" ? data.deliverablesAgreed : false}, 'pending'
+      )
+      ON CONFLICT (event_id, member_id) DO UPDATE SET
+        track = EXCLUDED.track,
+        guest_names = EXCLUDED.guest_names,
+        deliverables_agreed = EXCLUDED.deliverables_agreed,
+        status = 'pending', reviewed_at = NULL, reviewed_by = NULL,
+        created_at = NOW(), updated_at = NOW()
+      WHERE event_rsvp_requests.status = 'declined'
+      RETURNING status
+    `) as unknown as { status: "pending" }[];
+    if (!rows[0]) {
+      const existing = (await sql`
+        SELECT status FROM event_rsvp_requests WHERE event_id = ${event.id} AND member_id = ${member.id} LIMIT 1
+      `) as unknown as { status: string }[];
+      throw new Error(existing[0] ? `You already have an RSVP request for this event (${existing[0].status}).` : "Your RSVP request could not be saved.");
+    }
+    const details = [event.date, event.time, event.venue].filter(Boolean).join(" · ");
+    const message = `Thank you for your RSVP request to ${event.title}. Our team is reviewing your profile. A request does not guarantee a place; we will email you when a decision is made.${details ? ` Event details: ${details}.` : ""}`;
+    const delivery = await sendMemberEmail({
+      to: member.email,
+      subject: `RSVP request received · ${event.title}`,
+      text: `Hello ${member.name},\n\n${message}\n\nWarm regards,\nThe RSVP DXB team`,
+      html: memberEmailHtml(member.name, message),
+    });
+    return { status: "pending" as const, emailSent: delivery.sent };
   });
 
 export type GuestInvitationView = {
@@ -320,7 +360,7 @@ export const submitApplication = createServerFn({ method: "POST" })
           profiles: allProfiles,
           detail,
           id: application.id,
-          dashboardUrl: process.env["ADMIN_DASHBOARD_URL"],
+          ...(process.env["ADMIN_DASHBOARD_URL"] ? { dashboardUrl: process.env["ADMIN_DASHBOARD_URL"] } : {}),
         }),
       }),
     ]);

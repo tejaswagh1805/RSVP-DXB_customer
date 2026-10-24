@@ -35,7 +35,8 @@ export async function sendMemberEmail(input: {
     }));
     return { sent: true };
   } catch (error) {
-    console.error("SES member email failed", error);
+    const detail = error instanceof Error ? `${error.name}: ${error.message}` : "Unknown SES error";
+    console.error("SES member email failed", detail);
     return { sent: false, reason: "send_failed" };
   }
 }
@@ -81,8 +82,7 @@ export function applicationAdminEmail(input: { name: string; email: string; trac
       { label: "Application ID", value: input.id },
       { label: "Status", value: "Pending review" },
     ],
-    actionLabel: input.dashboardUrl ? "Open admin dashboard" : undefined,
-    actionUrl: input.dashboardUrl,
+    ...(input.dashboardUrl ? { actionLabel: "Open admin dashboard", actionUrl: input.dashboardUrl } : {}),
     footer: "Internal RSVP DXB notification · Please review this application in the admin dashboard.",
   });
 }

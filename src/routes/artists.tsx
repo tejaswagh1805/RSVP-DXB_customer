@@ -46,16 +46,16 @@ function ArtistsPage() {
         </div>
 
         <p className="eyebrow mt-8">Artists</p>
-        <div className="artist-grid mt-4">
+        <div className={`artist-grid mt-4${artists.length === 1 ? " artist-grid-single" : ""}`}>
           {artists.map((a) => (
-            <ArtistCard key={a.id || a.name} artist={a} />
+            <ArtistCard key={a.name} artist={a} fullBio />
           ))}
         </div>
 
         <p className="eyebrow mt-16">Influencers</p>
-        <div className="artist-grid mt-4">
+        <div className={`artist-grid mt-4${influencers.length === 1 ? " artist-grid-single" : ""}`}>
           {influencers.map((a) => (
-            <ArtistCard key={a.id || a.name} artist={a} />
+            <ArtistCard key={a.name} artist={a} fullBio />
           ))}
         </div>
       </section>

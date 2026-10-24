@@ -5,18 +5,24 @@ import propertyImage from "@/assets/event-property.jpg";
 
 export type Track = "Media" | "Creators" | "Tastemakers" | "Private Circle";
 
-export type RsvpState = "none" | "going" | "waitlist";
+export type RsvpState = "none" | "going" | "waitlist" | "pending" | "accepted" | "waitlisted" | "declined";
 
 export interface EventItem {
   id: string;
   title: string;
   brand: string;
   date: string; // ISO date
+  endDate?: string;
   time: string;
+  endTime?: string;
+  gatesOpenTime?: string;
   venue: string;
   area: string;
   category: string;
   tracks: Track[];
+  trackCapacities?: Partial<Record<Track, number>>;
+  influencerDeliverables?: string;
+  mapUrl?: string;
   capacity: number;
   confirmed: number;
   dressCode: string;

@@ -2,7 +2,6 @@ import { useEffect, useRef, useState } from "react";
 import { Link } from "@tanstack/react-router";
 import {
   ArrowUpRight,
-  Play,
   X,
   Instagram,
   Youtube,
@@ -292,67 +291,47 @@ export const INFLUENCERS = [
   { name: "The muse", genre: "Beauty / Fashion", image: influencerBeauty },
 ];
 
-export type ArtistCardData = { id?: string; name: string; genre: string; image: string; bio?: string; instagramUrl?: string; tiktokUrl?: string; youtubeUrl?: string; xUrl?: string };
-export const peopleProfileCard = (profile: PeopleProfile): ArtistCardData => ({ id: profile.id, name: profile.name, genre: profile.role, image: profile.imageUrl, bio: profile.bio, instagramUrl: profile.instagramUrl, tiktokUrl: profile.tiktokUrl, youtubeUrl: profile.youtubeUrl, xUrl: profile.xUrl });
-export function ArtistCard({ artist }: { artist: ArtistCardData }) {
-  const [open, setOpen] = useState(false);
-  const [url, setUrl] = useState("");
-  const [videoId, setVideoId] = useState("");
-  const [error, setError] = useState("");
-  const embed = () => {
-    try {
-      const parsed = new URL(url);
-      const id =
-        parsed.hostname === "youtu.be"
-          ? parsed.pathname.slice(1)
-          : ["www.youtube.com", "youtube.com", "m.youtube.com"].includes(parsed.hostname)
-            ? (parsed.searchParams.get("v") ?? parsed.pathname.split("/").pop())
-            : "";
-      if (!id || !/^[A-Za-z0-9_-]{11}$/.test(id)) throw new Error();
-      setVideoId(id);
-      setError("");
-    } catch {
-      setError("Enter a valid YouTube video link.");
-    }
-  };
+export type ArtistCardData = { id?: string; name: string; genre: string; subtitle?: string; image: string; bio?: string; instagramUrl?: string; tiktokUrl?: string; youtubeUrl?: string; xUrl?: string };
+const profileSlug = (name: string) => name.trim().toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") || "talent";
+export const peopleProfileCard = (profile: PeopleProfile): ArtistCardData => ({ id: profile.id, name: profile.name, genre: profile.role, subtitle: profile.subtitle, image: profile.imageUrl, bio: profile.bio, instagramUrl: profile.instagramUrl, tiktokUrl: profile.tiktokUrl, youtubeUrl: profile.youtubeUrl, xUrl: profile.xUrl });
+export function ArtistCard({ artist, fullBio = false, homeInteractive = false }: { artist: ArtistCardData; fullBio?: boolean; homeInteractive?: boolean }) {
   return (
     <article className="artist-card">
       <div className="artist-photo">
         {artist.id ? (
           <Link
             to="/artists/$profileId"
-            params={{ profileId: artist.id }}
+            params={{ profileId: profileSlug(artist.name) }}
             aria-label={`View ${artist.name}'s profile`}
-            className="artist-photo-link"
+            className={`artist-photo-link${homeInteractive ? " artist-photo-link-home" : ""}`}
           >
             <img src={artist.image} alt={artist.name} width={768} height={1024} loading="lazy" />
+            {homeInteractive ? (
+              <span className="artist-home-hover">
+                <span className="artist-home-hover-heading">
+                  <span className="artist-home-hover-role">{artist.genre}</span>
+                  <span className="artist-home-hover-name">{artist.name}</span>
+                  {artist.subtitle ? <span className="artist-home-hover-subtitle">{artist.subtitle}</span> : null}
+                </span>
+                <span className="artist-home-hover-bio">{artist.bio || `Meet ${artist.name}, part of the RSVP DXB community.`}</span>
+                <span className="artist-home-hover-action">Explore profile <ArrowUpRight size={16} /></span>
+              </span>
+            ) : null}
           </Link>
         ) : (
           <img src={artist.image} alt={artist.name} width={768} height={1024} loading="lazy" />
         )}
-        {videoId ? (
-          <iframe
-            src={`https://www.youtube-nocookie.com/embed/${videoId}`}
-            title={`${artist.name} video`}
-            allow="fullscreen; picture-in-picture"
-            allowFullScreen
-          />
-        ) : null}
-        <Button
-          className="artist-play"
-          size="sm"
-          onClick={() => {
-            setOpen(!open);
-            if (videoId) setVideoId("");
-          }}
-        >
-          <Play size={16} /> {videoId ? "Change video" : "Video spotlight"}
-        </Button>
       </div>
+      {!homeInteractive ? <>
       <div className="flex items-start justify-between gap-3 pt-5">
         <div>
           <p className="text-xs text-muted-foreground">{artist.genre}</p>
-          <h3 className="mt-1 text-3xl">{artist.name}</h3>
+          {artist.id ? (
+            <Link to="/artists/$profileId" params={{ profileId: profileSlug(artist.name) }} className="artist-card-name-link">
+              <h3 className="mt-1 text-3xl">{artist.name}</h3>
+            </Link>
+          ) : <h3 className="mt-1 text-3xl">{artist.name}</h3>}
+              {artist.subtitle ? <p className="artist-card-subtitle">{artist.subtitle}</p> : null}
         </div>
         <div className="flex gap-3 pt-2">
           <a
@@ -385,26 +364,8 @@ export function ArtistCard({ artist }: { artist: ArtistCardData }) {
           </a>
         </div>
       </div>
-      {artist.bio ? <p className="mt-3 text-sm text-muted-foreground">{artist.bio}</p> : null}
-      {open ? (
-        <div className="mt-4 flex flex-wrap gap-2">
-          <input
-            aria-label={`${artist.name} YouTube video link`}
-            className="min-w-0 flex-1 border border-input bg-surface px-3 py-2 text-sm"
-            placeholder="Paste YouTube video link"
-            value={url}
-            onChange={(e) => setUrl(e.target.value)}
-          />
-          <Button size="sm" onClick={embed}>
-            Embed video
-          </Button>
-          {error ? (
-            <p role="alert" className="w-full text-xs text-destructive">
-              {error}
-            </p>
-          ) : null}
-        </div>
-      ) : null}
+      {artist.bio ? <p className={`artist-card-bio${fullBio ? " artist-card-bio-full" : ""}`}>{artist.bio}</p> : null}
+      </> : null}
     </article>
   );
 }
@@ -427,7 +388,7 @@ export function ArtistGallery({ profiles = [] }: { profiles?: PeopleProfile[] })
       </div>
       <div className="artist-grid">
         {artists.map((a) => (
-          <ArtistCard key={a.id || a.name} artist={a} />
+          <ArtistCard key={a.id || a.name} artist={a} homeInteractive />
         ))}
       </div>
     </section>
