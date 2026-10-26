@@ -1,0 +1,6 @@
+ALTER TABLE events
+  ADD COLUMN IF NOT EXISTS ticket_url text NOT NULL DEFAULT '',
+  ADD COLUMN IF NOT EXISTS reservation_phone text NOT NULL DEFAULT '',
+  ADD COLUMN IF NOT EXISTS creator_pass_note text NOT NULL DEFAULT '',
+  ADD COLUMN IF NOT EXISTS age_restriction text NOT NULL DEFAULT '',
+  ADD COLUMN IF NOT EXISTS hashtag text NOT NULL DEFAULT '';

@@ -25,7 +25,7 @@ export const Route = createFileRoute("/events/")({
   component: EventsPage,
 });
 
-const CATEGORIES = ["All", "Dining", "Fashion", "Property", "Music", "Art", "Nightlife"];
+const CATEGORIES = ["All", "Dining", "Fashion", "Property", "Music", "Comedy", "Awards", "Art", "Nightlife", "Other"];
 const SORTS = ["Soonest", "Newest", "Few places left"];
 
 function EventsPage() {
@@ -47,7 +47,10 @@ function EventsPage() {
     if (area !== "All areas") out = out.filter((e) => e.area === area);
     if (sort === "Few places left") {
       out = [...out].sort(
-        (a, b) => a.capacity - a.confirmed - (b.capacity - b.confirmed),
+        (a, b) => {
+          if (!a.capacity || !b.capacity) return Number(Boolean(a.capacity)) - Number(Boolean(b.capacity));
+          return a.capacity - a.confirmed - (b.capacity - b.confirmed);
+        },
       );
     } else if (sort === "Newest") {
       out = [...out].reverse();
@@ -62,7 +65,7 @@ function EventsPage() {
       <PageHero
         eyebrow="Events"
         title="What is on"
-        intro="Filter by week, area and category. Your eligibility is based on your member track — anything outside it is marked clearly."
+        intro="Browse event details, ticket links, reservation contacts and creator opportunities."
       />
 
       <div className="mx-auto w-full max-w-6xl px-5 py-10">

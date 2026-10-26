@@ -60,7 +60,8 @@ function EventDetail() {
   }
 
   const state = data.event ? (databaseRsvps[event.id] ?? "none") : (demoRsvps[event.id] ?? "none");
-  const eligible = event.tracks.includes(profile.track);
+  const hasMemberRsvp = event.tracks.length > 0;
+  const eligible = hasMemberRsvp && event.tracks.includes(profile.track);
   const closed = event.status === "closed";
   const hasRequest = state !== "none" && state !== "declined";
   const statusLabel: Record<string, string> = {
@@ -71,7 +72,7 @@ function EventDetail() {
     going: "Confirmed",
     waitlist: "Waitlisted",
   };
-  const creatorDeliverables = profile.track === "Creators" ? event.influencerDeliverables?.trim() ?? "" : "";
+  const creatorDeliverables = hasMemberRsvp && profile.track === "Creators" ? event.influencerDeliverables?.trim() ?? "" : "";
   const submitRsvp = async () => {
     if (!profile.signedIn) {
       void navigate({ to: "/signin" });
@@ -116,8 +117,8 @@ function EventDetail() {
           </p>
 
           <div className="mt-10 space-y-8">
-            <Block title="About the evening">{event.about}</Block>
-            <div>
+            {event.about ? <Block title="About this event">{event.about}</Block> : null}
+            {event.included.length ? <div>
               <p className="eyebrow">What is included</p>
               <ul className="mt-3 grid gap-2 sm:grid-cols-2">
                 {event.included.map((i) => (
@@ -126,49 +127,46 @@ function EventDetail() {
                   </li>
                 ))}
               </ul>
-            </div>
-            <Block title="Dress code">{event.dressCode}</Block>
-            <Block title="Who is invited">{event.whoIsInvited}</Block>
-            <Block title="Getting there">
-              {event.venue}, {event.area}. Valet available on arrival; member desk is to the left of
-              the main entrance.
-              {event.mapUrl ? <> <a className="text-primary underline" href={event.mapUrl} target="_blank" rel="noreferrer">Open map and directions</a></> : null}
-            </Block>
-            <div>
+            </div> : null}
+            {event.dressCode ? <Block title="Dress code">{event.dressCode}</Block> : null}
+            {event.whoIsInvited ? <Block title="Who is invited">{event.whoIsInvited}</Block> : null}
+            {event.creatorPassNote ? <Block title="Creator passes / nominations">{event.creatorPassNote}</Block> : null}
+            {event.reservationPhone ? <Block title="Reservations"><a className="text-primary underline" href={`tel:${event.reservationPhone.replace(/[^+\d]/g, "")}`}>{event.reservationPhone}</a></Block> : null}
+            {event.hashtag ? <Block title="Event hashtag">{event.hashtag}</Block> : null}
+            {event.venue || event.mapUrl ? <Block title="Location">{event.venue}{event.area ? `, ${event.area}` : ""}{event.mapUrl ? <> <a className="text-primary underline" href={event.mapUrl} target="_blank" rel="noreferrer">Open map and directions</a></> : null}</Block> : null}
+            {(event.images?.length || event.image) ? <div>
               <p className="eyebrow">Photos</p>
               <div className="mt-3 grid grid-cols-3 gap-3">
                 {(event.images?.length ? event.images : [event.image]).map((image, i) => (
                   <img key={`${i}-${image.slice(-16)}`} src={image} alt={`${event.title} photo ${i + 1}`} loading="lazy" className="h-24 w-full rounded-md object-cover" />
                 ))}
               </div>
-            </div>
+            </div> : null}
             {event.video ? <video className="w-full rounded-lg" controls playsInline preload="metadata" poster={event.image}><source src={event.video} />Your browser does not support video playback.</video> : null}
-            <Card className="border-primary/30">
+            {event.hostNote ? <Card className="border-primary/30">
               <p className="eyebrow">Host note</p>
               <p className="mt-2 text-sm text-muted-foreground">{event.hostNote}</p>
-            </Card>
+            </Card> : null}
           </div>
         </div>
 
         <aside className="lg:sticky lg:top-24 lg:self-start">
           <Card>
             <div className="flex items-center justify-between">
-              <Badge tone="gold">{event.category}</Badge>
-              <span className="text-xs text-muted-foreground">
-                {Math.max(event.capacity - event.confirmed, 0)} of {event.capacity} places available
-              </span>
+            <Badge tone="gold">{event.category}</Badge>
+              {hasMemberRsvp && event.capacity > 0 ? <span className="text-xs text-muted-foreground">{Math.max(event.capacity - event.confirmed, 0)} of {event.capacity} places available</span> : null}
             </div>
-            <div className="mt-4 h-1.5 w-full overflow-hidden rounded-full bg-surface-2">
+            {hasMemberRsvp && event.capacity > 0 ? <div className="mt-4 h-1.5 w-full overflow-hidden rounded-full bg-surface-2">
               <div
                 className="h-full bg-primary"
                 style={{ width: `${Math.min((event.confirmed / event.capacity) * 100, 100)}%` }}
               />
-            </div>
+            </div> : null}
 
-            {!hasRequest || state === "declined" ? <div className="mt-5 space-y-3">
+            {event.tracks.length ? ((!hasRequest || state === "declined") ? <div className="mt-5 space-y-3">
               <label className="block text-xs text-muted-foreground" htmlFor="rsvp-track">Request as</label>
               <select id="rsvp-track" value={profile.track} disabled={!eligible} className="h-10 w-full rounded-md border border-border bg-surface px-3 text-sm text-foreground">
-                {event.tracks.map((track) => <option key={track} value={track} disabled={track !== profile.track}>{track}{track !== profile.track ? " · use the matching member profile" : ""}</option>)}
+              {event.tracks.map((track) => <option key={track} value={track} disabled={track !== profile.track}>{track}{track !== profile.track ? " · use the matching member profile" : ""}</option>)}
               </select>
               <div>
                 <p className="text-xs text-muted-foreground">Additional guests (optional, up to two)</p>
@@ -182,22 +180,20 @@ function EventDetail() {
             </div> : <div className="mt-5 rounded-md border border-primary/20 bg-surface px-4 py-3 text-center">
               <p className="eyebrow">RSVP STATUS</p>
               <p className="mt-1 text-sm">{statusLabel[state] ?? "Pending review"}</p>
-            </div>}
+            </div>) : <p className="mt-5 text-sm text-muted-foreground">Use the event booking details below to reserve your place.</p>}
             {rsvpError ? <p className="mt-2 text-center text-xs text-destructive">{rsvpError}</p> : null}
             {rsvpMessage ? <p className="mt-2 text-center text-xs text-muted-foreground">{rsvpMessage}</p> : null}
             {state === "pending" ? <p className="mt-2 text-center text-xs text-muted-foreground">Your place is not confirmed until the RSVP DXB team reviews your request.</p> : null}
 
             <div className="mt-5 grid gap-2">
-              <Button variant="outline" size="sm">
-                Add to calendar (.ics)
-              </Button>
+              {event.reservationPhone ? <a href={`tel:${event.reservationPhone.replace(/[^+\d]/g, "")}`} className="inline-flex h-9 items-center justify-center rounded-md border px-3 text-sm">Call to reserve</a> : null}
               <Button variant="outline" size="sm" onClick={() => toggleSave(event.id)}>
                 {saved.includes(event.id) ? "Saved" : "Save"}
               </Button>
               <WhatsAppAction event={event} />
             </div>
 
-            <div className="mt-6 border-t border-border pt-4">
+            {event.tracks.length ? <div className="mt-6 border-t border-border pt-4">
               <p className="eyebrow">Open to</p>
               <div className="mt-2 flex flex-wrap gap-2">
                 {event.tracks.map((t) => (
@@ -206,7 +202,7 @@ function EventDetail() {
                   </Badge>
                 ))}
               </div>
-            </div>
+            </div> : null}
           </Card>
 
           {state === "accepted" ? <Card className="mt-4 text-center"><p className="eyebrow">REQUEST APPROVED</p><p className="mt-2 text-sm">Your RSVP has been accepted. Please check your email for event entry details.</p></Card> : null}

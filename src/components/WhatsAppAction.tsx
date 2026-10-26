@@ -5,7 +5,14 @@ export function WhatsAppAction({ event }: { event: EventItem }) {
   const phoneNumber = String(import.meta.env["VITE_RSVP_WHATSAPP_NUMBER"] || "").replace(/\D/g, "");
   const ticketRequestOpen = event.status === "published" && event.date >= new Date().toISOString().slice(0, 10);
 
-  if (!ticketRequestOpen) {
+  if (event.ticketUrl && ticketRequestOpen) {
+    return (
+      <a href={event.ticketUrl} target="_blank" rel="noopener noreferrer" className="inline-flex h-8 items-center justify-center gap-2 rounded-md border border-primary bg-primary px-3 text-xs font-medium text-primary-foreground">
+        View / apply
+      </a>
+    );
+  }
+  if (!ticketRequestOpen || !phoneNumber) {
     return <span className="inline-flex h-8 items-center px-1 text-xs text-muted-foreground">Ticket requests closed</span>;
   }
   // Keep the action available for every visitor; the API number is configured

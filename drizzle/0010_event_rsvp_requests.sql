@@ -6,6 +6,13 @@ ALTER TABLE events
   ADD COLUMN IF NOT EXISTS end_time text NOT NULL DEFAULT '',
   ADD COLUMN IF NOT EXISTS gates_open_time text NOT NULL DEFAULT '';
 
+ALTER TABLE events
+  ADD COLUMN IF NOT EXISTS ticket_url text NOT NULL DEFAULT '',
+  ADD COLUMN IF NOT EXISTS reservation_phone text NOT NULL DEFAULT '',
+  ADD COLUMN IF NOT EXISTS creator_pass_note text NOT NULL DEFAULT '',
+  ADD COLUMN IF NOT EXISTS age_restriction text NOT NULL DEFAULT '',
+  ADD COLUMN IF NOT EXISTS hashtag text NOT NULL DEFAULT '';
+
 CREATE TABLE IF NOT EXISTS event_rsvp_requests (
   id text PRIMARY KEY,
   event_id text NOT NULL REFERENCES events(id) ON DELETE CASCADE,

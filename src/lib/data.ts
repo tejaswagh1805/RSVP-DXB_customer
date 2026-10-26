@@ -16,6 +16,11 @@ export interface EventItem {
   time: string;
   endTime?: string;
   gatesOpenTime?: string;
+  ticketUrl?: string;
+  reservationPhone?: string;
+  creatorPassNote?: string;
+  ageRestriction?: string;
+  hashtag?: string;
   venue: string;
   area: string;
   category: string;

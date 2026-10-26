@@ -19,6 +19,7 @@ for (const fileName of [
   "0009_people_profile_subtitle.sql",
   "0010_event_rsvp_requests.sql",
   "0011_venues.sql",
+  "0012_client_event_listing_fields.sql",
 ]) {
   const migration = await readFile(new URL(`../drizzle/${fileName}`, import.meta.url), "utf8");
   for (const statement of migration.split(";").map((part) => part.trim()).filter(Boolean)) {
