@@ -21,6 +21,8 @@ export interface EventItem {
   creatorPassNote?: string;
   ageRestriction?: string;
   hashtag?: string;
+  applicationDeadline?: string;
+  actionLabel?: string;
   venue: string;
   area: string;
   category: string;

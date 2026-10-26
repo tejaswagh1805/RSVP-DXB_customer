@@ -10,8 +10,6 @@ export function EventCard({ event }: { event: EventItem }) {
   const full = event.capacity > 0 && event.confirmed >= event.capacity;
   const left = Math.max(event.capacity - event.confirmed, 0);
   const eligible = event.tracks.includes(profile.track);
-  const ticketRequestOpen = event.status === "published" && event.date >= new Date().toISOString().slice(0, 10);
-
   return (
     <article className="group flex flex-col overflow-hidden rounded-md border border-border bg-card transition-colors hover:border-primary/50">
       <Link to="/events/$eventId" params={{ eventId: event.id }}>
@@ -31,9 +29,9 @@ export function EventCard({ event }: { event: EventItem }) {
         <Link to="/events/$eventId" params={{ eventId: event.id }}>
           <h3 className="mt-2 text-xl leading-snug hover:text-primary">{event.title}</h3>
         </Link>
-        <p className="mt-1 text-sm text-muted-foreground">{event.brand}</p>
+        {event.brand ? <p className="mt-1 text-sm text-muted-foreground">{event.brand}</p> : null}
         <p className="mt-3 text-xs text-muted-foreground">
-          {event.ageRestriction ? `${event.ageRestriction} · ` : ""}{event.hashtag || (event.tracks.length ? `Open to ${event.tracks.join(", ")}` : "Event details and booking information")}
+          {event.applicationDeadline ? `Nominations close ${formatDate(event.applicationDeadline)}` : event.ageRestriction ? event.ageRestriction : event.hashtag || (event.tracks.length ? `Open to ${event.tracks.join(", ")}` : "Event details and booking information")}
         </p>
 
         <div className="mt-5 flex items-center gap-2">
@@ -50,7 +48,7 @@ export function EventCard({ event }: { event: EventItem }) {
             {saved.includes(event.id) ? "Saved" : "Save"}
           </Button>
         </div>
-        <div className="mt-3 flex flex-wrap items-center gap-2">{ticketRequestOpen ? <WhatsAppAction event={event} /> : <span className="text-xs text-muted-foreground">Ticket requests closed</span>}</div>
+        <div className="mt-3 flex flex-wrap items-center gap-2"><WhatsAppAction event={event} />{event.creatorPassNote && !event.applicationDeadline ? <WhatsAppAction event={event} purpose="Request creator pass" /> : null}</div>
       </div>
     </article>
   );

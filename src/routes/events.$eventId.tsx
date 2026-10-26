@@ -107,13 +107,14 @@ function EventDetail() {
       <div className="h-56 w-full overflow-hidden md:h-80"><EventImage event={event} className="h-full w-full" /></div>
       <div className="mx-auto grid w-full max-w-6xl gap-10 px-5 py-12 lg:grid-cols-[1fr_340px]">
         <div>
-          <p className="eyebrow">{event.brand}</p>
+          {event.brand ? <p className="eyebrow">{event.brand}</p> : null}
           <h1 className="mt-3 text-4xl md:text-5xl">{event.title}</h1>
           <p className="mt-4 text-sm text-muted-foreground">
             {formatDate(event.date)}{event.endDate && event.endDate !== event.date ? ` – ${formatDate(event.endDate)}` : ""}
             {event.time ? ` · ${event.time}${event.endTime ? `–${event.endTime}` : ""}` : ""}
             {event.venue ? ` · ${event.venue}` : ""}{event.area ? `, ${event.area}` : ""}
             {event.gatesOpenTime ? ` · Gates open ${event.gatesOpenTime}` : ""}
+            {event.applicationDeadline ? ` · Nominations close ${formatDate(event.applicationDeadline)}` : ""}
           </p>
 
           <div className="mt-10 space-y-8">
@@ -131,6 +132,7 @@ function EventDetail() {
             {event.dressCode ? <Block title="Dress code">{event.dressCode}</Block> : null}
             {event.whoIsInvited ? <Block title="Who is invited">{event.whoIsInvited}</Block> : null}
             {event.creatorPassNote ? <Block title="Creator passes / nominations">{event.creatorPassNote}</Block> : null}
+            {event.ageRestriction ? <Block title="Age restriction">{event.ageRestriction}</Block> : null}
             {event.reservationPhone ? <Block title="Reservations"><a className="text-primary underline" href={`tel:${event.reservationPhone.replace(/[^+\d]/g, "")}`}>{event.reservationPhone}</a></Block> : null}
             {event.hashtag ? <Block title="Event hashtag">{event.hashtag}</Block> : null}
             {event.venue || event.mapUrl ? <Block title="Location">{event.venue}{event.area ? `, ${event.area}` : ""}{event.mapUrl ? <> <a className="text-primary underline" href={event.mapUrl} target="_blank" rel="noreferrer">Open map and directions</a></> : null}</Block> : null}
@@ -191,6 +193,7 @@ function EventDetail() {
                 {saved.includes(event.id) ? "Saved" : "Save"}
               </Button>
               <WhatsAppAction event={event} />
+              {event.creatorPassNote && !event.applicationDeadline ? <WhatsAppAction event={event} purpose="Request creator pass" /> : null}
             </div>
 
             {event.tracks.length ? <div className="mt-6 border-t border-border pt-4">

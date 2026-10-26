@@ -25,7 +25,7 @@ export const Route = createFileRoute("/events/")({
   component: EventsPage,
 });
 
-const CATEGORIES = ["All", "Dining", "Fashion", "Property", "Music", "Comedy", "Awards", "Art", "Nightlife", "Other"];
+const CATEGORIES = ["All", "Dining", "Fashion", "Property", "Music", "Comedy", "Awards", "Campaign", "Art", "Nightlife", "Other"];
 const SORTS = ["Soonest", "Newest", "Few places left"];
 
 function EventsPage() {
