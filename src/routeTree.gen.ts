@@ -14,6 +14,7 @@ import { Route as AboutRouteImport } from './routes/about'
 import { Route as AppsRouteImport } from './routes/apps'
 import { Route as ArtistsRouteImport } from './routes/artists'
 import { Route as ContactRouteImport } from './routes/contact'
+import { Route as EventGalleryRouteImport } from './routes/event-gallery'
 import { Route as FaqRouteImport } from './routes/faq'
 import { Route as ForgotPasswordRouteImport } from './routes/forgot-password'
 import { Route as HostRouteImport } from './routes/host'
@@ -53,6 +54,11 @@ const ArtistsRoute = ArtistsRouteImport.update({
 const ContactRoute = ContactRouteImport.update({
   id: '/contact',
   path: '/contact',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const EventGalleryRoute = EventGalleryRouteImport.update({
+  id: '/event-gallery',
+  path: '/event-gallery',
   getParentRoute: () => rootRouteImport,
 } as any)
 const FaqRoute = FaqRouteImport.update({
@@ -137,6 +143,7 @@ export interface FileRoutesByFullPath {
   '/apps': typeof AppsRoute
   '/artists': typeof ArtistsRouteWithChildren
   '/contact': typeof ContactRoute
+  '/event-gallery': typeof EventGalleryRoute
   '/faq': typeof FaqRoute
   '/forgot-password': typeof ForgotPasswordRoute
   '/host': typeof HostRoute
@@ -159,6 +166,7 @@ export interface FileRoutesByTo {
   '/apps': typeof AppsRoute
   '/artists': typeof ArtistsRouteWithChildren
   '/contact': typeof ContactRoute
+  '/event-gallery': typeof EventGalleryRoute
   '/faq': typeof FaqRoute
   '/forgot-password': typeof ForgotPasswordRoute
   '/host': typeof HostRoute
@@ -182,6 +190,7 @@ export interface FileRoutesById {
   '/apps': typeof AppsRoute
   '/artists': typeof ArtistsRouteWithChildren
   '/contact': typeof ContactRoute
+  '/event-gallery': typeof EventGalleryRoute
   '/faq': typeof FaqRoute
   '/forgot-password': typeof ForgotPasswordRoute
   '/host': typeof HostRoute
@@ -206,6 +215,7 @@ export interface FileRouteTypes {
     | '/apps'
     | '/artists'
     | '/contact'
+    | '/event-gallery'
     | '/faq'
     | '/forgot-password'
     | '/host'
@@ -228,6 +238,7 @@ export interface FileRouteTypes {
     | '/apps'
     | '/artists'
     | '/contact'
+    | '/event-gallery'
     | '/faq'
     | '/forgot-password'
     | '/host'
@@ -250,6 +261,7 @@ export interface FileRouteTypes {
     | '/apps'
     | '/artists'
     | '/contact'
+    | '/event-gallery'
     | '/faq'
     | '/forgot-password'
     | '/host'
@@ -273,6 +285,7 @@ export interface RootRouteChildren {
   AppsRoute: typeof AppsRoute
   ArtistsRoute: typeof ArtistsRouteWithChildren
   ContactRoute: typeof ContactRoute
+  EventGalleryRoute: typeof EventGalleryRoute
   FaqRoute: typeof FaqRoute
   ForgotPasswordRoute: typeof ForgotPasswordRoute
   HostRoute: typeof HostRoute
@@ -324,6 +337,13 @@ declare module '@tanstack/react-router' {
       path: '/contact'
       fullPath: '/contact'
       preLoaderRoute: typeof ContactRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/event-gallery': {
+      id: '/event-gallery'
+      path: '/event-gallery'
+      fullPath: '/event-gallery'
+      preLoaderRoute: typeof EventGalleryRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/faq': {
@@ -451,6 +471,7 @@ const rootRouteChildren: RootRouteChildren = {
   AppsRoute: AppsRoute,
   ArtistsRoute: ArtistsRouteWithChildren,
   ContactRoute: ContactRoute,
+  EventGalleryRoute: EventGalleryRoute,
   FaqRoute: FaqRoute,
   ForgotPasswordRoute: ForgotPasswordRoute,
   HostRoute: HostRoute,

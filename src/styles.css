@@ -1088,6 +1088,37 @@
   gap: 18px;
 }
 
+.event-gallery-filters { display: flex; gap: 8px; max-width: 100%; overflow-x: auto; padding-block: 4px; }
+.event-gallery-heading h1 {
+  margin-top: 10px;
+  color: var(--foreground);
+  font-family: var(--font-display);
+  font-size: 64px;
+  font-weight: 400;
+  line-height: 1;
+}
+.event-gallery-section .gallery-label {
+  color: var(--customer-ivory);
+  font-family: var(--font-display);
+  font-weight: 500;
+  line-height: 1.2;
+}
+.event-gallery-filter { flex-shrink: 0; height: 32px; padding-inline: 12px; border: 1px solid var(--border); border-radius: 9px; color: var(--foreground); background: transparent; font-size: 12px; transition: background-color .2s; }
+.event-gallery-filter:hover { background: var(--surface-2); }
+.event-gallery-filter.is-active { background: var(--primary); border-color: var(--primary); color: var(--primary-foreground); }
+.event-gallery-more { display: flex; justify-content: flex-end; margin-top: 24px; }
+.customer-banner-page .event-gallery-section { padding-bottom: 24px; }
+.customer-banner-page .event-gallery-section + .experience-section { padding-top: 40px; }
+.event-gallery-more-link { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 40px; padding: 10px 24px; border-radius: 6px; background: var(--primary); color: var(--primary-foreground); font-size: 14px; font-weight: 500; }
+.event-gallery-more-link:hover { background: color-mix(in srgb, var(--primary) 90%, transparent); }
+.event-gallery-section :is(button, a):focus-visible { outline: 2px solid var(--primary); outline-offset: 4px; }
+@media(max-width:700px) {
+  .event-gallery-heading { flex-direction: column; align-items: flex-start; gap: 20px; }
+  .event-gallery-heading h1 { font-size: 40px; }
+  .customer-banner-page .event-gallery-section { padding-bottom: 16px; }
+  .customer-banner-page .event-gallery-section + .experience-section { padding-top: 24px; }
+}
+
 .gallery-item:first-child {
   grid-column: span 2;
 }
@@ -2260,7 +2291,12 @@
 }
 
 .customer-banner-page .showcase-copy {
-  bottom: 60px;
+  /* Include the 60px scroll offset so the button always clears the frame. */
+  bottom: calc(120px + env(safe-area-inset-bottom, 0px));
+}
+
+.customer-banner-page .showcase-copy > a {
+  display: inline-flex;
 }
 
 @media(max-width:700px) {
@@ -2269,7 +2305,7 @@
   }
 
   .customer-banner-page .showcase-copy {
-    bottom: 48px;
+    bottom: calc(108px + env(safe-area-inset-bottom, 0px));
   }
 }
 

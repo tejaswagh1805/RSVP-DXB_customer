@@ -42,7 +42,7 @@ function Home() {
       <ScrollShowcase />
       <EventRibbon title="Latest events" events={databaseEvents} />
       {media.some((item) => item.slot === "top_pick") ? <SiteMediaRibbon media={media.filter((item) => item.slot === "top_pick")} /> : <EventRibbon title="RSVP TOP Pick" reverse events={databaseEvents} />}
-      <EventGallery media={media.filter((item) => item.slot === "gallery")} />
+      <EventGallery events={databaseEvents} media={media.filter((item) => item.slot === "gallery")} />
       <ArtistGallery profiles={profiles} />
       <TicketOffers />
     </SitePage>

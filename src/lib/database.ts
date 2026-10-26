@@ -6,9 +6,9 @@ import diningImage from "@/assets/event-dining.jpg";
 import fashionImage from "@/assets/event-fashion.jpg";
 import nightlifeImage from "@/assets/event-nightlife.jpg";
 import propertyImage from "@/assets/event-property.jpg";
-import { getSql } from "./db.server";
+import { getSql, isLocalPreview } from "./db.server";
 import { applicationAdminEmail, applicationConfirmationEmail, memberEmailHtml, sendMemberEmail } from "./email.server";
-import { profileSlug, type EventItem, type Track } from "./data";
+import { EVENTS, profileSlug, type EventItem, type Track } from "./data";
 
 export type HomepageMediaItem = { id: string; slot: "gallery" | "top_pick"; title: string; caption: string; imageUrl: string; linkUrl: string; displayOrder: number };
 export type PeopleProfile = { id: string; category: "artist" | "influencer"; name: string; role: string; subtitle: string; bio: string; imageUrl: string; instagramUrl: string; tiktokUrl: string; youtubeUrl: string; xUrl: string; displayOrder: number };
@@ -38,6 +38,7 @@ async function hashPassword(password: string): Promise<string> {
 }
 
 async function currentMember() {
+  if (isLocalPreview()) return null;
   const token = cookieValue(MEMBER_COOKIE);
   if (!token) return null;
   const tokenHash = createHash("sha256").update(token).digest("hex");
@@ -80,6 +81,7 @@ function mapEvent(row: EventRow): EventItem {
 }
 
 export const listPublishedEvents = createServerFn({ method: "GET" }).handler(async () => {
+  if (isLocalPreview()) return EVENTS.filter((event) => event.status === "published");
   const sql = getSql();
   const rows = (await sql`
     SELECT id, title, brand, to_char(date, 'YYYY-MM-DD') AS date, time, venue, area,
@@ -96,6 +98,7 @@ export const listPublishedEvents = createServerFn({ method: "GET" }).handler(asy
 export const getEventById = createServerFn({ method: "GET" })
   .validator((eventId: string) => eventId)
   .handler(async ({ data: eventId }) => {
+    if (isLocalPreview()) return EVENTS.find((event) => event.id === eventId && event.status !== "pending") ?? null;
     const sql = getSql();
     const rows = (await sql`
       SELECT id, title, brand, to_char(date, 'YYYY-MM-DD') AS date, time, venue, area,
@@ -110,6 +113,7 @@ export const getEventById = createServerFn({ method: "GET" })
   });
 
 export const listHomepageMedia = createServerFn({ method: "GET" }).handler(async () => {
+  if (isLocalPreview()) return [] as HomepageMediaItem[];
   const sql = getSql();
   const rows = (await sql`
     SELECT id, slot, title, caption, image_url AS "imageUrl", link_url AS "linkUrl", display_order AS "displayOrder"
@@ -119,6 +123,7 @@ export const listHomepageMedia = createServerFn({ method: "GET" }).handler(async
 });
 
 export const listPeopleProfiles = createServerFn({ method: "GET" }).handler(async () => {
+  if (isLocalPreview()) return [] as PeopleProfile[];
   const sql = getSql();
   const rows = (await sql`
     SELECT id, category, name, role, subtitle, bio, image_url AS "imageUrl",
@@ -132,6 +137,7 @@ export const listPeopleProfiles = createServerFn({ method: "GET" }).handler(asyn
 export const getPeopleProfileById = createServerFn({ method: "GET" })
   .validator((profileKey: string) => profileKey)
   .handler(async ({ data: profileKey }) => {
+    if (isLocalPreview()) return null;
     const sql = getSql();
     const byId = (await sql`
       SELECT id, category, name, role, subtitle, bio, image_url AS "imageUrl",
@@ -236,6 +242,7 @@ export type GuestInvitationView = {
 export const getGuestInvitation = createServerFn({ method: "GET" })
   .validator((token: string) => token)
   .handler(async ({ data: token }) => {
+    if (isLocalPreview()) return null;
     if (!/^[A-Za-z0-9_-]{32,100}$/.test(token)) return null;
     const tokenHash = createHash("sha256").update(token).digest("hex");
     const sql = getSql();

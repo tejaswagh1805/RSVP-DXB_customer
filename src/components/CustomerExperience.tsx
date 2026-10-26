@@ -2,7 +2,6 @@ import { useEffect, useRef, useState } from "react";
 import { Link } from "@tanstack/react-router";
 import {
   ArrowUpRight,
-  X,
   Instagram,
   Youtube,
   Ticket,
@@ -56,12 +55,12 @@ export function ScrollShowcase() {
           0,
           Math.min(1, (top - section.getBoundingClientRect().top) / Math.max(range, 1)),
         );
-        // The rail is 500% wide but each scene is one viewport wide. Translate
-        // by the viewport width so the last story ends exactly at the frame edge.
-        rail.current.style.transform = `translate3d(${-progress * 80}vw,0,0)`;
+        // Travel across all scenes, ending with the last one filling the frame.
+        const travel = rail.current.scrollWidth - sticky.current.clientWidth;
+        rail.current.style.transform = `translate3d(${-progress * travel}px,0,0)`;
         section.style.setProperty("--story-progress", String(progress));
         rail.current.querySelectorAll<HTMLElement>(".showcase-scene").forEach((scene, i) => {
-          const distance = Math.min(1, Math.abs(progress * 4 - i));
+          const distance = Math.min(1, Math.abs(progress * (SCENES.length - 1) - i));
           scene.style.setProperty("--scene-scale", String(1.02 + distance * 0.12));
           scene.style.setProperty("--copy-offset", `${distance * 60}px`);
         });
@@ -193,88 +192,60 @@ export function SiteMediaRibbon({ media }: { media: HomepageMediaItem[] }) {
   return <section className="event-ribbon ribbon-reverse"><div className="experience-heading"><div><p className="eyebrow">Selected for the spotlight</p><h2>RSVP TOP Pick</h2></div><Link to="/events"><Button variant="outline" size="sm">Explore events <ArrowUpRight size={16} /></Button></Link></div><div className="ribbon-window"><div className="ribbon-track">{[0, 1].map((copy) => <div key={copy} className="ribbon-set" aria-hidden={copy === 1 ? true : undefined} inert={copy === 1 ? true : undefined}>{tiles.map((item, i) => <article className="ribbon-tile" key={`${copy}-${item.id}-${i}`}><a href={item.linkUrl || "/events"} target={item.linkUrl ? "_blank" : undefined} rel={item.linkUrl ? "noreferrer" : undefined}><div className="ribbon-photo"><img src={item.imageUrl} alt={item.title} className="h-full w-full object-cover" /><span className="tile-category">RSVP TOP Pick</span><ArrowUpRight className="tile-arrow" /></div><h3 className="mt-3 text-2xl">{item.title}</h3>{item.caption ? <p className="mt-1 text-sm text-muted-foreground">{item.caption}</p> : null}</a></article>)}</div>)}</div></div></section>;
 }
 
-export function EventGallery({ media = [] }: { media?: HomepageMediaItem[] }) {
-  const { events } = useStore();
+export function EventGallery({ media = [], events: suppliedEvents, fullPage = false }: { media?: HomepageMediaItem[]; events?: EventItem[]; fullPage?: boolean }) {
+  const { events: storedEvents } = useStore();
+  const events = suppliedEvents ?? storedEvents;
   const [category, setCategory] = useState("All");
-  const [selected, setSelected] = useState<EventItem | HomepageMediaItem | null>(null);
-  const categories = [
-    "All",
-    ...new Set(events.filter((e) => e.status === "published").map((e) => e.category)),
-  ];
+  const categories = ["All", "Dining", "Fashion", "Property", "Music", "Art"];
   const gallery = events.filter(
     (e) => e.status === "published" && (category === "All" || e.category === category),
   );
-  useEffect(() => {
-    if (!selected) return;
-    const listener = (e: KeyboardEvent) => {
-      if (e.key === "Escape") setSelected(null);
-    };
-    window.addEventListener("keydown", listener);
-    return () => window.removeEventListener("keydown", listener);
-  }, [selected]);
+  // Site media has no category field; only classify it when its event is known.
+  const filteredMedia = media.filter((item) => category === "All" || events.some((event) =>
+    event.category === category && (event.title === item.title || item.linkUrl === `/events/${event.id}`),
+  ));
   return (
-    <section className="experience-section">
-      <div className="experience-heading">
+    <section className="experience-section event-gallery-section">
+      <div className="experience-heading event-gallery-heading">
         <div>
           <p className="eyebrow">Inside the room</p>
-          <h2>Latest events gallery</h2>
+          {fullPage ? <h1>Event Gallery</h1> : <h2>Latest events gallery</h2>}
         </div>
-        {!media.length ? <div className="flex flex-wrap gap-2">
+        <div className="event-gallery-filters" role="group" aria-label="Filter event gallery">
           {categories.map((c) => (
-            <Button
+            <button
               key={c}
-              size="sm"
-              variant={category === c ? "primary" : "outline"}
+              type="button"
+              aria-pressed={category === c}
+              className={`event-gallery-filter${category === c ? " is-active" : ""}`}
               onClick={() => setCategory(c)}
             >
               {c}
-            </Button>
+            </button>
           ))}
-        </div> : null}
+        </div>
       </div>
       <div className="event-gallery">
-        {media.length ? media.map((item) => (
+        {media.length ? (fullPage ? filteredMedia : filteredMedia.slice(0, 5)).map((item) => (
           <div className="gallery-item" key={item.id}>
-            <Button variant="ghost" className="gallery-photo" onClick={() => setSelected(item)}>
+            <div className="gallery-photo rounded-md">
               <img src={item.imageUrl} alt={item.title} className="h-full w-full object-cover" />
-              <span className="gallery-label">{item.title}<ArrowUpRight size={20} /></span>
-            </Button>
+              <span className="gallery-label">{item.title}</span>
+            </div>
           </div>
-        )) : gallery.map((e) => (
+        )) : (fullPage ? gallery : gallery.slice(0, 5)).map((e) => (
           <div className="gallery-item" key={e.id}>
-            <Button variant="ghost" className="gallery-photo" onClick={() => setSelected(e)}>
+            <div className="gallery-photo rounded-md">
               <EventImage event={e} className="h-full w-full" />
               <span className="gallery-label">
                 {e.title}
-                <ArrowUpRight size={20} />
               </span>
-            </Button>
+            </div>
           </div>
         ))}
       </div>
-      {selected ? (
-        <div
-          className="gallery-dialog"
-          role="dialog"
-          aria-modal="true"
-            aria-label={selected.title}
-          onClick={() => setSelected(null)}
-        >
-          <div className="gallery-dialog-inner" onClick={(e) => e.stopPropagation()}>
-            <Button className="gallery-close" onClick={() => setSelected(null)}>
-              <X size={20} />
-              <span className="sr-only">Close photo</span>
-            </Button>
-            {"imageUrl" in selected ? <img src={selected.imageUrl} alt={selected.title} className="max-h-[65vh] w-full object-contain" /> : <EventImage event={selected} className="max-h-[65vh] w-full" />}
-            <h3 className="mt-4 text-3xl">{selected.title}</h3>
-            {"imageUrl" in selected ? (selected.caption ? <p className="mt-2 text-muted-foreground">{selected.caption}</p> : null) : <Link to="/events/$eventId" params={{ eventId: selected.id }}>
-              <Button className="mt-4">
-                View event <ArrowUpRight size={18} />
-              </Button>
-            </Link>}
-          </div>
-        </div>
-      ) : null}
+      {(media.length ? filteredMedia.length === 0 : gallery.length === 0) ? <p className="py-12 text-center text-muted-foreground" role="status">No gallery photos in this category yet.</p> : null}
+      {!fullPage ? <div className="event-gallery-more"><Link to="/event-gallery" className="event-gallery-more-link">View more <ArrowUpRight size={18} aria-hidden="true" /></Link></div> : null}
     </section>
   );
 }

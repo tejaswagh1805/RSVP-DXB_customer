@@ -27,6 +27,11 @@ npm i
 npm run dev
 ```
 
+Without `DATABASE_URL`, the development server previews the public pages using
+bundled sample events. Sign-in and database submissions require a development
+database. Add `DATABASE_URL` to `.env` and restart the server to use live data.
+Production always requires a configured database.
+
 ## Built with
 
 - TanStack Start
