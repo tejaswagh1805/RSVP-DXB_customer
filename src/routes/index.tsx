@@ -44,7 +44,7 @@ function Home() {
       <EventRibbon title="Latest events" events={databaseEvents} />
       <EventRibbon title="RSVP TOP Pick" reverse events={databaseEvents} />
       {venues.length ? <VenueTopPicks venues={venues} /> : media.some((item) => item.slot === "top_pick") ? <SiteMediaRibbon media={media.filter((item) => item.slot === "top_pick")} /> : null}
-      <EventGallery media={media.filter((item) => item.slot === "gallery")} previewLimit={4} />
+      <EventGallery media={media.filter((item) => item.slot === "gallery")} previewLimit={5} />
       <ArtistGallery profiles={profiles} />
       <TicketOffers />
     </SitePage>
