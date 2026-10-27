@@ -222,11 +222,11 @@ export function SiteMediaRibbon({ media }: { media: HomepageMediaItem[] }) {
                     rel={item.linkUrl ? "noreferrer" : undefined}
                   >
                     <div className="ribbon-photo">
-                      <img
-                        src={item.imageUrl}
-                        alt={item.title}
-                        className="h-full w-full object-cover"
-                      />
+                      {item.mediaType === "video" ? (
+                        <video src={item.imageUrl} muted autoPlay loop playsInline preload="metadata" aria-label={item.title} className="h-full w-full object-cover" />
+                      ) : (
+                        <img src={item.imageUrl} alt={item.title} className="h-full w-full object-cover" />
+                      )}
                       <span className="tile-category">RSVP TOP Pick</span>
                       <ArrowUpRight className="tile-arrow" />
                     </div>
@@ -291,11 +291,11 @@ export function EventGallery({ media = [] }: { media?: HomepageMediaItem[] }) {
           ? media.map((item) => (
               <div className="gallery-item" key={item.id}>
                 <Button variant="ghost" className="gallery-photo" onClick={() => setSelected(item)}>
-                  <img
-                    src={item.imageUrl}
-                    alt={item.title}
-                    className="h-full w-full object-cover"
-                  />
+                  {item.mediaType === "video" ? (
+                    <video src={item.imageUrl} muted playsInline preload="metadata" aria-label={item.title} className="h-full w-full object-cover" />
+                  ) : (
+                    <img src={item.imageUrl} alt={item.title} className="h-full w-full object-cover" />
+                  )}
                   <span className="gallery-label">
                     {item.title}
                     <ArrowUpRight size={20} />
@@ -329,11 +329,11 @@ export function EventGallery({ media = [] }: { media?: HomepageMediaItem[] }) {
               <span className="sr-only">Close photo</span>
             </Button>
             {"imageUrl" in selected ? (
-              <img
-                src={selected.imageUrl}
-                alt={selected.title}
-                className="max-h-[65vh] w-full object-contain"
-              />
+              selected.mediaType === "video" ? (
+                <video src={selected.imageUrl} controls autoPlay playsInline className="max-h-[65vh] w-full object-contain" />
+              ) : (
+                <img src={selected.imageUrl} alt={selected.title} className="max-h-[65vh] w-full object-contain" />
+              )
             ) : (
               <EventImage event={selected} className="max-h-[65vh] w-full" />
             )}

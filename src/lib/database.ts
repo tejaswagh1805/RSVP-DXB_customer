@@ -10,7 +10,7 @@ import { getSql } from "./db.server";
 import { applicationAdminEmail, applicationConfirmationEmail, memberEmailHtml, sendMemberEmail } from "./email.server";
 import { profileSlug, type EventItem, type Track } from "./data";
 
-export type HomepageMediaItem = { id: string; slot: "gallery" | "top_pick"; title: string; caption: string; imageUrl: string; linkUrl: string; displayOrder: number };
+export type HomepageMediaItem = { id: string; slot: "gallery" | "top_pick"; title: string; caption: string; imageUrl: string; mediaType: "image" | "video"; linkUrl: string; displayOrder: number };
 export type PeopleProfile = { id: string; category: "artist" | "influencer"; name: string; role: string; subtitle: string; bio: string; imageUrl: string; instagramUrl: string; tiktokUrl: string; youtubeUrl: string; xUrl: string; displayOrder: number };
 export type Venue = { id: string; slug: string; category: string; name: string; tagline: string; description: string; location: string; highlights: string[]; offer: string; featuredDate: string | null; imageUrl: string; websiteUrl: string; moreInfoUrl: string; displayOrder: number; featured: boolean };
 
@@ -128,7 +128,7 @@ export const getEventById = createServerFn({ method: "GET" })
 export const listHomepageMedia = createServerFn({ method: "GET" }).handler(async () => {
   const sql = getSql();
   const rows = (await sql`
-    SELECT id, slot, title, caption, image_url AS "imageUrl", link_url AS "linkUrl", display_order AS "displayOrder"
+    SELECT id, slot, title, caption, image_url AS "imageUrl", COALESCE(media_type, 'image') AS "mediaType", link_url AS "linkUrl", display_order AS "displayOrder"
     FROM site_media WHERE active = TRUE ORDER BY slot, display_order, created_at DESC
   `) as unknown as HomepageMediaItem[];
   return rows;
