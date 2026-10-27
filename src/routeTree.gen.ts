@@ -16,6 +16,7 @@ import { Route as ArtistsRouteImport } from './routes/artists'
 import { Route as ContactRouteImport } from './routes/contact'
 import { Route as FaqRouteImport } from './routes/faq'
 import { Route as ForgotPasswordRouteImport } from './routes/forgot-password'
+import { Route as GalleryRouteImport } from './routes/gallery'
 import { Route as HostRouteImport } from './routes/host'
 import { Route as MeRouteImport } from './routes/me'
 import { Route as MembershipRouteImport } from './routes/membership'
@@ -65,6 +66,11 @@ const FaqRoute = FaqRouteImport.update({
 const ForgotPasswordRoute = ForgotPasswordRouteImport.update({
   id: '/forgot-password',
   path: '/forgot-password',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const GalleryRoute = GalleryRouteImport.update({
+  id: '/gallery',
+  path: '/gallery',
   getParentRoute: () => rootRouteImport,
 } as any)
 const HostRoute = HostRouteImport.update({
@@ -151,6 +157,7 @@ export interface FileRoutesByFullPath {
   '/contact': typeof ContactRoute
   '/faq': typeof FaqRoute
   '/forgot-password': typeof ForgotPasswordRoute
+  '/gallery': typeof GalleryRoute
   '/host': typeof HostRoute
   '/me': typeof MeRoute
   '/membership': typeof MembershipRoute
@@ -175,6 +182,7 @@ export interface FileRoutesByTo {
   '/contact': typeof ContactRoute
   '/faq': typeof FaqRoute
   '/forgot-password': typeof ForgotPasswordRoute
+  '/gallery': typeof GalleryRoute
   '/host': typeof HostRoute
   '/me': typeof MeRoute
   '/membership': typeof MembershipRoute
@@ -200,6 +208,7 @@ export interface FileRoutesById {
   '/contact': typeof ContactRoute
   '/faq': typeof FaqRoute
   '/forgot-password': typeof ForgotPasswordRoute
+  '/gallery': typeof GalleryRoute
   '/host': typeof HostRoute
   '/me': typeof MeRoute
   '/membership': typeof MembershipRoute
@@ -226,6 +235,7 @@ export interface FileRouteTypes {
     | '/contact'
     | '/faq'
     | '/forgot-password'
+    | '/gallery'
     | '/host'
     | '/me'
     | '/membership'
@@ -250,6 +260,7 @@ export interface FileRouteTypes {
     | '/contact'
     | '/faq'
     | '/forgot-password'
+    | '/gallery'
     | '/host'
     | '/me'
     | '/membership'
@@ -274,6 +285,7 @@ export interface FileRouteTypes {
     | '/contact'
     | '/faq'
     | '/forgot-password'
+    | '/gallery'
     | '/host'
     | '/me'
     | '/membership'
@@ -299,6 +311,7 @@ export interface RootRouteChildren {
   ContactRoute: typeof ContactRoute
   FaqRoute: typeof FaqRoute
   ForgotPasswordRoute: typeof ForgotPasswordRoute
+  GalleryRoute: typeof GalleryRoute
   HostRoute: typeof HostRoute
   MeRoute: typeof MeRoute
   MembershipRoute: typeof MembershipRoute
@@ -363,6 +376,13 @@ declare module '@tanstack/react-router' {
       path: '/forgot-password'
       fullPath: '/forgot-password'
       preLoaderRoute: typeof ForgotPasswordRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/gallery': {
+      id: '/gallery'
+      path: '/gallery'
+      fullPath: '/gallery'
+      preLoaderRoute: typeof GalleryRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/host': {
@@ -504,6 +524,7 @@ const rootRouteChildren: RootRouteChildren = {
   ContactRoute: ContactRoute,
   FaqRoute: FaqRoute,
   ForgotPasswordRoute: ForgotPasswordRoute,
+  GalleryRoute: GalleryRoute,
   HostRoute: HostRoute,
   MeRoute: MeRoute,
   MembershipRoute: MembershipRoute,

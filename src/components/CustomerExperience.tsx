@@ -245,7 +245,7 @@ export function SiteMediaRibbon({ media }: { media: HomepageMediaItem[] }) {
   );
 }
 
-export function EventGallery({ media = [] }: { media?: HomepageMediaItem[] }) {
+export function EventGallery({ media = [], previewLimit }: { media?: HomepageMediaItem[]; previewLimit?: number }) {
   const { events } = useStore();
   const [category, setCategory] = useState("All");
   const [selected, setSelected] = useState<EventItem | HomepageMediaItem | null>(null);
@@ -256,6 +256,7 @@ export function EventGallery({ media = [] }: { media?: HomepageMediaItem[] }) {
   const gallery = events.filter(
     (e) => e.status === "published" && (category === "All" || e.category === category),
   );
+  const visibleMedia = previewLimit ? media.slice(0, previewLimit) : media;
   useEffect(() => {
     if (!selected) return;
     const listener = (e: KeyboardEvent) => {
@@ -271,7 +272,11 @@ export function EventGallery({ media = [] }: { media?: HomepageMediaItem[] }) {
           <p className="eyebrow">Inside the room</p>
           <h2>Latest events gallery</h2>
         </div>
-        {!media.length ? (
+        {media.length > 0 && previewLimit && media.length > previewLimit ? (
+          <Link to="/gallery">
+            <Button size="sm" variant="outline">View more <ArrowUpRight size={16} /></Button>
+          </Link>
+        ) : !media.length ? (
           <div className="flex flex-wrap gap-2">
             {categories.map((c) => (
               <Button
@@ -288,7 +293,7 @@ export function EventGallery({ media = [] }: { media?: HomepageMediaItem[] }) {
       </div>
       <div className="event-gallery">
         {media.length
-          ? media.map((item) => (
+          ? visibleMedia.map((item) => (
               <div className="gallery-item" key={item.id}>
                 <Button variant="ghost" className="gallery-photo" onClick={() => setSelected(item)}>
                   {item.mediaType === "video" ? (
