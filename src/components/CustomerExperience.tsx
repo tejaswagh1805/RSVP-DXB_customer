@@ -223,7 +223,7 @@ export function SiteMediaRibbon({ media }: { media: HomepageMediaItem[] }) {
                   >
                     <div className="ribbon-photo">
                       {item.mediaType === "video" ? (
-                        <video src={item.imageUrl} muted autoPlay loop playsInline preload="metadata" aria-label={item.title} className="h-full w-full object-cover" />
+                        <video src={item.imageUrl} muted autoPlay loop playsInline preload="metadata" aria-label={item.title} className="h-full w-full object-contain bg-black" />
                       ) : (
                         <img src={item.imageUrl} alt={item.title} className="h-full w-full object-cover" />
                       )}
@@ -292,7 +292,7 @@ export function EventGallery({ media = [] }: { media?: HomepageMediaItem[] }) {
               <div className="gallery-item" key={item.id}>
                 <Button variant="ghost" className="gallery-photo" onClick={() => setSelected(item)}>
                   {item.mediaType === "video" ? (
-                    <video src={item.imageUrl} muted playsInline preload="metadata" aria-label={item.title} className="h-full w-full object-cover" />
+                    <video src={item.imageUrl} muted playsInline preload="metadata" aria-label={item.title} className="h-full w-full object-contain bg-black" />
                   ) : (
                     <img src={item.imageUrl} alt={item.title} className="h-full w-full object-cover" />
                   )}
