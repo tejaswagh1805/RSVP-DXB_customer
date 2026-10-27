@@ -8,6 +8,15 @@ import { CursorBlob } from "./GenZFx";
 import clientLogoUrl from "@/assets/rsvp-client-logo.png";
 import { getMemberSession, signOutMember } from "@/lib/database";
 const clientLogo = { url: clientLogoUrl };
+const whatsappNumber = String(import.meta.env["VITE_RSVP_WHATSAPP_NUMBER"] || "").replace(/\D/g, "");
+const whatsappChatUrl = whatsappNumber
+  ? `https://wa.me/${whatsappNumber}?text=${encodeURIComponent("Hi RSVP DXB, I'd love to know more.")}`
+  : null;
+const memberWhatsappChatUrl = whatsappNumber
+  ? `https://wa.me/${whatsappNumber}?text=${encodeURIComponent("Hi RSVP DXB")}`
+  : "https://wa.me/?text=Hi%20RSVP%20DXB";
+
+export { memberWhatsappChatUrl };
 
 const NAV = [
   { to: "/events", label: "Events" },
@@ -195,10 +204,11 @@ function NewsletterForm() {
 }
 
 export function WhatsAppFloat() {
+  if (!whatsappChatUrl) return null;
   return (
     <a
       className="whatsapp-float"
-      href="https://wa.me/?text=Hi%20RSVP%20DXB%2C%20I%27d%20love%20to%20know%20more."
+      href={whatsappChatUrl}
       target="_blank"
       rel="noreferrer"
       aria-label="Chat with us on WhatsApp"

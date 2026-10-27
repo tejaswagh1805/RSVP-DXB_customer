@@ -4,7 +4,7 @@
 
 The `.github/workflows/deploy-aws.yml` workflow deploys this Node SSR app to AWS Lambda and updates the customer CloudFront origin after a successful health check. Push to `main` to deploy; the first successful run creates the Lambda function and Function URL automatically. Runtime settings are read from the encrypted `/rsvp/prod/customer-env` parameter in AWS Systems Manager (`eu-west-1`). GitHub authenticates to AWS with its repository-restricted OIDC role; no AWS access keys or runtime secrets belong in GitHub.
 
-Set the repository Actions variable `VITE_RSVP_WHATSAPP_NUMBER` if the Infobip sender number changes from the workflow's current default.
+The WhatsApp contact number defaults to RSVP DXB's UAE number. Set the repository Actions variable `VITE_RSVP_WHATSAPP_NUMBER` if it changes.
 
 This project was built with [Lovable](https://lovable.dev).
 
