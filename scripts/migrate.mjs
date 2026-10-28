@@ -1,13 +1,60 @@
 import { neon } from "@neondatabase/serverless";
 import { readFile } from "node:fs/promises";
 
-process.loadEnvFile?.();
+try {
+  process.loadEnvFile?.();
+} catch (error) {
+  if (error?.code !== "ENOENT") throw error;
+}
 const databaseUrl = process.env.DATABASE_URL;
 if (!databaseUrl) {
   throw new Error("DATABASE_URL is missing. Add DATABASE_URL=... to the project .env file.");
 }
 
 const sql = neon(databaseUrl);
+function splitSqlStatements(source) {
+  const statements = [];
+  let current = "";
+  let quote = "";
+  let lineComment = false;
+  let blockComment = false;
+  for (let index = 0; index < source.length; index += 1) {
+    const char = source[index];
+    const next = source[index + 1];
+    if (lineComment) {
+      current += char;
+      if (char === "\n") lineComment = false;
+      continue;
+    }
+    if (blockComment) {
+      current += char;
+      if (char === "*" && next === "/") { current += next; index += 1; blockComment = false; }
+      continue;
+    }
+    if (quote) {
+      current += char;
+      if (char === quote) {
+        if (next === quote) { current += next; index += 1; }
+        else quote = "";
+      }
+      continue;
+    }
+    if (char === "-" && next === "-") { current += char + next; index += 1; lineComment = true; continue; }
+    if (char === "/" && next === "*") { current += char + next; index += 1; blockComment = true; continue; }
+    if (char === "'" || char === '"') { quote = char; current += char; continue; }
+    if (char === ";") {
+      if (current.trim()) statements.push(current.trim());
+      current = "";
+      continue;
+    }
+    current += char;
+  }
+  if (quote) throw new Error("Unterminated quoted value in migration SQL.");
+  if (blockComment) throw new Error("Unterminated block comment in migration SQL.");
+  if (current.trim()) statements.push(current.trim());
+  return statements;
+}
+
 for (const fileName of [
   "0001_events_and_rsvps.sql",
   "0002_applications.sql",
@@ -21,9 +68,10 @@ for (const fileName of [
   "0011_venues.sql",
   "0012_client_event_listing_fields.sql",
   "0013_client_event_listings.sql",
+  "0014_member_password_resets.sql",
 ]) {
   const migration = await readFile(new URL(`../drizzle/${fileName}`, import.meta.url), "utf8");
-  for (const statement of migration.split(";").map((part) => part.trim()).filter(Boolean)) {
+  for (const statement of splitSqlStatements(migration)) {
     await sql.query(statement);
   }
   console.info(`Applied ${fileName}.`);

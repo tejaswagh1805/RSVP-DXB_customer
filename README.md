@@ -37,11 +37,17 @@ npm run dev
 ## Member email delivery
 
 Application receipt, admin application notifications, and application decision emails are sent from the server through Amazon SES. Set `RSVP_ADMIN_EMAIL=vinitahirani@rsvpdxb.com` to choose the admin notification recipient (this is the default).
-Configure `AWS_REGION=eu-north-1` and `SES_FROM_EMAIL=vinitahirani@rsvpdxb.com` in the app's
-hosting environment. The sender address must belong to a verified SES identity. Give the app
+Configure `AWS_REGION=eu-north-1`, `SES_FROM_EMAIL=vinitahirani@rsvpdxb.com`,
+`RSVP_PASSWORD_RESET_FROM=RSVP DXB <noreply@rsvpdxb.com>`, and `PUBLIC_SITE_URL` in the app's
+hosting environment. Both sender addresses must belong to a verified SES identity. Give the app
 runtime an IAM role or dedicated IAM credentials with `ses:SendEmail` access to that identity;
 do not use root-account credentials or expose AWS credentials through `VITE_*` variables.
 
 SES must have production access enabled in the same region before it can send to unverified
 customer addresses. While the account remains in the sandbox, verify each recipient in SES for
 testing. A successful SES API response confirms acceptance by SES, not final inbox delivery.
+
+Member password reset links are sent only to approved members already in the database. Reset
+tokens are stored as hashes, expire after 30 minutes, work once, and revoke existing member
+sessions after a successful reset. Apply the database migration with `npm run db:migrate` before
+deploying this feature.

@@ -7,7 +7,7 @@ import fashionImage from "@/assets/event-fashion.jpg";
 import nightlifeImage from "@/assets/event-nightlife.jpg";
 import propertyImage from "@/assets/event-property.jpg";
 import { getSql } from "./db.server";
-import { applicationAdminEmail, applicationConfirmationEmail, memberEmailHtml, sendMemberEmail } from "./email.server";
+import { applicationAdminEmail, applicationConfirmationEmail, memberEmailHtml, memberPasswordResetEmail, sendMemberEmail } from "./email.server";
 import { profileSlug, type EventItem, type Track } from "./data";
 
 export type HomepageMediaItem = { id: string; slot: "gallery" | "top_pick"; title: string; caption: string; imageUrl: string; mediaType: "image" | "video"; linkUrl: string; displayOrder: number };
@@ -484,6 +484,87 @@ export const updateMemberProfile = createServerFn({ method: "POST" })
     `) as unknown as { id: string; name: string; email: string; track: Track; points: number; rank: string; city: string; mobile: string; handle: string; followers: number }[];
     if (!rows[0]) throw new Error("Your member profile could not be found.");
     return rows[0];
+  });
+
+export const requestMemberPasswordReset = createServerFn({ method: "POST" })
+  .validator((input: { email: string }) => input)
+  .handler(async ({ data }) => {
+    const email = data.email.trim().toLowerCase();
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) || email.length > 254) {
+      throw new Error("Enter a valid email address.");
+    }
+
+    const sql = getSql();
+    const members = (await sql`
+      SELECT id, name, email FROM members
+      WHERE lower(email) = ${email} AND status = 'approved'
+      LIMIT 1
+    `) as unknown as { id: string; name: string; email: string }[];
+    const member = members[0];
+    if (!member) return { ok: true };
+
+    // Limit reset email requests to one per member per minute.
+    const recent = await sql`
+      SELECT 1 FROM member_password_resets
+      WHERE member_id = ${member.id} AND created_at > now() - interval '1 minute'
+      LIMIT 1
+    `;
+    if (recent.length) return { ok: true };
+
+    const token = randomBytes(32).toString("hex");
+    const tokenHash = createHash("sha256").update(token).digest("hex");
+    await sql`DELETE FROM member_password_resets WHERE member_id = ${member.id}`;
+    await sql`
+      INSERT INTO member_password_resets (token_hash, member_id, expires_at)
+      VALUES (${tokenHash}, ${member.id}, now() + interval '30 minutes')
+    `;
+
+    const siteUrl = (process.env["PUBLIC_SITE_URL"] || "https://d25iiefhi451d5.cloudfront.net").replace(/\/$/, "");
+    const resetUrl = `${siteUrl}/reset-password?token=${token}`;
+    const delivery = await sendMemberEmail({
+      to: member.email,
+      from: process.env["RSVP_PASSWORD_RESET_FROM"] || "RSVP DXB <noreply@rsvpdxb.com>",
+      subject: "Reset your RSVP DXB password",
+      text: `Hello ${member.name},\n\nWe received a request to reset your RSVP DXB member password. Open this link within 30 minutes to choose a new password. It can be used once:\n\n${resetUrl}\n\nIf you did not request this, you can ignore this email.\n\nThe RSVP DXB team`,
+      html: memberPasswordResetEmail(member.name, resetUrl),
+    });
+    if (!delivery.sent) {
+      await sql`DELETE FROM member_password_resets WHERE token_hash = ${tokenHash}`;
+      console.error("Member password reset email could not be sent", delivery.reason);
+    }
+
+    // Always return the same response so the endpoint does not reveal account existence.
+    return { ok: true };
+  });
+
+export const resetMemberPassword = createServerFn({ method: "POST" })
+  .validator((input: { token: string; password: string }) => input)
+  .handler(async ({ data }) => {
+    if (!/^[a-f0-9]{64}$/i.test(data.token)) throw new Error("This reset link is invalid or expired. Request a new one.");
+    if (data.password.length < 12 || data.password.length > 200) throw new Error("Password must be at least 12 characters.");
+    const tokenHash = createHash("sha256").update(data.token).digest("hex");
+    const passwordHash = await hashPassword(data.password);
+    const sql = getSql();
+    const rows = (await sql`
+      WITH consumed AS (
+        DELETE FROM member_password_resets
+        WHERE token_hash = ${tokenHash} AND expires_at > now()
+        RETURNING member_id
+      ), changed AS (
+        UPDATE members
+        SET password_hash = ${passwordHash}
+        FROM consumed
+        WHERE members.id = consumed.member_id AND members.status = 'approved'
+        RETURNING members.id
+      ), revoked AS (
+        DELETE FROM member_sessions WHERE member_id IN (SELECT id FROM changed)
+        RETURNING member_id
+      )
+      SELECT id FROM changed
+    `) as unknown as { id: string }[];
+    if (!rows[0]) throw new Error("This reset link is invalid or expired. Request a new one.");
+    await sql`DELETE FROM member_password_resets WHERE member_id = ${rows[0].id}`;
+    return { ok: true };
   });
 
 export const signInMember = createServerFn({ method: "POST" })

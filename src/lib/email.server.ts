@@ -15,8 +15,9 @@ export async function sendMemberEmail(input: {
   subject: string;
   text: string;
   html: string;
+  from?: string;
 }): Promise<{ sent: boolean; reason?: "not_configured" | "send_failed" }> {
-  const from = process.env["SES_FROM_EMAIL"];
+  const from = input.from || process.env["SES_FROM_EMAIL"];
   if (!from) return { sent: false, reason: "not_configured" };
 
   try {
@@ -89,4 +90,16 @@ export function applicationAdminEmail(input: { name: string; email: string; trac
 
 export function memberEmailHtml(name: string, message: string): string {
   return emailShell({ eyebrow: "A note from RSVP DXB", title: "A little update for you.", greeting: `Hello ${name},`, message });
+}
+
+export function memberPasswordResetEmail(name: string, resetUrl: string): string {
+  return emailShell({
+    eyebrow: "Member account security",
+    title: "Reset your password",
+    greeting: `Hello ${name},`,
+    message: "We received a request to reset the password for your RSVP DXB member account. This secure link expires in 30 minutes and can be used once. If you did not request this, you can ignore this email.",
+    actionLabel: "Choose a new password",
+    actionUrl: resetUrl,
+    footer: "For your security, never share this link. RSVP DXB will never ask you to send us your password.",
+  });
 }
