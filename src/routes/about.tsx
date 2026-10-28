@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { PageHero, SitePage } from "@/components/SiteLayout";
-import { Button, Card, Field, Section, Stat, inputClass } from "@/components/ui-kit";
+import { Button, Card, Field, Section, inputClass } from "@/components/ui-kit";
 
 export const Route = createFileRoute("/about")({
   head: () => ({
@@ -23,6 +23,10 @@ export const Route = createFileRoute("/about")({
 
 function AboutPage() {
   const [sent, setSent] = useState(false);
+  const whatsappDigits = String(import.meta.env["VITE_RSVP_WHATSAPP_NUMBER"] || "971552789169").replace(/\D/g, "");
+  const whatsappDisplay = whatsappDigits.startsWith("971")
+    ? `+971 ${whatsappDigits.slice(3, 5)} ${whatsappDigits.slice(5, 8)} ${whatsappDigits.slice(8)}`
+    : `+${whatsappDigits}`;
 
   return (
     <SitePage>
@@ -34,10 +38,10 @@ function AboutPage() {
 
       <Section>
         <div className="grid gap-4 sm:grid-cols-4">
-          <Stat label="Members" value="4,280" hint="Approved across four tracks" />
-          <Stat label="Events hosted" value="612" hint="Last 24 months" />
-          <Stat label="Brand partners" value="140" />
-          <Stat label="Avg. attendance" value="87%" hint="Of confirmed RSVPs" />
+          <AnimatedStat label="Members" value="4,280" hint="Approved across four tracks" />
+          <AnimatedStat label="Events hosted" value="612" hint="Last 24 months" />
+          <AnimatedStat label="Brand partners" value="140" />
+          <AnimatedStat label="Avg. attendance" value="87%" hint="Of confirmed RSVPs" />
         </div>
       </Section>
 
@@ -98,12 +102,59 @@ function AboutPage() {
               <p className="mt-2 text-sm text-muted-foreground">brands@rsvpdxb.com</p>
             </Card>
             <Card>
-              <p className="eyebrow">WhatsApp</p>
-              <p className="mt-2 text-sm text-muted-foreground">+971 50 000 0000</p>
+              <p className="eyebrow">Connect with us</p>
+              <p className="mt-2 text-sm text-muted-foreground">{whatsappDisplay}</p>
             </Card>
           </div>
         </div>
       </Section>
     </SitePage>
+  );
+}
+
+function AnimatedStat({ label, value, hint }: { label: string; value: string; hint?: string }) {
+  const ref = useRef<HTMLParagraphElement>(null);
+  const [displayValue, setDisplayValue] = useState("0");
+
+  useEffect(() => {
+    const target = Number(value.replace(/[^\d.]/g, ""));
+    if (!Number.isFinite(target)) {
+      setDisplayValue(value);
+      return;
+    }
+    const element = ref.current;
+    if (!element) return;
+    let frame = 0;
+    const observer = new IntersectionObserver(([entry]) => {
+      if (!entry?.isIntersecting) return;
+      observer.disconnect();
+      if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+        setDisplayValue(value);
+        return;
+      }
+      const start = performance.now();
+      const duration = 1200;
+      const tick = (now: number) => {
+        const progress = Math.min(1, (now - start) / duration);
+        const eased = 1 - (1 - progress) ** 3;
+        const current = Math.round(target * eased);
+        setDisplayValue(`${current.toLocaleString()}${value.endsWith("%") ? "%" : ""}`);
+        if (progress < 1) frame = requestAnimationFrame(tick);
+      };
+      frame = requestAnimationFrame(tick);
+    }, { threshold: 0.35 });
+    observer.observe(element);
+    return () => {
+      observer.disconnect();
+      cancelAnimationFrame(frame);
+    };
+  }, [value]);
+
+  return (
+    <Card className="p-4">
+      <p className="eyebrow">{label}</p>
+      <p ref={ref} className="mt-2 font-display text-3xl text-foreground" aria-label={value}>{displayValue}</p>
+      {hint ? <p className="mt-1 text-xs text-muted-foreground">{hint}</p> : null}
+    </Card>
   );
 }

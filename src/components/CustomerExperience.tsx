@@ -602,13 +602,13 @@ export function TicketOffers() {
           <h3>{offer.title}</h3>
           <p className="mt-4 max-w-md text-muted-foreground">{offer.body}</p>
           <div className="mt-6 flex flex-wrap gap-3">
-            <Link to={tab === 3 ? "/host" : "/events"}>
+            <Link to={tab === 3 ? "/host" : tab === 0 ? "/tickets" : "/events"}>
               <Button>
-                {tab === 3 ? "Connect with us" : "Explore events"}
+                {["View Tickets", "Experience Drinks & Dining", "Exclusive Invitations", "Let’s connect"][tab]}
                 <ArrowUpRight size={18} />
               </Button>
             </Link>
-            {event ? <WhatsAppAction event={event} /> : null}
+            {event && event.date >= new Date().toISOString().slice(0, 10) && (!event.applicationDeadline || event.applicationDeadline >= new Date().toISOString().slice(0, 10)) ? <WhatsAppAction event={event} /> : null}
           </div>
         </div>
       </div>

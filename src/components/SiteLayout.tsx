@@ -64,7 +64,7 @@ export function SiteHeader({ overlay = false }: { overlay?: boolean }) {
             <Link
               key={item.to}
               to={item.to}
-              className="text-xs font-medium uppercase text-foreground transition-colors hover:text-primary"
+              className="header-nav-link text-xs font-medium uppercase text-foreground transition-colors hover:text-primary"
               activeProps={{ className: "text-primary" }}
             >
               {item.label}
@@ -171,7 +171,7 @@ export function SiteFooter() {
         />
       </div>
       <div className="border-t border-border px-5 py-5 text-center text-[11px] text-muted-foreground">
-        Prototype — RSVP DXB platform concept. Content is demonstration data.
+        <span>Powered by </span><span className="footer-credit">Perception Lab</span>
       </div>
     </footer>
   );

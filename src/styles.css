@@ -822,6 +822,73 @@
   flex-shrink: 0;
 }
 
+.header-nav-link {
+  position: relative;
+  padding-block: 7px;
+  transition: color 180ms ease, transform 180ms ease;
+}
+
+.header-nav-link::after {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  height: 1px;
+  background: currentColor;
+  content: "";
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform 220ms ease;
+}
+
+.header-nav-link:hover,
+.header-nav-link:focus-visible {
+  transform: translateY(-2px);
+}
+
+.header-nav-link:hover::after,
+.header-nav-link:focus-visible::after,
+.header-nav-link[aria-current="page"]::after {
+  transform: scaleX(1);
+}
+
+.customer-logo img {
+  transform-origin: center;
+  transition: transform 300ms cubic-bezier(.2,.8,.2,1), filter 300ms ease;
+}
+
+.customer-logo:hover img,
+.customer-logo:focus-visible img {
+  filter: drop-shadow(0 5px 8px rgb(111 64 29 / .22));
+  transform: translateY(-2px) scale(1.045) rotate(-2deg);
+}
+
+.header-actions button,
+.header-actions .header-ticket {
+  transition: transform 180ms ease, box-shadow 180ms ease;
+}
+
+.header-actions button:hover,
+.header-actions .header-ticket:hover {
+  box-shadow: 0 6px 14px rgb(79 44 19 / .15);
+  transform: translateY(-2px);
+}
+
+.footer-credit {
+  color: var(--customer-acid);
+  font-weight: 600;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .header-nav-link,
+  .header-nav-link::after,
+  .customer-logo img,
+  .header-actions button,
+  .header-actions .header-ticket {
+    transition-duration: 0.01ms;
+  }
+}
+
 .header-actions {
   flex-shrink: 0;
   justify-self: end;
