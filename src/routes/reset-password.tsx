@@ -8,7 +8,7 @@ import { resetMemberPassword } from "@/lib/database";
 
 export const Route = createFileRoute("/reset-password")({
   validateSearch: (search: Record<string, unknown>) => ({
-    token: typeof search.token === "string" ? search.token : "",
+    token: typeof search["token"] === "string" ? search["token"] : "",
   }),
   head: () => ({
     meta: [
