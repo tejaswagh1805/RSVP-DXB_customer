@@ -171,7 +171,7 @@ export function SiteFooter() {
         />
       </div>
       <div className="border-t border-border px-5 py-5 text-center text-[11px] text-muted-foreground">
-        <span>Powered by </span><span className="footer-credit">Perception Lab</span>
+        <span>Powered by </span><span className="footer-credit">Perception Labz</span>
       </div>
     </footer>
   );

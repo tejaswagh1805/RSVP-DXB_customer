@@ -1,6 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
-import { QRCodeSVG } from "qrcode.react";
 import { useState } from "react";
 import { Button, Card } from "@/components/ui-kit";
 import { getGuestInvitation, respondToGuestInvitation } from "@/lib/database";
@@ -65,9 +64,9 @@ function GuestRsvpPage() {
               {accepted ? `We look forward to seeing you${saved ? "" : ` and your ${invitation.plusOnes} guest${invitation.plusOnes === 1 ? "" : "s"}`} at the event.` : "We’re sorry you can’t make it."}
             </p>
             {accepted ? (
-              <div className="mx-auto mt-6 inline-block rounded-xl bg-white p-4">
-                <QRCodeSVG value={`/rsvp/${token}`} size={192} level="M" />
-                <p className="mt-2 text-xs text-black">Show this pass at the entrance</p>
+              <div className="mx-auto mt-6 max-w-sm rounded-xl border border-primary/30 bg-surface p-4">
+                <p className="font-display text-2xl text-primary">RSVP confirmed</p>
+                <p className="mt-2 text-sm text-muted-foreground">Show this confirmation and your name to the event host. No QR scan is required.</p>
               </div>
             ) : null}
           </div>

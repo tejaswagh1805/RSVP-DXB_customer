@@ -104,20 +104,32 @@ function EventDetail() {
 
   return (
     <SitePage>
-      <div className="h-56 w-full overflow-hidden md:h-80"><EventImage event={event} className="h-full w-full" /></div>
-      <div className="mx-auto grid w-full max-w-6xl gap-10 px-5 py-12 lg:grid-cols-[1fr_340px]">
-        <div>
-          {event.brand ? <p className="eyebrow">{event.brand}</p> : null}
-          <h1 className="mt-3 text-4xl md:text-5xl">{event.title}</h1>
-          <p className="mt-4 text-sm text-muted-foreground">
+      <section className="event-detail-hero" aria-label={`${event.title} event image`}>
+        <EventImage event={event} className="event-detail-hero-image" />
+        <div className="event-detail-hero-shade" />
+        <div className="event-detail-hero-content">
+          {event.brand ? <p className="event-detail-brand">{event.brand}</p> : <p className="event-detail-brand">RSVP DXB · THE GUEST LIST</p>}
+          <h1>{event.title}</h1>
+          <p>{formatDate(event.date)}{event.venue ? ` · ${event.venue}` : ""}{event.area ? `, ${event.area}` : ""}</p>
+          {event.category ? <Badge tone="gold">{event.category}</Badge> : null}
+        </div>
+        <span className="event-detail-hero-orbit" aria-hidden="true" />
+      </section>
+      <div className="event-detail-layout">
+        <main className="event-detail-main">
+          <div className="event-detail-heading">
+            {event.brand ? <p className="eyebrow">{event.brand}</p> : null}
+            <h2>{event.title}</h2>
+            <p className="event-detail-datetime">
             {formatDate(event.date)}{event.endDate && event.endDate !== event.date ? ` – ${formatDate(event.endDate)}` : ""}
             {event.time ? ` · ${event.time}${event.endTime ? `–${event.endTime}` : ""}` : ""}
             {event.venue ? ` · ${event.venue}` : ""}{event.area ? `, ${event.area}` : ""}
             {event.gatesOpenTime ? ` · Gates open ${event.gatesOpenTime}` : ""}
             {event.applicationDeadline ? ` · Nominations close ${formatDate(event.applicationDeadline)}` : ""}
-          </p>
+            </p>
+          </div>
 
-          <div className="mt-10 space-y-8">
+          <div className="event-detail-sections">
             {event.about ? <Block title="About this event">{event.about}</Block> : null}
             {event.included.length ? <div>
               <p className="eyebrow">What is included</p>
@@ -138,22 +150,25 @@ function EventDetail() {
             {event.venue || event.mapUrl ? <Block title="Location">{event.venue}{event.area ? `, ${event.area}` : ""}{event.mapUrl ? <> <a className="text-primary underline" href={event.mapUrl} target="_blank" rel="noreferrer">Open map and directions</a></> : null}</Block> : null}
             {(event.images?.length || event.image) ? <div>
               <p className="eyebrow">Photos</p>
-              <div className="mt-3 grid grid-cols-3 gap-3">
+              <div className="event-detail-photos">
                 {(event.images?.length ? event.images : [event.image]).map((image, i) => (
-                  <img key={`${i}-${image.slice(-16)}`} src={image} alt={`${event.title} photo ${i + 1}`} loading="lazy" className="h-24 w-full rounded-md object-cover" />
+                  <img key={`${i}-${image.slice(-16)}`} src={image} alt={`${event.title} photo ${i + 1}`} loading="lazy" />
                 ))}
               </div>
             </div> : null}
-            {event.video ? <video className="w-full rounded-lg" controls playsInline preload="metadata" poster={event.image}><source src={event.video} />Your browser does not support video playback.</video> : null}
+            {event.video ? <video className="event-detail-video" controls playsInline preload="metadata" poster={event.image}><source src={event.video} />Your browser does not support video playback.</video> : null}
             {event.hostNote ? <Card className="border-primary/30">
               <p className="eyebrow">Host note</p>
               <p className="mt-2 text-sm text-muted-foreground">{event.hostNote}</p>
             </Card> : null}
           </div>
-        </div>
+        </main>
 
-        <aside className="lg:sticky lg:top-24 lg:self-start">
-          <Card>
+        <aside className="event-detail-aside">
+          <Card className="event-detail-booking">
+            <p className="event-detail-booking-kicker">YOUR NIGHT OUT</p>
+            <h2>{hasMemberRsvp ? "Request your place" : "Make it a night to remember"}</h2>
+            <p className="event-detail-booking-copy">{event.tracks.length ? "Send your RSVP request and our team will confirm the details." : "Use the event booking details below to reserve your place."}</p>
             <div className="flex items-center justify-between">
             <Badge tone="gold">{event.category}</Badge>
               {hasMemberRsvp && event.capacity > 0 ? <span className="text-xs text-muted-foreground">{Math.max(event.capacity - event.confirmed, 0)} of {event.capacity} places available</span> : null}
@@ -165,7 +180,7 @@ function EventDetail() {
               />
             </div> : null}
 
-            {event.tracks.length ? ((!hasRequest || state === "declined") ? <div className="mt-5 space-y-3">
+            {event.tracks.length ? (!hasRequest ? <div className="event-detail-rsvp-form">
               <label className="block text-xs text-muted-foreground" htmlFor="rsvp-track">Request as</label>
               <select id="rsvp-track" value={profile.track} disabled={!eligible} className="h-10 w-full rounded-md border border-border bg-surface px-3 text-sm text-foreground">
               {event.tracks.map((track) => <option key={track} value={track} disabled={track !== profile.track}>{track}{track !== profile.track ? " · use the matching member profile" : ""}</option>)}
@@ -187,8 +202,8 @@ function EventDetail() {
             {rsvpMessage ? <p className="mt-2 text-center text-xs text-muted-foreground">{rsvpMessage}</p> : null}
             {state === "pending" ? <p className="mt-2 text-center text-xs text-muted-foreground">Your place is not confirmed until the RSVP DXB team reviews your request.</p> : null}
 
-            <div className="mt-5 grid gap-2">
-              {event.reservationPhone ? <a href={`tel:${event.reservationPhone.replace(/[^+\d]/g, "")}`} className="inline-flex h-9 items-center justify-center rounded-md border px-3 text-sm">Call to reserve</a> : null}
+            <div className="event-detail-actions">
+              {event.reservationPhone ? <a href={`tel:${event.reservationPhone.replace(/[^+\d]/g, "")}`} className="event-detail-action-link">Call to reserve</a> : null}
               <Button variant="outline" size="sm" onClick={() => toggleSave(event.id)}>
                 {saved.includes(event.id) ? "Saved" : "Save"}
               </Button>
@@ -208,7 +223,7 @@ function EventDetail() {
             </div> : null}
           </Card>
 
-          {state === "accepted" ? <Card className="mt-4 text-center"><p className="eyebrow">REQUEST APPROVED</p><p className="mt-2 text-sm">Your RSVP has been accepted. Please check your email for event entry details.</p></Card> : null}
+          {state === "accepted" ? <Card className="event-detail-confirmed"><p className="eyebrow">REQUEST APPROVED</p><p className="mt-2 text-sm">Your RSVP has been accepted. Please check your email for event entry details.</p></Card> : null}
         </aside>
       </div>
     </SitePage>

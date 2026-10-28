@@ -39,7 +39,7 @@ function AboutPage() {
       <Section>
         <div className="grid gap-4 sm:grid-cols-4">
           <AnimatedStat label="Members" value="4,280" hint="Approved across four tracks" />
-          <AnimatedStat label="Events hosted" value="612" hint="Last 24 months" />
+          <AnimatedStat label="Events hosted" value="612" hint="Till Now" />
           <AnimatedStat label="Brand partners" value="140" />
           <AnimatedStat label="Avg. attendance" value="87%" hint="Of confirmed RSVPs" />
         </div>
@@ -95,15 +95,15 @@ function AboutPage() {
             </Card>
             <Card>
               <p className="eyebrow">General</p>
-              <p className="mt-2 text-sm text-muted-foreground">hello@rsvpdxb.com</p>
+              <a className="mt-2 inline-block text-sm text-muted-foreground transition-colors hover:text-primary" href="mailto:vinitahirani@rsvpdxb.com">vinitahirani@rsvpdxb.com</a>
             </Card>
             <Card>
               <p className="eyebrow">Brands & partnerships</p>
-              <p className="mt-2 text-sm text-muted-foreground">brands@rsvpdxb.com</p>
+              <a className="mt-2 inline-block text-sm text-muted-foreground transition-colors hover:text-primary" href="mailto:vinitahirani@rsvpdxb.com">vinitahirani@rsvpdxb.com</a>
             </Card>
             <Card>
               <p className="eyebrow">Connect with us</p>
-              <p className="mt-2 text-sm text-muted-foreground">{whatsappDisplay}</p>
+              <a className="mt-2 inline-block text-sm text-muted-foreground transition-colors hover:text-primary" href={`https://wa.me/${whatsappDigits}`} target="_blank" rel="noreferrer">{whatsappDisplay}</a>
             </Card>
           </div>
         </div>
@@ -133,7 +133,7 @@ function AnimatedStat({ label, value, hint }: { label: string; value: string; hi
         return;
       }
       const start = performance.now();
-      const duration = 1200;
+      const duration = 3000;
       const tick = (now: number) => {
         const progress = Math.min(1, (now - start) / duration);
         const eased = 1 - (1 - progress) ** 3;

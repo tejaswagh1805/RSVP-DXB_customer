@@ -541,7 +541,7 @@ const OFFERS = [
     category: "All",
   },
   {
-    name: "FOOD N DRINKS",
+    name: "Food & Drinks",
     icon: Utensils,
     title: "A seat worth taking.",
     body: "Chef-led tables, tasting experiences and a little something unexpected.",

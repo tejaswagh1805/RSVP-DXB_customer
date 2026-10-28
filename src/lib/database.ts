@@ -50,11 +50,14 @@ async function currentMember() {
   const sql = getSql();
   const rows = (await sql`
     SELECT m.id, m.name, m.email, m.track, m.points, m.rank, m.city,
-      m.mobile, m.handle, m.followers
-    FROM member_sessions s JOIN members m ON m.id = s.member_id
+      m.mobile, m.handle, m.followers,
+      COALESCE(m.joined, m.created_at::date)::text AS joined,
+      m.member_number AS "memberNumber"
+    FROM member_sessions s
+    JOIN members m ON m.id = s.member_id
     WHERE s.token_hash = ${tokenHash} AND s.expires_at > now() AND m.status = 'approved'
     LIMIT 1
-  `) as unknown as { id: string; name: string; email: string; track: Track; points: number; rank: string; city: string; mobile: string; handle: string; followers: number }[];
+  `) as unknown as { id: string; name: string; email: string; track: Track; points: number; rank: string; city: string; mobile: string; handle: string; followers: number; joined: string; memberNumber: number }[];
   return rows[0] ?? null;
 }
 
@@ -78,7 +81,7 @@ function mapEvent(row: EventRow): EventItem {
     images,
     influencerDeliverables: influencer_deliverables ?? "",
     mapUrl: map_url ?? "",
-    endDate: endDate ?? undefined,
+    ...(endDate ? { endDate } : {}),
     endTime: end_time ?? "",
     gatesOpenTime: gates_open_time ?? "",
     ticketUrl: ticket_url ?? "",

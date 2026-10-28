@@ -1,11 +1,10 @@
 import { createFileRoute, Link, redirect } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import type React from "react";
-import { QRCodeSVG } from "qrcode.react";
-import { LayoutDashboard, CalendarDays, QrCode, Video, Award, UserRound, ArrowUpRight, Camera, Trash2, Bell, Settings, Crown, LockKeyhole, MapPin, MessageCircle, WalletCards, TrendingUp, Ticket, Clock3, Headphones, Mail, Home, ChevronDown, X } from "lucide-react";
+import { LayoutDashboard, CalendarDays, Video, Award, UserRound, ArrowUpRight, Camera, Trash2, Bell, Settings, Crown, MessageCircle, WalletCards, Clock3, ChevronDown, X } from "lucide-react";
 import { SitePage, memberWhatsappChatUrl } from "@/components/SiteLayout";
 import { EventImage } from "@/components/EventImage";
-import { Badge, Button, Card, Field, PasswordInput, Stat, inputClass } from "@/components/ui-kit";
+import { Badge, Button, Card, Field, PasswordInput, inputClass } from "@/components/ui-kit";
 import { POINT_RULES, RANKS, formatDate, rankFor } from "@/lib/data";
 import { useStore } from "@/lib/store";
 import { getMemberRsvps, getMemberSession, listPublishedEvents, updateMemberProfile } from "@/lib/database";
@@ -35,7 +34,7 @@ export const Route = createFileRoute("/me")({
 });
 
 const TABS = ["Dashboard", "My RSVPs", "My Pass", "My Content", "Points", "Profile"];
-const TAB_ICONS = [LayoutDashboard, CalendarDays, QrCode, Video, Award, UserRound];
+const TAB_ICONS = [LayoutDashboard, CalendarDays, WalletCards, Video, Award, UserRound];
 
 function AnimatedNumber({ value, prefix = "", compact = false }: { value: number; prefix?: string; compact?: boolean }) {
   const [display, setDisplay] = useState(0);
@@ -138,13 +137,23 @@ function MemberArea() {
   const myEvents = dashboardEvents.filter((e) => (rsvps[e.id] ?? "none") !== "none");
   const rank = rankFor(profile.points);
   const nextRank = RANKS.find((r) => r.at > profile.points);
+  const today = new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Dubai", year: "numeric", month: "2-digit", day: "2-digit" }).format(new Date());
   const matched = dashboardEvents.filter(
-    (e) => e.status === "published" && e.tracks.includes(profile.track) && (!rsvps[e.id] || rsvps[e.id] === "declined"),
+    (e) => e.status === "published" && e.date >= today && (!e.applicationDeadline || e.applicationDeadline >= today) && e.tracks.includes(profile.track) && (!rsvps[e.id] || rsvps[e.id] === "declined"),
   );
   const wishlistEvents = useMemo(() => dashboardEvents.filter((event) => saved.includes(event.id)), [dashboardEvents, saved]);
-  const upcomingEvent = wishlistEvents[0] ?? matched[0] ?? dashboardEvents.find((e) => e.status === "published");
+  const upcomingEvent = [...wishlistEvents, ...myEvents.filter((event) => ["accepted", "going", "pending", "waitlisted", "waitlist"].includes(rsvps[event.id] ?? "")), ...matched]
+    .filter((event) => event.date >= today)
+    .sort((a, b) => a.date.localeCompare(b.date))[0];
   const activityEvents = useMemo(() => myEvents.slice().sort((a, b) => b.date.localeCompare(a.date)), [myEvents]);
   const inviteCount = matched.length;
+  const memberNumber = Number.isSafeInteger(loaderData.member.memberNumber)
+    ? String(loaderData.member.memberNumber).padStart(3, "0")
+    : "—";
+  const memberSince = loaderData.member.joined
+    ? new Date(`${loaderData.member.joined}T00:00:00`).toLocaleDateString(undefined, { month: "long", year: "numeric" })
+    : "Date unavailable";
+  const pendingRsvpCount = myEvents.filter((event) => rsvps[event.id] === "pending").length;
 
   return (
     <SitePage>
@@ -157,31 +166,29 @@ function MemberArea() {
             <Button variant={tab === "My Pass" ? "primary" : "ghost"} className="justify-start" onClick={() => setTab("My Pass")}><WalletCards size={18} />VIP Black Card <span className="member-nav-spark">✦</span></Button>
             <Button variant={tab === "Profile" ? "primary" : "ghost"} className="justify-start" onClick={() => setTab("Profile")}><Settings size={18} />Settings</Button>
           </nav>
-          <div className="member-since-card"><span>Member since</span><strong>January 2023</strong><Badge tone="gold">Tier: {rank.toUpperCase()}</Badge></div>
+          <div className="member-since-card"><span>Member since</span><strong>{memberSince}</strong><Badge tone="gold">Tier: {rank.toUpperCase()}</Badge></div>
         </aside>
         <div className="member-content">
-          {tab === "Dashboard" ? <div className="member-topbar"><div className="member-search"><span>⌕</span>Search guests, events, venues...</div><div className="member-top-actions"><div className="member-popover-anchor"><button className="member-icon-action" aria-label="Notifications" aria-expanded={notificationsOpen} onClick={() => { setNotificationsOpen((open) => !open); setAccountMenuOpen(false); }}><Bell size={20} />{activityEvents.length > 0 ? <i>{activityEvents.length}</i> : null}</button>{notificationsOpen ? <div className="member-popover member-notifications" role="dialog" aria-label="Recent RSVP activity"><div className="member-popover-heading"><strong>Recent RSVP activity</strong><button aria-label="Close notifications" onClick={() => setNotificationsOpen(false)}><X size={16} /></button></div>{activityEvents.length ? activityEvents.slice(0, 5).map((event) => <button className="member-notification-item" key={event.id} onClick={() => { setTab("My RSVPs"); setNotificationsOpen(false); }}><span><b>{event.title}</b><small>{({ pending: "Request pending", accepted: "Request accepted", waitlisted: "Added to waitlist", declined: "Request declined", going: "You're attending", waitlist: "Added to waitlist" } as Record<string, string>)[rsvps[event.id] ?? ""] ?? "RSVP updated"} · {formatDate(event.date)}</small></span><ArrowUpRight size={15} /></button>) : <p className="member-notification-empty">No RSVP updates yet. Your event request updates will appear here.</p>}<button className="member-popover-link" onClick={() => { setTab("My RSVPs"); setNotificationsOpen(false); }}>View my RSVPs <ArrowUpRight size={14} /></button></div> : null}</div><button className="member-icon-action" aria-label="Settings" onClick={() => setTab("Profile")}><Settings size={20} /></button><div className="member-popover-anchor"><button className="member-account-trigger" aria-expanded={accountMenuOpen} onClick={() => { setAccountMenuOpen((open) => !open); setNotificationsOpen(false); }}><span className="member-top-avatar">{avatar ? <img src={avatar} alt="" /> : initials.slice(0, 1)}</span><strong>{profile.name.split(" ")[0]}</strong><ChevronDown size={15} /></button>{accountMenuOpen ? <div className="member-popover member-account-menu" role="menu"><div className="member-account-summary"><b>{profile.name}</b><small>{profile.email}</small></div><button role="menuitem" onClick={() => { setTab("Profile"); setAccountMenuOpen(false); }}>My profile</button><button role="menuitem" onClick={() => { setTab("My RSVPs"); setAccountMenuOpen(false); }}>My RSVPs</button><button role="menuitem" onClick={() => { setTab("My Pass"); setAccountMenuOpen(false); }}>My pass</button></div> : null}</div></div></div> : null}
-          <div className="member-content-heading"><div><p className="eyebrow">{tab === "Dashboard" ? "RSVP DXB  •  Exclusive Client Dashboard  •  Dubai, UAE  •  22 Oct 2024 — 19:32 GST" : `Member area / ${tab}`}</p><h2 className="mt-2 text-4xl">{tab === "Dashboard" ? `Welcome back, ${profile.name}.` : tab}</h2></div>{tab === "Dashboard" ? <div className="member-heading-actions"><Link to="/events"><Button>＋ New Invite</Button></Link><a href={memberWhatsappChatUrl} target="_blank" rel="noreferrer"><Button variant="outline"><MessageCircle size={17} />Private Concierge Chat</Button></a></div> : <Link to="/events"><Button variant="outline">Discover events <ArrowUpRight size={18} /></Button></Link>}</div>
+          {tab === "Dashboard" ? <div className="member-topbar"><div className="member-top-actions"><div className="member-popover-anchor"><button className="member-icon-action" aria-label="Notifications" aria-expanded={notificationsOpen} onClick={() => { setNotificationsOpen((open) => !open); setAccountMenuOpen(false); }}><Bell size={20} />{activityEvents.length > 0 ? <i>{activityEvents.length}</i> : null}</button>{notificationsOpen ? <div className="member-popover member-notifications" role="dialog" aria-label="Recent RSVP activity"><div className="member-popover-heading"><strong>Recent RSVP activity</strong><button aria-label="Close notifications" onClick={() => setNotificationsOpen(false)}><X size={16} /></button></div>{activityEvents.length ? activityEvents.slice(0, 5).map((event) => <button className="member-notification-item" key={event.id} onClick={() => { setTab("My RSVPs"); setNotificationsOpen(false); }}><span><b>{event.title}</b><small>{({ pending: "Request pending", accepted: "Request accepted", waitlisted: "Added to waitlist", declined: "Request declined", going: "You're attending", waitlist: "Added to waitlist" } as Record<string, string>)[rsvps[event.id] ?? ""] ?? "RSVP updated"} · {formatDate(event.date)}</small></span><ArrowUpRight size={15} /></button>) : <p className="member-notification-empty">No RSVP updates yet. Your event request updates will appear here.</p>}<button className="member-popover-link" onClick={() => { setTab("My RSVPs"); setNotificationsOpen(false); }}>View my RSVPs <ArrowUpRight size={14} /></button></div> : null}</div><button className="member-icon-action" aria-label="Settings" onClick={() => setTab("Profile")}><Settings size={20} /></button><div className="member-popover-anchor"><button className="member-account-trigger" aria-expanded={accountMenuOpen} onClick={() => { setAccountMenuOpen((open) => !open); setNotificationsOpen(false); }}><span className="member-top-avatar">{avatar ? <img src={avatar} alt="" /> : initials.slice(0, 1)}</span><strong>{profile.name.split(" ")[0]}</strong><ChevronDown size={15} /></button>{accountMenuOpen ? <div className="member-popover member-account-menu" role="menu"><div className="member-account-summary"><b>{profile.name}</b><small>{profile.email}</small></div><button role="menuitem" onClick={() => { setTab("Profile"); setAccountMenuOpen(false); }}>My profile</button><button role="menuitem" onClick={() => { setTab("My RSVPs"); setAccountMenuOpen(false); }}>My RSVPs</button><button role="menuitem" onClick={() => { setTab("My Pass"); setAccountMenuOpen(false); }}>My pass</button></div> : null}</div></div></div> : null}
+          <div className="member-content-heading"><div><p className="eyebrow">{tab === "Dashboard" ? "RSVP DXB · Member dashboard · Dubai, UAE" : `Member area / ${tab}`}</p><h2 className="mt-2 text-4xl">{tab === "Dashboard" ? `Welcome back, ${profile.name}.` : tab}</h2></div>{tab === "Dashboard" ? <div className="member-heading-actions"><Link to="/events"><Button>＋ New Invite</Button></Link><a href={memberWhatsappChatUrl} target="_blank" rel="noreferrer"><Button variant="outline"><MessageCircle size={17} />Private Concierge Chat</Button></a></div> : <Link to="/events"><Button variant="outline">Discover events <ArrowUpRight size={18} /></Button></Link>}</div>
         {tab === "Dashboard" ? (
           <div className="member-overview space-y-8">
             <div className="member-dashboard-grid">
               <div className="member-dashboard-main">
                 <div className="member-kpis">
-                  <Card><TrendingUp size={19} /><b>Total RSVPs</b><AnimatedNumber value={1248 + myEvents.length} /><span>↑ 12.4% vs last month</span><small>↑ +136 this week</small></Card>
-                  <Card><Crown size={19} /><b>VIP Guests</b><AnimatedNumber value={profile.points ? Math.max(96, Math.floor(profile.points / 26)) : 96} /><span>{rank} member tier</span><small>+8 new this week</small></Card>
-                  <Card><Clock3 size={19} /><b>Pending Invites</b><AnimatedNumber value={Math.max(inviteCount, matched.length)} /><span>Awaiting confirmation</span><small>Response rate 78%</small></Card>
-                  <Card><WalletCards size={19} /><b>Revenue</b><AnimatedNumber value={182000} prefix="AED " compact /><span>+22% vs last month</span><small>Avg. spend AED 1.9K</small></Card>
+                  <Card><CalendarDays size={19} /><b>Your RSVPs</b><AnimatedNumber value={myEvents.length} /><span>Requests on your account</span></Card>
+                  <Card><Crown size={19} /><b>Matched events</b><AnimatedNumber value={inviteCount} /><span>Based on your member track</span></Card>
+                  <Card><Clock3 size={19} /><b>Pending RSVPs</b><AnimatedNumber value={pendingRsvpCount} /><span>Awaiting a response</span></Card>
+                  <Card><WalletCards size={19} /><b>Member number</b><strong className="member-kpi-number" aria-label={`Member number ${memberNumber}`}>{memberNumber}</strong><span>Manual reference · no scan needed</span></Card>
                 </div>
                 <div className="member-feature-grid">
-                  <Card className="member-black-card"><h3>✦ VIP BLACK CARD</h3><div className="member-card-art"><span>RSVP DXB</span><strong>{profile.name.toUpperCase()} · {rank.toUpperCase()}</strong><small>•••• 9924</small><i>◉ NFC TAP · VALID 09/27</i></div><p className="member-auth-note">Tap to authenticate · Secure · Wallet Enabled</p><b>{rank.toUpperCase()} #4 CHAMPAGNE PEARL DROP —</b><div className="member-pearl-row"><span>🟤</span><p>Unlock #4 available —<br />1 of 5 Pearl Drops</p><strong>80%</strong></div><progress value="80" max="100" /><small>Unlocks in 02:14:33 · <button onClick={() => setTab("Points")}>Unlock Now</button></small></Card>
-                  <Card className="member-locked-card"><h3><LockKeyhole size={17} /> {wishlistEvents.length ? "SAVED TO YOUR WISHLIST" : "INVITE-ONLY LOCKED EVENTS"}</h3>{upcomingEvent ? <><div className="member-event-art" style={{ backgroundImage: `linear-gradient(90deg, rgba(30,20,12,.78), rgba(30,20,12,.08)), url(${upcomingEvent.image})` }}><b>{upcomingEvent.title}</b><span>{upcomingEvent.venue}</span><em>{wishlistEvents.some((event) => event.id === upcomingEvent.id) ? "SAVED EVENT" : `MATCHED FOR ${profile.track.toUpperCase()}`}</em><small>Date: {formatDate(upcomingEvent.date)} · {upcomingEvent.time} · {Math.max(0, upcomingEvent.capacity - upcomingEvent.confirmed)} spots left</small></div><div className="member-request-footer"><Link to="/events/$eventId" params={{ eventId: upcomingEvent.id }}><Button>{rsvps[upcomingEvent.id] && rsvps[upcomingEvent.id] !== "declined" ? "View request" : "Request Access"}<ArrowUpRight size={16} /></Button></Link></div></> : <div className="member-empty-event"><p>No published events are available right now.</p><Link to="/events"><Button variant="outline">Browse events <ArrowUpRight size={15} /></Button></Link></div>}</Card>
+                  <Card className="member-black-card"><h3>MEMBERSHIP</h3><div className="member-card-art"><span>RSVP DXB</span><strong>{profile.name.toUpperCase()} · {rank.toUpperCase()}</strong><small>MEMBER NUMBER {memberNumber}</small><i>Manual member reference · No scan required</i></div><Button className="mt-4 w-full" variant="outline" onClick={() => setTab("My Pass")}>View member details <ArrowUpRight size={16} /></Button></Card>
+                  <Card className="member-locked-card"><h3><CalendarDays size={17} /> UPCOMING EVENT</h3>{upcomingEvent ? <><Link to="/events/$eventId" params={{ eventId: upcomingEvent.id }} className="member-event-art" style={{ backgroundImage: `linear-gradient(90deg, rgba(30,20,12,.78), rgba(30,20,12,.08)), url(${upcomingEvent.image})` }}><b>{upcomingEvent.title}</b><span>{upcomingEvent.venue}</span><em>{wishlistEvents.some((event) => event.id === upcomingEvent.id) ? "SAVED EVENT" : `MATCHED FOR ${profile.track.toUpperCase()}`}</em><small>Date: {formatDate(upcomingEvent.date)} · {upcomingEvent.time} · {Math.max(0, upcomingEvent.capacity - upcomingEvent.confirmed)} places remaining</small></Link><div className="member-request-footer"><Link to="/events/$eventId" params={{ eventId: upcomingEvent.id }}><Button>{rsvps[upcomingEvent.id] && rsvps[upcomingEvent.id] !== "declined" ? "View request" : "Request RSVP"}<ArrowUpRight size={16} /></Button></Link></div></> : <div className="member-empty-event"><p>No upcoming events are matched to your profile yet.</p><Link to="/events"><Button variant="outline">Browse events <ArrowUpRight size={15} /></Button></Link></div>}</Card>
                 </div>
-                <p className="member-skyline-caption">DUBAI SKYLINE <span>•</span> UPCOMING: {upcomingEvent?.title ?? "Gala Night 30 Oct"}</p>
+                {upcomingEvent ? <p className="member-skyline-caption">UPCOMING · {formatDate(upcomingEvent.date)} · {upcomingEvent.title}</p> : null}
               </div>
               <div className="member-dashboard-rail">
-                <Card className="member-guest-list"><h3><WalletCards size={20} /> LIVE GUEST LIST</h3><p className="member-guest-count">{32 + myEvents.length} guests checked in · Updated 2m ago</p>{["Omar K.", "Sophia L.", "Hiro T.", "Ahmed S."].map((guest, i) => <div className="member-guest" key={guest}><span>{i === 2 ? <Clock3 size={18} /> : i === 3 ? <LockKeyhole size={17} /> : <Crown size={17} />}</span><p><b>{guest}</b><small>{["Arrived · Table 7", "VIP · Terrace", "En route · 5min", "VIP · Private"][i]}</small></p>{i === 1 ? <Crown size={16} /> : null}</div>)}<button className="member-view-guests" onClick={() => setTab("My RSVPs")}>View all {96 + myEvents.length} guests →</button></Card>
-                <Card className="member-venue-card"><h3><MapPin size={20} /> SECRET VENUE MAP —</h3><small>CONFIDENTIAL</small><div className="member-map-art"><MapPin /><MapPin /><MapPin /><MapPin /><MapPin /><MapPin /></div><div className="member-map-labels"><b>Palace Beach<small>Private</small></b><b>Skypool Lounge<small>Invitation Only</small></b><b>Desert Club<small>Hidden</small></b></div><p>Map is confidential · Share disabled</p></Card>
-                <button className="member-ticket" onClick={() => setTab("My Pass")}><span><Ticket size={22} /> HOLOGRAPHIC TICKET<br />GALA NIGHT 30 OCT<small>ADMIT ONE · TABLE 4 · DOORCODE #9941</small></span><QrCode size={54} /></button>
+                <Card className="member-guest-list"><h3><CalendarDays size={20} /> YOUR EVENT REQUESTS</h3>{myEvents.length ? myEvents.slice(0, 5).map((event) => <Link className="member-guest member-event-request" key={event.id} to="/events/$eventId" params={{ eventId: event.id }}><span><CalendarDays size={17} /></span><p><b>{event.title}</b><small>{formatDate(event.date)} · {{ pending: "Pending", accepted: "Accepted", going: "Accepted", waitlisted: "Waitlisted", waitlist: "Waitlisted", declined: "Declined" }[rsvps[event.id] ?? "pending"] ?? "Pending"}</small></p><ArrowUpRight size={16} /></Link>) : <div className="member-request-empty"><p>No event requests yet.</p><Link to="/events"><Button size="sm" variant="outline">Browse events <ArrowUpRight size={14} /></Button></Link></div>}<Link className="member-view-guests" to="/events">Browse events →</Link></Card>
               </div>
             </div>
 
@@ -226,7 +233,7 @@ function MemberArea() {
                     {formatDate(e.date)} · {e.time} · {e.venue}
                   </p>
                 </div>
-                <Badge tone={rsvps[e.id] === "accepted" || rsvps[e.id] === "going" ? "green" : rsvps[e.id] === "declined" ? "red" : "amber"}>
+                <Badge tone={rsvps[e.id] === "accepted" ? "green" : rsvps[e.id] === "declined" ? "red" : "amber"}>
                   {{ pending: "Pending review", accepted: "Accepted", waitlisted: "Waitlisted", declined: "Declined", going: "Accepted", waitlist: "Waitlisted" }[rsvps[e.id] ?? "pending"] ?? "Pending review"}
                 </Badge>
                 <Link to="/events/$eventId" params={{ eventId: e.id }}><Button size="sm" variant="outline">Event details</Button></Link>
@@ -246,36 +253,27 @@ function MemberArea() {
         {tab === "My Pass" ? (
           <div className="grid gap-4 md:grid-cols-3">
             <Card className="text-center">
-              <p className="eyebrow">Member pass</p>
+              <p className="eyebrow">Membership details</p>
               <h3 className="mt-1 text-lg">{profile.name}</h3>
-              <div className="mx-auto mt-5 inline-block rounded-md bg-white p-2">
-                <QRCodeSVG value={`RSVP-DXB|MEMBER|${profile.email}|RSVP-TEJAS`} size={128} />
+              <div className="member-number-display mx-auto mt-5">
+                <span>MEMBER NUMBER</span>
+                <strong>{memberNumber}</strong>
               </div>
               <p className="mt-4 text-sm">{rank} member</p>
-              <p className="text-xs text-muted-foreground">Show at the door · RSVP-TEJAS</p>
+              <p className="text-xs text-muted-foreground">Use this number as your member reference. No scanning required.</p>
             </Card>
-            {myEvents.filter((event) => rsvps[event.id] === "accepted" || rsvps[event.id] === "going").map((e) => (
+            {myEvents.filter((event) => rsvps[event.id] === "accepted").map((e) => (
               <Card key={e.id} className="text-center">
                 <p className="eyebrow">{e.brand}</p>
                 <h3 className="mt-1 text-lg">{e.title}</h3>
-                <div className="mx-auto mt-5 inline-block rounded-md bg-white p-2">
-                  <span className="px-5 py-10 text-sm font-semibold text-primary">RSVP ACCEPTED</span>
-                </div>
+                <p className="mt-5 font-display text-2xl text-primary">RSVP confirmed</p>
                 <p className="mt-4 text-sm">{profile.name}</p>
                 <p className="text-xs text-muted-foreground">
-                  {formatDate(e.date)} · Entry for 1 · RSVP-4471
+                  {formatDate(e.date)} · Member number {memberNumber}
                 </p>
-                <div className="mt-4 grid gap-2">
-                  <Button size="sm" variant="outline">
-                    Add to Apple Wallet
-                  </Button>
-                  <Button size="sm" variant="ghost">
-                    Add to Google Wallet
-                  </Button>
-                </div>
               </Card>
             ))}
-            {!myEvents.some((event) => rsvps[event.id] === "accepted" || rsvps[event.id] === "going") ? (
+            {!myEvents.some((event) => rsvps[event.id] === "accepted") ? (
               <p className="text-sm text-muted-foreground">Your pass appears once you RSVP.</p>
             ) : null}
           </div>
@@ -288,7 +286,7 @@ function MemberArea() {
               <div className="mt-5 grid gap-4">
                 <Field label="Event">
                   <select className={inputClass}>
-                    {events.slice(0, 4).map((e) => (
+                    {dashboardEvents.slice(0, 4).map((e) => (
                       <option key={e.id}>{e.title}</option>
                     ))}
                   </select>
@@ -364,8 +362,8 @@ function MemberArea() {
               <div className="mt-6 rounded-md border border-primary/30 p-4">
                 <p className="eyebrow">Refer a friend</p>
                 <p className="mt-2 text-sm text-muted-foreground">
-                  Your code <span className="text-primary">RSVP-TEJAS</span> — +100 points per
-                  approved referral.
+                  Your member number is <span className="text-primary">{memberNumber}</span>.
+                  Referral rewards will appear here when they are available.
                 </p>
               </div>
             </Card>
