@@ -20,8 +20,8 @@ export { memberWhatsappChatUrl };
 
 const NAV = [
   { to: "/events", label: "Events" },
-  { to: "/host", label: "Host" },
   { to: "/membership", label: "Membership" },
+  { to: "/host", label: "Host" },
   { to: "/wall", label: "Events Wall" },
   { to: "/press", label: "Press" },
   { to: "/about", label: "About" },
