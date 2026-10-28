@@ -10,6 +10,7 @@ export function EventCard({ event }: { event: EventItem }) {
   const full = event.capacity > 0 && event.confirmed >= event.capacity;
   const left = Math.max(event.capacity - event.confirmed, 0);
   const eligible = event.tracks.includes(profile.track);
+  const isPast = event.status === "closed" || (event.endDate || event.date) < new Date().toISOString().slice(0, 10);
   return (
     <article className="group flex flex-col overflow-hidden rounded-md border border-border bg-card transition-colors hover:border-primary/50">
       <Link to="/events/$eventId" params={{ eventId: event.id }}>
@@ -17,6 +18,7 @@ export function EventCard({ event }: { event: EventItem }) {
           <EventImage event={event} className="h-full w-full transition-transform duration-500 group-hover:scale-105" />
           <div className="absolute left-4 top-4 flex gap-2">
             <Badge tone="gold">{event.category}</Badge>
+            {isPast ? <Badge tone="muted">Past event</Badge> : null}
             {event.tracks.length > 0 && left <= 10 && !full ? <Badge tone="amber">{left} places left</Badge> : null}
             {event.tracks.length > 0 && full ? <Badge tone="red">Full</Badge> : null}
           </div>
@@ -31,11 +33,11 @@ export function EventCard({ event }: { event: EventItem }) {
         </Link>
         {event.brand ? <p className="mt-1 text-sm text-muted-foreground">{event.brand}</p> : null}
         <p className="mt-3 text-xs text-muted-foreground">
-          {event.applicationDeadline ? `Nominations close ${formatDate(event.applicationDeadline)}` : event.ageRestriction ? event.ageRestriction : event.hashtag || (event.tracks.length ? `Open to ${event.tracks.join(", ")}` : "Event details and booking information")}
+          {isPast ? event.about.slice(0, 150) : event.applicationDeadline ? `Nominations close ${formatDate(event.applicationDeadline)}` : event.ageRestriction ? event.ageRestriction : event.hashtag || (event.tracks.length ? `Open to ${event.tracks.join(", ")}` : "Event details and booking information")}
         </p>
 
         <div className="mt-5 flex items-center gap-2">
-          {event.tracks.length && !eligible ? (
+          {isPast ? <Link to="/events/$eventId" params={{ eventId: event.id }}><Button size="sm" variant="primary">View recap</Button></Link> : event.tracks.length && !eligible ? (
             <Button size="sm" variant="outline" disabled>
               Not on your list
             </Button>
@@ -44,11 +46,11 @@ export function EventCard({ event }: { event: EventItem }) {
               <Button size="sm" variant="primary">Request RSVP</Button>
             </Link>
           ) : null}
-          <Button size="sm" variant="ghost" onClick={() => toggleSave(event.id)}>
+          {!isPast ? <Button size="sm" variant="ghost" onClick={() => toggleSave(event.id)}>
             {saved.includes(event.id) ? "Saved" : "Save"}
-          </Button>
+          </Button> : null}
         </div>
-        <div className="mt-3 flex flex-wrap items-center gap-2"><WhatsAppAction event={event} />{event.creatorPassNote && !event.applicationDeadline ? <WhatsAppAction event={event} purpose="Request creator pass" /> : null}</div>
+        {!isPast ? <div className="mt-3 flex flex-wrap items-center gap-2"><WhatsAppAction event={event} />{event.creatorPassNote && !event.applicationDeadline ? <WhatsAppAction event={event} purpose="Request creator pass" /> : null}</div> : null}
       </div>
     </article>
   );

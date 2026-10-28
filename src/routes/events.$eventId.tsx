@@ -59,6 +59,7 @@ function EventDetail() {
     );
   }
 
+  const isPastEvent = event.status === "closed" || (event.endDate || event.date) < new Date().toISOString().slice(0, 10);
   const state = data.event ? (databaseRsvps[event.id] ?? "none") : (demoRsvps[event.id] ?? "none");
   const hasMemberRsvp = event.tracks.length > 0;
   const eligible = hasMemberRsvp && event.tracks.includes(profile.track);
@@ -112,6 +113,7 @@ function EventDetail() {
           <h1>{event.title}</h1>
           <p>{formatDate(event.date)}{event.venue ? ` · ${event.venue}` : ""}{event.area ? `, ${event.area}` : ""}</p>
           {event.category ? <Badge tone="gold">{event.category}</Badge> : null}
+          {isPastEvent ? <Badge tone="muted">Past event</Badge> : null}
         </div>
         <span className="event-detail-hero-orbit" aria-hidden="true" />
       </section>
@@ -132,7 +134,7 @@ function EventDetail() {
           <div className="event-detail-sections">
             {event.about ? <Block title="About this event">{event.about}</Block> : null}
             {event.included.length ? <div>
-              <p className="eyebrow">What is included</p>
+              <p className="eyebrow">{isPastEvent ? "Event highlights" : "What is included"}</p>
               <ul className="mt-3 grid gap-2 sm:grid-cols-2">
                 {event.included.map((i) => (
                   <li key={i} className="rounded-md bg-surface px-4 py-2.5 text-sm">
@@ -158,14 +160,30 @@ function EventDetail() {
             </div> : null}
             {event.video ? <video className="event-detail-video" controls playsInline preload="metadata" poster={event.image}><source src={event.video} />Your browser does not support video playback.</video> : null}
             {event.hostNote ? <Card className="border-primary/30">
-              <p className="eyebrow">Host note</p>
+              <p className="eyebrow">{isPastEvent ? "Our role" : "Host note"}</p>
               <p className="mt-2 text-sm text-muted-foreground">{event.hostNote}</p>
             </Card> : null}
           </div>
         </main>
 
         <aside className="event-detail-aside">
-          <Card className="event-detail-booking">
+          {isPastEvent ? <Card className="event-detail-booking">
+            <p className="event-detail-booking-kicker">EVENT RECAP</p>
+            <h2>Part of the story</h2>
+            <p className="event-detail-booking-copy">This event has taken place. Explore the highlights and see the photos once they are added.</p>
+            <div className="mt-5 border-t border-border pt-4">
+              <p className="eyebrow">Event date</p>
+              <p className="mt-2 text-sm">{formatDate(event.date)}{event.endDate && event.endDate !== event.date ? ` – ${formatDate(event.endDate)}` : ""}</p>
+            </div>
+            {event.venue || event.area ? <div className="mt-4">
+              <p className="eyebrow">Location</p>
+              <p className="mt-2 text-sm">{event.venue}{event.venue && event.area ? ", " : ""}{event.area}</p>
+            </div> : null}
+            {event.brand ? <div className="mt-4">
+              <p className="eyebrow">Presented by</p>
+              <p className="mt-2 text-sm">{event.brand}</p>
+            </div> : null}
+          </Card> : <Card className="event-detail-booking">
             <p className="event-detail-booking-kicker">YOUR NIGHT OUT</p>
             <h2>{hasMemberRsvp ? "Request your place" : "Make it a night to remember"}</h2>
             <p className="event-detail-booking-copy">{event.tracks.length ? "Send your RSVP request and our team will confirm the details." : "Use the event booking details below to reserve your place."}</p>
@@ -221,7 +239,7 @@ function EventDetail() {
                 ))}
               </div>
             </div> : null}
-          </Card>
+          </Card>}
 
           {state === "accepted" ? <Card className="event-detail-confirmed"><p className="eyebrow">REQUEST APPROVED</p><p className="mt-2 text-sm">Your RSVP has been accepted. Please check your email for event entry details.</p></Card> : null}
         </aside>

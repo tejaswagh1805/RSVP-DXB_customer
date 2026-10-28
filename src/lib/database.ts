@@ -77,7 +77,9 @@ function mapEvent(row: EventRow): EventItem {
   const images = image_gallery?.length ? image_gallery : image_data ? [image_data] : [];
   return {
     ...event,
-    image: images[0] || EVENT_IMAGES[image_key] || EVENT_IMAGES["atlantis-chef-table"]!,
+    image: images[0] || EVENT_IMAGES[image_key] || (row.status === "closed"
+      ? "linear-gradient(135deg, hsl(36 36% 20%), hsl(24 34% 10%))"
+      : EVENT_IMAGES["atlantis-chef-table"]!),
     images,
     influencerDeliverables: influencer_deliverables ?? "",
     mapUrl: map_url ?? "",
@@ -105,7 +107,7 @@ export const listPublishedEvents = createServerFn({ method: "GET" }).handler(asy
       track_capacities AS "trackCapacities", influencer_deliverables, map_url,
       to_char(end_date, 'YYYY-MM-DD') AS "endDate", end_time, gates_open_time,
       status, image_key, image_data, image_gallery, video_url
-    FROM events WHERE status = 'published' ORDER BY date, time
+    FROM events WHERE status IN ('published', 'closed') ORDER BY date, time
   `) as unknown as EventRow[];
   return rows.map(mapEvent);
 });

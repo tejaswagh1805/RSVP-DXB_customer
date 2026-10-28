@@ -25,7 +25,7 @@ export const Route = createFileRoute("/events/")({
   component: EventsPage,
 });
 
-const CATEGORIES = ["All", "Dining", "Fashion", "Property", "Music", "Comedy", "Awards", "Campaign", "Art", "Nightlife", "Other"];
+const CATEGORIES = ["All", "Dining", "Fashion", "Property", "Music", "Sports", "Comedy", "Awards", "Campaign", "Art", "Nightlife", "Other"];
 const SORTS = ["Soonest", "Newest", "Few places left"];
 
 function EventsPage() {
@@ -35,30 +35,34 @@ function EventsPage() {
   const [category, setCategory] = useState("All");
   const [area, setArea] = useState("All areas");
   const [sort, setSort] = useState("Soonest");
+  const today = new Date().toISOString().slice(0, 10);
 
   const areas = useMemo(
     () => ["All areas", ...Array.from(new Set(events.map((e) => e.area)))],
     [events],
   );
 
-  const list = useMemo(() => {
-    let out = events.filter((e) => e.status === "published");
+  const { list, pastEvents } = useMemo(() => {
+    let out = events.filter((e) => e.status === "published" || e.status === "closed");
     if (category !== "All") out = out.filter((e) => e.category === category);
     if (area !== "All areas") out = out.filter((e) => e.area === area);
+    const past = out.filter((e) => e.status === "closed" || (e.endDate || e.date) < today);
+    const upcoming = out.filter((e) => e.status !== "closed" && (e.endDate || e.date) >= today);
     if (sort === "Few places left") {
-      out = [...out].sort(
+      upcoming.sort(
         (a, b) => {
           if (!a.capacity || !b.capacity) return Number(Boolean(a.capacity)) - Number(Boolean(b.capacity));
           return a.capacity - a.confirmed - (b.capacity - b.confirmed);
         },
       );
     } else if (sort === "Newest") {
-      out = [...out].reverse();
+      upcoming.reverse();
     } else {
-      out = [...out].sort((a, b) => a.date.localeCompare(b.date));
+      upcoming.sort((a, b) => a.date.localeCompare(b.date));
     }
-    return out;
-  }, [events, category, area, sort]);
+    past.sort((a, b) => (b.endDate || b.date).localeCompare(a.endDate || a.date));
+    return { list: upcoming, pastEvents: past };
+  }, [events, category, area, sort, today]);
 
   return (
     <SitePage>
@@ -100,13 +104,27 @@ function EventsPage() {
           </select>
         </div>
 
-        <p className="mt-6 text-xs text-muted-foreground">{list.length} events</p>
+        <p className="mt-6 text-xs text-muted-foreground">{list.length} upcoming events</p>
 
         <div className="mt-4 grid gap-5 md:grid-cols-3">
           {list.map((e) => (
             <EventCard key={e.id} event={e} />
           ))}
         </div>
+        {!list.length ? <p className="mt-5 rounded-md border border-border bg-card px-5 py-6 text-sm text-muted-foreground">No upcoming events right now. Browse past event recaps below.</p> : null}
+        {pastEvents.length ? <section className="mt-16" aria-labelledby="past-events-title">
+          <div className="flex flex-wrap items-end justify-between gap-3 border-b border-border pb-4">
+            <div>
+              <p className="eyebrow">The moments that brought us together</p>
+              <h2 id="past-events-title" className="mt-2 text-3xl">Past events</h2>
+            </div>
+            <p className="text-sm text-muted-foreground">Stories, people and highlights from our recent events.</p>
+          </div>
+          <p className="mt-4 text-xs text-muted-foreground">{pastEvents.length} event recaps</p>
+          <div className="mt-4 grid gap-5 md:grid-cols-3">
+            {pastEvents.map((event) => <EventCard key={event.id} event={event} />)}
+          </div>
+        </section> : null}
       </div>
     </SitePage>
   );
