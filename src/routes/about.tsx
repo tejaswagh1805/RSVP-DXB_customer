@@ -1,7 +1,8 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
 import { PageHero, SitePage } from "@/components/SiteLayout";
-import { Button, Card, Field, Section, inputClass } from "@/components/ui-kit";
+import { Button, Card, Section } from "@/components/ui-kit";
+import { ArrowRight, ArrowUpRight, Facebook, Instagram, Linkedin, Mail, MapPin, MessageCircle, Phone } from "lucide-react";
 
 export const Route = createFileRoute("/about")({
   head: () => ({
@@ -22,11 +23,7 @@ export const Route = createFileRoute("/about")({
 });
 
 function AboutPage() {
-  const [sent, setSent] = useState(false);
   const whatsappDigits = String(import.meta.env["VITE_RSVP_WHATSAPP_NUMBER"] || "971552789169").replace(/\D/g, "");
-  const whatsappDisplay = whatsappDigits.startsWith("971")
-    ? `+971 ${whatsappDigits.slice(3, 5)} ${whatsappDigits.slice(5, 8)} ${whatsappDigits.slice(8)}`
-    : `+${whatsappDigits}`;
 
   return (
     <SitePage>
@@ -55,56 +52,52 @@ function AboutPage() {
         </Section>
       </div>
 
-      <Section eyebrow="Partner with us" title="Contact">
-        <div className="mt-8 grid gap-6 lg:grid-cols-2">
-          <Card>
-            {sent ? (
-              <p className="py-6 text-center text-sm text-muted-foreground">
-                Thank you — we will be in touch shortly.
-              </p>
-            ) : (
-              <form
-                className="grid gap-5"
-                onSubmit={(e) => {
-                  e.preventDefault();
-                  setSent(true);
-                }}
-              >
-                <Field label="Name">
-                  <input className={inputClass} required />
-                </Field>
-                <Field label="Company">
-                  <input className={inputClass} />
-                </Field>
-                <Field label="Email">
-                  <input className={inputClass} type="email" required />
-                </Field>
-                <Field label="Message">
-                  <textarea className={inputClass} rows={4} required />
-                </Field>
-                <Button type="submit">Send message</Button>
-              </form>
-            )}
-          </Card>
-          <div className="space-y-4">
-            <Card>
-              <p className="eyebrow">Office</p>
-              <p className="mt-2 text-sm text-muted-foreground">
-                Tickbox UAE, Business Bay, Dubai, United Arab Emirates
-              </p>
-            </Card>
-            <Card>
-              <p className="eyebrow">General</p>
-              <a className="mt-2 inline-block text-sm text-muted-foreground transition-colors hover:text-primary" href="mailto:vinitahirani@rsvpdxb.com">vinitahirani@rsvpdxb.com</a>
-            </Card>
-            <Card>
-              <p className="eyebrow">Brands & partnerships</p>
-              <a className="mt-2 inline-block text-sm text-muted-foreground transition-colors hover:text-primary" href="mailto:vinitahirani@rsvpdxb.com">vinitahirani@rsvpdxb.com</a>
-            </Card>
-            <Card>
-              <p className="eyebrow">Connect with us</p>
-              <a className="mt-2 inline-block text-sm text-muted-foreground transition-colors hover:text-primary" href={`https://wa.me/${whatsappDigits}`} target="_blank" rel="noreferrer">{whatsappDisplay}</a>
-            </Card>
+      <Section className="about-contact-section" eyebrow="Contact" title="We’d love to hear from you">
+        <div className="about-contact-grid">
+          <div className="about-contact-details">
+            <a className="about-contact-card" href="https://maps.google.com/?q=Diplomat+One+Building+Umm+Hurair+1+Dubai" target="_blank" rel="noopener noreferrer">
+              <span className="about-contact-icon"><MapPin size={25} aria-hidden="true" /></span>
+              <span><strong>Visit us</strong><small>303 Diplomat One Building, AWR Properties, 9th Street, Umm Hurair 1, Dubai, UAE</small></span>
+              <ArrowUpRight className="about-contact-arrow" size={17} aria-hidden="true" />
+            </a>
+            <a className="about-contact-card" href="tel:+971552521124">
+              <span className="about-contact-icon"><Phone size={25} aria-hidden="true" /></span>
+              <span><strong>Call us</strong><small>+971 55 252 1124</small></span>
+              <ArrowUpRight className="about-contact-arrow" size={17} aria-hidden="true" />
+            </a>
+            <a className="about-contact-card" href="mailto:vinitahirani@tickboxuae.com">
+              <span className="about-contact-icon"><Mail size={25} aria-hidden="true" /></span>
+              <span><strong>Email us</strong><small>vinitahirani@tickboxuae.com</small></span>
+              <ArrowUpRight className="about-contact-arrow" size={17} aria-hidden="true" />
+            </a>
+            <div className="about-contact-socials">
+              <a href="https://www.instagram.com/rsvpdxb/" target="_blank" rel="noopener noreferrer" aria-label="RSVP DXB on Instagram"><Instagram size={21} /></a>
+              <span title="Facebook profile link not configured" aria-label="Facebook"><Facebook size={21} /></span>
+              <span title="LinkedIn profile link not configured" aria-label="LinkedIn"><Linkedin size={21} /></span>
+              <a href={`https://wa.me/${whatsappDigits}`} target="_blank" rel="noopener noreferrer" aria-label="Chat with RSVP DXB on WhatsApp"><MessageCircle size={21} /></a>
+            </div>
+          </div>
+          <div className="about-contact-form-card">
+            <h2>Drop us a line</h2>
+            <form onSubmit={(event) => {
+              event.preventDefault();
+              const form = new FormData(event.currentTarget);
+              const name = String(form.get("name") ?? "").trim();
+              const email = String(form.get("email") ?? "").trim();
+              const organisation = String(form.get("organisation") ?? "").trim();
+              const project = String(form.get("project") ?? "").trim();
+              const message = ["Hello RSVP DXB, I would like to get in touch.", `Name: ${name}`, `Email: ${email}`, `Organisation: ${organisation}`, project ? `Project: ${project}` : ""].filter(Boolean).join("\n");
+              window.location.href = `https://wa.me/${whatsappDigits}?text=${encodeURIComponent(message)}`;
+            }}>
+              <div className="about-contact-fields">
+                <input name="name" autoComplete="name" placeholder="Your name" aria-label="Your name" required />
+                <input name="email" type="email" autoComplete="email" placeholder="Email address*" aria-label="Email address" required />
+                <input className="about-contact-wide" name="organisation" placeholder="Name of organisation*" aria-label="Name of organisation" required />
+                <textarea className="about-contact-wide" name="project" placeholder="Tell us about your project" aria-label="Tell us about your project" rows={4} />
+              </div>
+              <Button className="about-contact-submit" type="submit">Send message <ArrowRight size={19} /></Button>
+              <p className="about-contact-note">Submitting opens WhatsApp with your message — the fastest way to reach us.</p>
+            </form>
           </div>
         </div>
       </Section>

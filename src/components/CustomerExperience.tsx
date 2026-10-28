@@ -50,15 +50,19 @@ export function ScrollShowcase() {
       frame = requestAnimationFrame(() => {
         const section = ref.current;
         if (!section || !rail.current || !sticky.current) return;
+        const scrollDistance = window.innerWidth * (SCENES.length - 1);
+        const requiredHeight = sticky.current.offsetHeight + scrollDistance;
+        if (Math.abs(section.offsetHeight - requiredHeight) > 1) {
+          section.style.height = `${requiredHeight}px`;
+        }
         const top = parseFloat(getComputedStyle(sticky.current).top) || 0;
         const range = section.offsetHeight - sticky.current.offsetHeight;
         const progress = Math.max(
           0,
           Math.min(1, (top - section.getBoundingClientRect().top) / Math.max(range, 1)),
         );
-        // The rail is 500% wide but each scene is one viewport wide. Translate
-        // by the viewport width so the last story ends exactly at the frame edge.
-        rail.current.style.transform = `translate3d(${-progress * 80}vw,0,0)`;
+        // Five viewport-width scenes need four viewport widths of travel.
+        rail.current.style.transform = `translate3d(${-progress * (SCENES.length - 1) * 100}vw,0,0)`;
         section.style.setProperty("--story-progress", String(progress));
         rail.current.querySelectorAll<HTMLElement>(".showcase-scene").forEach((scene, i) => {
           const distance = Math.min(1, Math.abs(progress * 4 - i));
