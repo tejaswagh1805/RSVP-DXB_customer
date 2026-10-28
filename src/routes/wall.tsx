@@ -4,8 +4,14 @@ import { PageHero, SitePage } from "@/components/SiteLayout";
 import { Badge, Button, Card } from "@/components/ui-kit";
 import { useStore } from "@/lib/store";
 import { EventImage } from "@/components/EventImage";
+import { formatDate, type EventItem, type WallPost } from "@/lib/data";
+import { listLiveWallPosts, listPublishedEvents } from "@/lib/database";
 
 export const Route = createFileRoute("/wall")({
+  loader: async () => {
+    const [events, posts] = await Promise.all([listPublishedEvents(), listLiveWallPosts()]);
+    return { events, posts };
+  },
   head: () => ({
     meta: [
       { title: "Events Wall — RSVP DXB" },
@@ -29,10 +35,31 @@ export const Route = createFileRoute("/wall")({
 const TABS = ["Everything", "Last-minute", "New Events", "Recaps", "Offers", "Saved"];
 
 function WallPage() {
-  const { wall, saved, events, toggleSave } = useStore();
+  const { saved, toggleSave } = useStore();
+  const { events: databaseEvents, posts: databasePosts } = Route.useLoaderData();
   const [tab, setTab] = useState("Everything");
 
-  const live = wall.filter((p) => p.status === "live");
+  const todayDubai = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Asia/Dubai",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).format(new Date());
+  const events = databaseEvents.filter((event) => event.status === "published" && event.date >= todayDubai);
+  const linkedEventIds = new Set(databasePosts.flatMap((post) => post.eventId ? [post.eventId] : []));
+  const eventPosts: WallPost[] = events
+    .filter((event) => !linkedEventIds.has(event.id))
+    .map((event: EventItem) => ({
+      id: `event-${event.id}`,
+      brand: event.brand,
+      type: "New Event",
+      body: `${event.title} · ${formatDate(event.date)}${event.time ? ` at ${event.time}` : ""}${event.venue ? ` · ${event.venue}` : ""}${event.area ? `, ${event.area}` : ""}`,
+      posted: `Upcoming · ${formatDate(event.date)}`,
+      boosted: false,
+      status: "live",
+      eventId: event.id,
+    }));
+  const live = [...eventPosts, ...databasePosts];
   const filtered = live.filter((p) => {
     if (tab === "Everything") return true;
     if (tab === "Last-minute") return p.type === "Places Just Opened" || p.type === "Tonight";
@@ -47,7 +74,7 @@ function WallPage() {
       <PageHero
         eyebrow="Events Wall"
         title="Live from the city"
-        intro="Brands post here using credits. A normal post costs 1 credit, a 24-hour boost costs 3. Members RSVP straight from the feed."
+        intro="The latest published events and updates from brands across Dubai. Open an event for details and RSVP options."
       />
 
       <div className="mx-auto w-full max-w-3xl px-5 py-10">
@@ -61,7 +88,7 @@ function WallPage() {
 
         <div className="mt-8 space-y-4">
           {filtered.map((p) => {
-            const event = p.eventId ? events.find((e) => e.id === p.eventId) : undefined;
+            const event = p.eventId ? databaseEvents.find((e) => e.id === p.eventId) : undefined;
             return (
               <Card key={p.id} className={p.boosted ? "border-primary/50" : ""}>
                 <div className="flex items-start gap-4">

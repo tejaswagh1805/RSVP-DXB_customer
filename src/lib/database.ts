@@ -8,7 +8,7 @@ import nightlifeImage from "@/assets/event-nightlife.jpg";
 import propertyImage from "@/assets/event-property.jpg";
 import { getSql } from "./db.server";
 import { applicationAdminEmail, applicationConfirmationEmail, memberEmailHtml, memberPasswordResetEmail, sendMemberEmail } from "./email.server";
-import { profileSlug, type EventItem, type Track } from "./data";
+import { profileSlug, type EventItem, type Track, type WallPost } from "./data";
 
 export type HomepageMediaItem = { id: string; slot: "gallery" | "top_pick"; title: string; caption: string; imageUrl: string; mediaType: "image" | "video"; linkUrl: string; displayOrder: number };
 export type PeopleProfile = { id: string; category: "artist" | "influencer"; name: string; role: string; subtitle: string; bio: string; imageUrl: string; instagramUrl: string; tiktokUrl: string; youtubeUrl: string; xUrl: string; displayOrder: number };
@@ -108,6 +108,27 @@ export const listPublishedEvents = createServerFn({ method: "GET" }).handler(asy
     FROM events WHERE status = 'published' ORDER BY date, time
   `) as unknown as EventRow[];
   return rows.map(mapEvent);
+});
+
+export const listLiveWallPosts = createServerFn({ method: "GET" }).handler(async () => {
+  const sql = getSql();
+  const rows = (await sql`
+    SELECT post.id, post.brand, post.type, post.body, post.posted, post.boosted,
+      post.status, post.event_id AS "eventId"
+    FROM wall_posts AS post
+    LEFT JOIN events AS event ON event.id = post.event_id
+    WHERE post.status = 'live'
+      AND (
+        post.event_id IS NULL
+        OR (
+          event.status = 'published'
+          AND event.date >= (NOW() AT TIME ZONE 'Asia/Dubai')::date
+        )
+      )
+    ORDER BY post.created_at DESC
+    LIMIT 50
+  `) as unknown as WallPost[];
+  return rows;
 });
 
 export const getEventById = createServerFn({ method: "GET" })
