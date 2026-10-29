@@ -72,7 +72,7 @@ function EventsPage() {
         intro="Browse event details, ticket links, reservation contacts and creator opportunities."
       />
 
-      <div className="mx-auto w-full max-w-6xl px-5 py-10">
+      <div className="customer-content-section mx-auto w-full max-w-6xl px-5 py-10">
         <div className="flex flex-wrap items-center gap-2">
           {CATEGORIES.map((c) => (
             <Button

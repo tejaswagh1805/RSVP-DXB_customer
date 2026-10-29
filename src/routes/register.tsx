@@ -5,6 +5,7 @@ import { SitePage } from "@/components/SiteLayout";
 import { Badge, Button, Card, Field, inputClass, PasswordInput } from "@/components/ui-kit";
 import { TRACKS, type Track } from "@/lib/data";
 import { submitApplication } from "@/lib/database";
+import { isValidPassword } from "@/lib/password";
 
 export const Route = createFileRoute("/register")({
   head: () => ({
@@ -112,13 +113,9 @@ function RegisterPage() {
         },
       });
       setEmailNotice(
-        result.emailSent && result.adminEmailSent
-          ? "Your confirmation email was sent, and the team was notified."
-          : result.emailSent
-            ? "Your confirmation email was sent. The team notification email could not be sent, but your application is saved for review."
-            : result.adminEmailSent
-              ? "Your application is saved and the team was notified. Your confirmation email could not be sent yet."
-              : "Your application is saved, but the emails could not be sent yet. The team can still review your application.",
+        result.emailSent
+          ? `A confirmation email has been sent to ${email.trim()}. Please check your inbox and spam folder.`
+          : "Your application is safely submitted for review. We could not send a confirmation email just now; please contact the RSVP DXB team if you need assistance.",
       );
       setStep(5);
     } catch (error) {
@@ -134,7 +131,7 @@ function RegisterPage() {
 
   return (
     <SitePage>
-      <div className="mx-auto w-full max-w-2xl px-5 py-20">
+      <div className="customer-auth-content mx-auto w-full max-w-2xl px-5 py-20">
         <div className="flex items-center justify-between">
           <h1 className="text-4xl">Register</h1>
           {step < 5 ? <Badge tone="gold">Step {step} of 3</Badge> : null}
@@ -180,12 +177,18 @@ function RegisterPage() {
                     value={password}
                     onChange={setPassword}
                     autoComplete="new-password"
-                    placeholder="At least 12 characters"
+                    placeholder="Password"
                   />
+                  <ul className="register-password-rules" aria-live="polite">
+                    <li className={password.length >= 8 ? "is-met" : ""}>At least 8 characters</li>
+                    <li className={/[A-Z]/.test(password) ? "is-met" : ""}>One capital letter</li>
+                    <li className={/\d/.test(password) ? "is-met" : ""}>One number</li>
+                    <li className={/[^A-Za-z0-9\s]/.test(password) ? "is-met" : ""}>One special character</li>
+                  </ul>
                 </Field>
                 <Button
                   variant="outline"
-                  disabled={name.trim().length < 2 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim()) || password.length < 12}
+                  disabled={name.trim().length < 2 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim()) || !isValidPassword(password)}
                   onClick={() => setStep(2)}
                 >
                   Continue
@@ -422,17 +425,22 @@ function RegisterPage() {
           ) : null}
 
           {step === 5 ? (
-            <div className="py-6 text-center">
+            <div className="register-success py-6 text-center" role="status" aria-live="polite">
+              <div className="register-confetti" aria-hidden="true">
+                {Array.from({ length: 16 }, (_, index) => <span key={index} />)}
+              </div>
+              <div className="register-success-icon" aria-hidden="true">✓</div>
+              <p className="eyebrow mt-4">Congratulations, {name.trim().split(/\s+/)[0]}!</p>
               <Badge tone="amber">Pending review</Badge>
-              <h2 className="mt-4 text-3xl">Application submitted</h2>
+              <h2 className="mt-3 text-3xl">Your application is in</h2>
               <p className="mx-auto mt-3 max-w-md text-sm text-muted-foreground">
-                Thank you. Your {track} application is saved for the team to review. We normally
-                respond within 48 hours.
+                Thank you for your interest in RSVP DXB. Our membership team will review your {track}
+                profile and send an update to {email.trim()}, typically within 48 hours.
               </p>
               {emailNotice ? <p className="mx-auto mt-3 max-w-md text-sm text-muted-foreground" role="status">{emailNotice}</p> : null}
               <div className="mt-8 flex justify-center gap-3">
                 <Link to="/">
-                  <Button>Back to RSVP DXB</Button>
+                  <Button className="register-success-cta">Back to RSVP DXB</Button>
                 </Link>
               </div>
             </div>

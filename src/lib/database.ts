@@ -7,8 +7,9 @@ import fashionImage from "@/assets/event-fashion.jpg";
 import nightlifeImage from "@/assets/event-nightlife.jpg";
 import propertyImage from "@/assets/event-property.jpg";
 import { getSql } from "./db.server";
-import { applicationAdminEmail, applicationConfirmationEmail, memberEmailHtml, memberPasswordResetEmail, sendMemberEmail } from "./email.server";
+import { applicationAdminEmail, applicationConfirmationEmail, memberEmailHtml, memberPasswordResetEmail, newsletterAdminEmail, newsletterConfirmationEmail, sendMemberEmail } from "./email.server";
 import { profileSlug, type EventItem, type Track, type WallPost } from "./data";
+import { isValidPassword } from "./password";
 
 export type HomepageMediaItem = { id: string; slot: "gallery" | "top_pick"; title: string; caption: string; imageUrl: string; mediaType: "image" | "video"; linkUrl: string; displayOrder: number };
 export type PeopleProfile = { id: string; category: "artist" | "influencer"; name: string; role: string; subtitle: string; bio: string; imageUrl: string; instagramUrl: string; tiktokUrl: string; youtubeUrl: string; xUrl: string; displayOrder: number };
@@ -259,6 +260,35 @@ export const getMemberRsvps = createServerFn({ method: "GET" }).handler(async ()
   return Object.fromEntries(rows.map((row) => [row.event_id, row.state]));
 });
 
+export const submitNewsletterSubscription = createServerFn({ method: "POST" })
+  .validator((input: { email: string }) => input)
+  .handler(async ({ data }) => {
+    const email = String(data.email ?? "").trim().toLowerCase();
+    if (email.length > 254 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      throw new Error("Enter a valid email address.");
+    }
+
+    const adminEmail = "vinitahirani@rsvpdxb.com";
+    const [subscriberResult, adminResult] = await Promise.all([
+      sendMemberEmail({
+        to: email,
+        subject: "You’re on the RSVP DXB list",
+        text: "Thanks for subscribing to RSVP DXB. We’ll send you occasional updates about upcoming events, new openings, and last-minute offers. You can ignore this email if you did not sign up.",
+        html: newsletterConfirmationEmail(),
+      }),
+      sendMemberEmail({
+        to: adminEmail,
+        subject: "New RSVP DXB newsletter subscriber",
+        text: `A visitor subscribed from the RSVP DXB website.\n\nSubscriber email: ${email}`,
+        html: newsletterAdminEmail(email),
+      }),
+    ]);
+    if (!subscriberResult.sent) {
+      throw new Error("We couldn’t send your confirmation email. Please try again later.");
+    }
+    return { adminEmailSent: adminResult.sent };
+  });
+
 export const submitEventRsvpRequest = createServerFn({ method: "POST" })
   .validator((input: { eventId: string; track: Track; guestNames: string[]; deliverablesAgreed: boolean }) => input)
   .handler(async ({ data }) => {
@@ -417,7 +447,7 @@ export const submitApplication = createServerFn({ method: "POST" })
     const password = data.password;
     if (name.length < 2 || name.length > 120) throw new Error("Enter your full name.");
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) throw new Error("Enter a valid email address.");
-    if (password.length < 12 || password.length > 200) throw new Error("Password must be at least 12 characters.");
+    if (!isValidPassword(password)) throw new Error("Password must be at least 8 characters and include an uppercase letter, a number, and a special character.");
     if (!["Media", "Creators", "Tastemakers", "Private Circle"].includes(data.track)) throw new Error("Choose a valid membership track.");
     const submittedProfile = String(data.instagramProfile ?? "").trim();
     const urlMatch = submittedProfile.match(/^(?:https?:\/\/)?(?:www\.)?instagram\.com\/([a-zA-Z0-9._]{1,30})\/?$/i);
@@ -465,9 +495,9 @@ export const submitApplication = createServerFn({ method: "POST" })
     const [customerEmailResult, adminEmailResult] = await Promise.all([
       sendMemberEmail({
         to: application.email,
-        subject: "We received your RSVP DXB application",
-        text: `Hello ${application.name},\n\nThank you for applying to RSVP DXB. Our team will review your application and normally respond within 48 hours.\n\nRegards,\nRSVP DXB`,
-        html: applicationConfirmationEmail(application.name),
+        subject: "RSVP DXB membership application received",
+        text: `Hello ${application.name},\n\nYour RSVP DXB membership application has been received and is now pending review.\n\nMembership track: ${data.track}\nStatus: Pending review\n\nOur membership team will review your profile and contact you at this email address with an update, typically within 48 hours.\n\nIf you did not submit this application, you can disregard this email.\n\nKind regards,\nRSVP DXB Membership Team`,
+        html: applicationConfirmationEmail(application.name, data.track, application.email),
       }),
       sendMemberEmail({
         to: adminEmail,
@@ -605,7 +635,7 @@ export const resetMemberPassword = createServerFn({ method: "POST" })
   .validator((input: { token: string; password: string }) => input)
   .handler(async ({ data }) => {
     if (!/^[a-f0-9]{64}$/i.test(data.token)) throw new Error("This reset link is invalid or expired. Request a new one.");
-    if (data.password.length < 12 || data.password.length > 200) throw new Error("Password must be at least 12 characters.");
+    if (!isValidPassword(data.password)) throw new Error("Password must be at least 8 characters and include an uppercase letter, a number, and a special character.");
     const tokenHash = createHash("sha256").update(data.token).digest("hex");
     const passwordHash = await hashPassword(data.password);
     const sql = getSql();

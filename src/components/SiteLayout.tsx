@@ -6,7 +6,7 @@ import { Button } from "./ui-kit";
 import { Apple, Menu, MessageCircle, Play, Send, Ticket, X } from "lucide-react";
 import { CursorBlob } from "./GenZFx";
 import clientLogoUrl from "@/assets/rsvp-client-logo.png";
-import { getMemberSession, signOutMember } from "@/lib/database";
+import { getMemberSession, signOutMember, submitNewsletterSubscription } from "@/lib/database";
 const clientLogo = { url: clientLogoUrl };
 const whatsappNumber = String(import.meta.env["VITE_RSVP_WHATSAPP_NUMBER"] || "").replace(/\D/g, "");
 const whatsappChatUrl = whatsappNumber
@@ -87,6 +87,7 @@ export function SiteHeader({ overlay = false }: { overlay?: boolean }) {
               {item.label}
             </Link>
           ))}
+          <Link to="/tickets" className="mobile-only-link mobile-last-minute-link" onClick={closeMobileMenu}>Last minute ticket</Link>
           {!profile.signedIn ? <Link to="/signin" className="mobile-only-link" onClick={() => setMobileMenuOpen(false)}>Sign in</Link> : null}
         </nav>
 
@@ -209,14 +210,27 @@ export function SiteFooter() {
 function NewsletterForm() {
   const [email, setEmail] = useState("");
   const [done, setDone] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState("");
+  const subscribe = useServerFn(submitNewsletterSubscription);
   return done ? (
-    <p className="footer-newsletter-done">Thanks for your interest. Newsletter signup is not connected yet; please contact the RSVP DXB team.</p>
+    <p className="footer-newsletter-done">Thanks for subscribing. Check your inbox for a confirmation email from RSVP DXB.</p>
   ) : (
     <form
       className="footer-newsletter-form"
-      onSubmit={(e) => {
+      onSubmit={async (e) => {
         e.preventDefault();
-        if (email.trim()) setDone(true);
+        setBusy(true);
+        setError("");
+        try {
+          const result = await subscribe({ data: { email } });
+          setDone(true);
+          if (!result.adminEmailSent) setError("Your confirmation was sent, but our team notification failed. Please contact RSVP DXB to confirm your subscription.");
+        } catch (submitError) {
+          setError(submitError instanceof Error ? submitError.message : "We couldn’t complete your subscription. Please try again.");
+        } finally {
+          setBusy(false);
+        }
       }}
     >
       <input
@@ -224,11 +238,13 @@ function NewsletterForm() {
         required
         maxLength={254}
         value={email}
+        autoComplete="email"
         onChange={(e) => setEmail(e.target.value)}
-      placeholder="your@email.com"
+        placeholder="your@email.com"
         aria-label="Email address"
       />
-      <button type="submit" aria-label="Subscribe"><Send size={16} aria-hidden="true" />Subscribe</button>
+      <button type="submit" aria-label="Subscribe" disabled={busy}><Send size={16} aria-hidden="true" />{busy ? "Sending…" : "Subscribe"}</button>
+      {error ? <p className="footer-newsletter-error" role="alert">{error}</p> : null}
     </form>
   );
 }
@@ -282,13 +298,15 @@ export function PageHero({
   eyebrow,
   title,
   intro,
+  className = "",
 }: {
   eyebrow: string;
   title: string;
   intro: string;
+  className?: string;
 }) {
   return (
-    <div className="customer-page-hero border-b border-border bg-surface">
+    <div className={`customer-page-hero border-b border-border bg-surface ${className}`}>
       <div className="mx-auto w-full max-w-6xl px-5 py-16">
         <p className="eyebrow">{eyebrow}</p>
         <h1 className="mt-3 max-w-3xl text-4xl md:text-5xl">{title}</h1>

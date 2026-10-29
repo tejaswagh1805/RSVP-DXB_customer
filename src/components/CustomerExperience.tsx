@@ -302,9 +302,9 @@ export function EventGallery({ media = [], previewLimit }: { media?: HomepageMed
               <div className="gallery-item" key={item.id}>
                 <Button variant="ghost" className="gallery-photo" onClick={() => setSelected(item)}>
                   {item.mediaType === "video" ? (
-                    <video src={item.imageUrl} muted playsInline preload="metadata" aria-label={item.title} className="h-full w-full object-contain bg-black" />
+                    <video src={item.imageUrl} muted playsInline preload="metadata" aria-label={item.title} className="gallery-media gallery-media-video" />
                   ) : (
-                    <SafeImage src={item.imageUrl} alt={item.title} className="h-full w-full object-cover" />
+                    <SafeImage src={item.imageUrl} alt={item.title} className="gallery-media gallery-media-image" />
                   )}
                   <span className="gallery-label">
                     {item.title}
@@ -314,7 +314,7 @@ export function EventGallery({ media = [], previewLimit }: { media?: HomepageMed
               </div>
             ))
           : gallery.map((e) => (
-              <div className="gallery-item" key={e.id}>
+              <div className="gallery-item gallery-event-item" key={e.id}>
                 <Button variant="ghost" className="gallery-photo" onClick={() => setSelected(e)}>
                   <EventImage event={e} className="h-full w-full" />
                   <span className="gallery-label">

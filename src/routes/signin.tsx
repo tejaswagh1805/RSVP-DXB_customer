@@ -31,7 +31,7 @@ function SignInPage() {
 
   return (
     <SitePage>
-      <div className="mx-auto w-full max-w-md px-5 py-24">
+      <div className="customer-auth-content mx-auto w-full max-w-md px-5 py-24">
         <h1 className="text-center text-4xl">Welcome back</h1>
         <p className="mt-2 text-center text-sm text-muted-foreground">
           Sign in to see your invitations, RSVPs and pass.

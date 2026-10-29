@@ -40,7 +40,7 @@ function HostPage() {
       <Section eyebrow="Packages & pricing" title="Three ways to work with us">
         <div className="mt-8 grid gap-4 md:grid-cols-3">
           {PACKAGES.map((p) => (
-            <Card key={p.name} className={pkg === p.name ? "border-primary/60" : ""}>
+            <Card key={p.name} className={`host-package-card${pkg === p.name ? " border-primary/60" : ""}`}>
               <div className="flex items-center justify-between">
                 <h3 className="text-xl">{p.name}</h3>
                 <Badge tone="gold">from {p.from}</Badge>
@@ -55,7 +55,7 @@ function HostPage() {
                 ))}
               </ul>
               <Button
-                className="mt-5 w-full"
+                className="host-package-button w-full"
                 variant={pkg === p.name ? "primary" : "outline"}
                 onClick={() => setPkg(p.name)}
               >

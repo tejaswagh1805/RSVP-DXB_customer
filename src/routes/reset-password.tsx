@@ -5,6 +5,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { SitePage } from "@/components/SiteLayout";
 import { Button, Card, Field, PasswordInput } from "@/components/ui-kit";
 import { resetMemberPassword } from "@/lib/database";
+import { isValidPassword } from "@/lib/password";
 
 export const Route = createFileRoute("/reset-password")({
   validateSearch: (search: Record<string, unknown>) => ({
@@ -31,16 +32,16 @@ function ResetPasswordPage() {
   const [error, setError] = useState("");
   const navigate = useNavigate();
 
-  const tooShort = pass.length > 0 && pass.length < 12;
+  const invalidPassword = pass.length > 0 && !isValidPassword(pass);
   const mismatch = confirm.length > 0 && pass !== confirm;
-  const canSave = pass.length >= 12 && pass.length <= 200 && pass === confirm && Boolean(token);
+  const canSave = isValidPassword(pass) && pass === confirm && Boolean(token);
 
   return (
     <SitePage>
-      <div className="mx-auto w-full max-w-md px-5 py-24">
+      <div className="customer-auth-content mx-auto w-full max-w-md px-5 py-24">
         <h1 className="text-center text-4xl">Set a new password</h1>
         <p className="mt-2 text-center text-sm text-muted-foreground">
-          Choose a password of at least 12 characters.
+          Use at least 8 characters, including a capital letter, a number, and a special character.
         </p>
         <Card className="mt-8">
           {done ? (
@@ -80,8 +81,8 @@ function ResetPasswordPage() {
               }}
             >
               <Field label="New password">
-                <PasswordInput value={pass} onChange={setPass} autoComplete="new-password" placeholder="At least 12 characters" />
-                <span className="mt-1 block text-xs text-destructive">{tooShort ? "Use at least 12 characters." : ""}</span>
+                <PasswordInput value={pass} onChange={setPass} autoComplete="new-password" placeholder="Password" />
+                <span className="mt-1 block text-xs text-destructive">{invalidPassword ? "Use at least 8 characters, one capital letter, one number, and one special character." : ""}</span>
               </Field>
               <Field label="Confirm new password">
                 <PasswordInput value={confirm} onChange={setConfirm} autoComplete="new-password" placeholder="Type it again" />

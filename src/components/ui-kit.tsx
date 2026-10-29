@@ -98,7 +98,7 @@ export function Section({
   className?: string;
 }) {
   return (
-    <section className={cn("mx-auto w-full max-w-6xl px-5 py-16", className)}>
+    <section className={cn("customer-section mx-auto w-full max-w-6xl px-5 py-16", className)}>
       {eyebrow ? <p className="eyebrow">{eyebrow}</p> : null}
       {title ? <h2 className="mt-3 text-3xl md:text-4xl">{title}</h2> : null}
       {intro ? <p className="mt-3 max-w-2xl text-sm text-muted-foreground">{intro}</p> : null}

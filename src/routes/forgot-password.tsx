@@ -27,7 +27,7 @@ function ForgotPasswordPage() {
 
   return (
     <SitePage>
-      <div className="mx-auto w-full max-w-md px-5 py-24">
+      <div className="customer-auth-content mx-auto w-full max-w-md px-5 py-24">
         <h1 className="text-center text-4xl">Forgot password?</h1>
         <p className="mt-2 text-center text-sm text-muted-foreground">
           Enter the email address associated with your approved member account.

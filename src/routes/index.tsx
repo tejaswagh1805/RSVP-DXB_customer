@@ -40,13 +40,15 @@ function Home() {
   const { events: databaseEvents, media, profiles, venues } = Route.useLoaderData();
   return (
     <SitePage overlayHeader>
-      <ScrollShowcase />
-      <EventRibbon title="Latest events" events={databaseEvents} />
-      <EventRibbon title="RSVP TOP Pick" reverse events={databaseEvents} />
-      {venues.length ? <VenueTopPicks venues={venues} /> : media.some((item) => item.slot === "top_pick") ? <SiteMediaRibbon media={media.filter((item) => item.slot === "top_pick")} /> : null}
-      <EventGallery media={media.filter((item) => item.slot === "gallery")} previewLimit={5} />
-      <ArtistGallery profiles={profiles} />
-      <TicketOffers />
+      <div className="customer-home">
+        <ScrollShowcase />
+        <EventRibbon title="Latest events" events={databaseEvents} />
+        <EventRibbon title="RSVP TOP Pick" reverse events={databaseEvents} />
+        {venues.length ? <VenueTopPicks venues={venues} /> : media.some((item) => item.slot === "top_pick") ? <SiteMediaRibbon media={media.filter((item) => item.slot === "top_pick")} /> : null}
+        <EventGallery media={media.filter((item) => item.slot === "gallery")} previewLimit={5} />
+        <ArtistGallery profiles={profiles} />
+        <TicketOffers />
+      </div>
     </SitePage>
   );
 }
