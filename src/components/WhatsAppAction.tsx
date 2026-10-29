@@ -5,12 +5,12 @@ export function WhatsAppAction({ event, purpose }: { event: EventItem; purpose?:
   const phoneNumber = String(import.meta.env["VITE_RSVP_WHATSAPP_NUMBER"] || "").replace(/\D/g, "");
   const today = new Date().toISOString().slice(0, 10);
   const ticketRequestOpen = event.status === "published" && event.date >= today && (!event.applicationDeadline || event.applicationDeadline >= today);
-  const isApplicationAction = /nominate|application|apply|creator pass/i.test(event.actionLabel || "");
-
-  // Preserve explicit nomination/application destinations; the ticket action
-  // itself is routed through the tracked WhatsApp request flow for every event.
-  if (!purpose && event.ticketUrl && isApplicationAction && ticketRequestOpen) {
-    return <a href={event.ticketUrl} target="_blank" rel="noopener noreferrer" className="inline-flex h-8 items-center justify-center gap-2 rounded-md border border-primary bg-primary px-3 text-xs font-medium text-primary-foreground">{event.actionLabel}</a>;
+  // The admin event URL is the configured destination for ticket purchases,
+  // nominations, or applications. Use it whenever it exists; only fall back
+  // to the tracked WhatsApp request flow when no external destination is set.
+  if (!purpose && event.ticketUrl && ticketRequestOpen) {
+    const label = event.actionLabel?.trim() || "Buy tickets";
+    return <a href={event.ticketUrl} target="_blank" rel="noopener noreferrer" aria-label={`${label} for ${event.title} (opens external site)`} className="inline-flex h-8 items-center justify-center gap-2 rounded-md border border-primary bg-primary px-3 text-xs font-medium text-primary-foreground">{label}</a>;
   }
 
   if (!ticketRequestOpen) {
