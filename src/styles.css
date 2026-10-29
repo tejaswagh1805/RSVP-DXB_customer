@@ -5296,3 +5296,8 @@ textarea {
   .register-success-icon:hover,
   .register-success-cta:hover { transform: none; }
 }
+
+.gallery-route-content {
+  max-width: 72rem;
+  padding-inline: 20px;
+}

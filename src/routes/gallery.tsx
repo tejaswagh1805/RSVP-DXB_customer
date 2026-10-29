@@ -25,7 +25,7 @@ function GalleryPage() {
   return (
     <SitePage>
       <PageHero eyebrow="Inside the room" title="Event gallery" intro="Photos and videos from RSVP DXB events and experiences." />
-      <EventGallery media={media} />
+      <EventGallery media={media} className="gallery-route-content" />
     </SitePage>
   );
 }

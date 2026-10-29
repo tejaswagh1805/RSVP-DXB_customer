@@ -250,7 +250,7 @@ export function SiteMediaRibbon({ media }: { media: HomepageMediaItem[] }) {
   );
 }
 
-export function EventGallery({ media = [], previewLimit }: { media?: HomepageMediaItem[]; previewLimit?: number }) {
+export function EventGallery({ media = [], previewLimit, className = "" }: { media?: HomepageMediaItem[]; previewLimit?: number; className?: string }) {
   const { events } = useStore();
   const [category, setCategory] = useState("All");
   const [selected, setSelected] = useState<EventItem | HomepageMediaItem | null>(null);
@@ -271,7 +271,7 @@ export function EventGallery({ media = [], previewLimit }: { media?: HomepageMed
     return () => window.removeEventListener("keydown", listener);
   }, [selected]);
   return (
-    <section className="experience-section">
+    <section className={`experience-section ${className}`.trim()}>
       <div className="experience-heading">
         <div>
           <p className="eyebrow">Inside the room</p>
