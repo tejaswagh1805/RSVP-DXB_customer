@@ -119,14 +119,19 @@ export function Stat({ label, value, hint }: { label: string; value: string; hin
 
 export function Field({
   label,
+  icon,
   children,
 }: {
   label: string;
+  icon?: ReactNode;
   children: ReactNode;
 }) {
   return (
     <label className="block">
-      <span className="eyebrow">{label}</span>
+      <span className="eyebrow inline-flex items-center gap-2">
+        {icon ? <span className="field-icon" aria-hidden="true">{icon}</span> : null}
+        {label}
+      </span>
       <div className="mt-2">{children}</div>
     </label>
   );

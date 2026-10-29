@@ -1,11 +1,33 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useState } from "react";
+import { useState, type CSSProperties } from "react";
 import { useServerFn } from "@tanstack/react-start";
+import {
+  ArrowRight,
+  AtSign,
+  BadgeCheck,
+  BriefcaseBusiness,
+  Building2,
+  Check,
+  CircleUserRound,
+  Compass,
+  Instagram,
+  KeyRound,
+  Link2,
+  Mail,
+  MapPin,
+  Newspaper,
+  Phone,
+  Sparkles,
+  Utensils,
+  UsersRound,
+} from "lucide-react";
 import { SitePage } from "@/components/SiteLayout";
 import { Badge, Button, Card, Field, inputClass, PasswordInput } from "@/components/ui-kit";
 import { TRACKS, type Track } from "@/lib/data";
 import { submitApplication } from "@/lib/database";
+import { getEmailValidationMessage } from "@/lib/email";
 import { isValidPassword } from "@/lib/password";
+import { formatPhoneNational, normalizeWhatsAppNumber, PHONE_COUNTRIES, type PhoneCountryCode } from "@/lib/phone";
 
 export const Route = createFileRoute("/register")({
   head: () => ({
@@ -38,6 +60,31 @@ const INTERESTS = [
   "Motoring",
 ];
 
+const TRACK_ICONS = {
+  Media: Newspaper,
+  Creators: Sparkles,
+  Tastemakers: Utensils,
+  "Private Circle": BadgeCheck,
+} satisfies Record<Track, typeof Newspaper>;
+
+const PROFILE_FIELD_ICONS: Record<string, typeof MapPin> = {
+  City: MapPin,
+  "Mobile / WhatsApp": Phone,
+  Instagram: Instagram,
+  "Follower count": UsersRound,
+  Outlet: Building2,
+  Role: BriefcaseBusiness,
+  Subjects: Compass,
+  "Recent work": Link2,
+  "TikTok / YouTube": AtSign,
+  Niche: Sparkles,
+  Company: Building2,
+  Industry: Compass,
+  "Profession / company": BriefcaseBusiness,
+  "Preferred events": Sparkles,
+  "Assistant contact": Phone,
+};
+
 function RegisterPage() {
   const submitToDatabase = useServerFn(submitApplication);
   const [step, setStep] = useState(1);
@@ -51,6 +98,19 @@ function RegisterPage() {
   const [emailNotice, setEmailNotice] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [interests, setInterests] = useState<string[]>(["Dining"]);
+  const [whatsappOptIn, setWhatsappOptIn] = useState(false);
+  const [whatsappNotice, setWhatsappNotice] = useState("");
+  const [phoneCountryCode, setPhoneCountryCode] = useState<PhoneCountryCode>("+971");
+  const passwordChecks = [password.length >= 8, /[A-Z]/.test(password), /\d/.test(password), /[^A-Za-z0-9\s]/.test(password)];
+  const passwordStrength = passwordChecks.filter(Boolean).length;
+  const emailError = getEmailValidationMessage(email);
+  const mobile = profileDetails["Mobile / WhatsApp"] ?? "";
+  const selectedPhoneCountry = PHONE_COUNTRIES.find((country) => country.code === phoneCountryCode)!;
+  const phoneError = mobile && !normalizeWhatsAppNumber(mobile, phoneCountryCode)
+    ? `Enter a valid ${selectedPhoneCountry.country} mobile number with ${selectedPhoneCountry.digits} digits.`
+    : whatsappOptIn && !mobile
+      ? "Enter a WhatsApp number to receive the welcome message."
+      : "";
 
   const toggleInterest = (i: string) =>
     setInterests((list) => (list.includes(i) ? list.filter((x) => x !== i) : [...list, i]));
@@ -59,8 +119,15 @@ function RegisterPage() {
     setProfileDetails((current) => ({ ...current, [key]: value }));
 
   const setPhoneNumber = (value: string) => {
-    const digits = value.replace(/\D/g, "");
-    setProfileDetail("Mobile / WhatsApp", `${value.trimStart().startsWith("+") ? "+" : ""}${digits}`);
+    let digits = value.replace(/\D/g, "");
+    const code = phoneCountryCode.replace(/\D/g, "");
+    if (digits.startsWith("00")) digits = digits.slice(2);
+    const nationalLength = selectedPhoneCountry.digits;
+    const hasInternationalLength = digits.length === code.length + nationalLength ||
+      Boolean(selectedPhoneCountry.trunk && digits.length === code.length + nationalLength + 1);
+    if (digits.startsWith(code) && hasInternationalLength) digits = digits.slice(code.length);
+    if (selectedPhoneCountry.trunk && digits.startsWith(selectedPhoneCountry.trunk) && digits.length === selectedPhoneCountry.digits + 1) digits = digits.slice(1);
+    setProfileDetail("Mobile / WhatsApp", digits.slice(0, selectedPhoneCountry.digits));
   };
 
   const submit = async () => {
@@ -82,6 +149,8 @@ function RegisterPage() {
           instagramProfile: profileDetails["Instagram"] ?? "",
           instagramFollowers: profileDetails["Follower count"] ?? "",
           mobile: profileDetails["Mobile / WhatsApp"] ?? "",
+          mobileCountryCode: phoneCountryCode,
+          whatsappOptIn,
           outlet:
             profileDetails["Outlet"] ??
             profileDetails["Company"] ??
@@ -117,6 +186,13 @@ function RegisterPage() {
           ? `A confirmation email has been sent to ${email.trim()}. Please check your inbox and spam folder.`
           : "Your application is safely submitted for review. We could not send a confirmation email just now; please contact the RSVP DXB team if you need assistance.",
       );
+      setWhatsappNotice(
+        whatsappOptIn
+          ? result.whatsappSent
+            ? "Your WhatsApp welcome message was accepted for delivery."
+            : "Your application was saved, but we could not send the WhatsApp welcome message right now. The team will follow up by email."
+          : "",
+      );
       setStep(5);
     } catch (error) {
       setSubmitError(
@@ -144,16 +220,16 @@ function RegisterPage() {
           />
         </div>
 
-        <Card className="mt-8">
+        <Card className="register-card mt-8">
           {step === 1 ? (
-            <div>
+            <div key="register-step-1" className="register-step-content">
               <h2 className="text-2xl">Create your account</h2>
               <div className="my-6 flex items-center gap-3 text-xs text-muted-foreground">
                 <div className="h-px flex-1 bg-border" /> register with email
                 <div className="h-px flex-1 bg-border" />
               </div>
               <div className="grid gap-4">
-                <Field label="Full name">
+                <Field label="Full name" icon={<CircleUserRound size={15} />}>
                   <input
                     className={inputClass}
                     required
@@ -162,17 +238,22 @@ function RegisterPage() {
                     placeholder="Your name"
                   />
                 </Field>
-                <Field label="Email">
+                <Field label="Email" icon={<Mail size={15} />}>
                   <input
-                    className={inputClass}
+                    className={`${inputClass} ${emailError ? "border-destructive" : ""}`}
                     required
                     type="email"
+                    autoComplete="email"
+                    maxLength={254}
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     placeholder="you@email.com"
+                    aria-invalid={Boolean(emailError)}
+                    aria-describedby={emailError ? "register-email-error" : undefined}
                   />
+                  {emailError ? <p id="register-email-error" className="mt-2 text-xs text-destructive" role="alert">{emailError}</p> : null}
                 </Field>
-                <Field label="Password">
+                <Field label="Password" icon={<KeyRound size={15} />}>
                   <PasswordInput
                     value={password}
                     onChange={setPassword}
@@ -185,69 +266,103 @@ function RegisterPage() {
                     <li className={/\d/.test(password) ? "is-met" : ""}>One number</li>
                     <li className={/[^A-Za-z0-9\s]/.test(password) ? "is-met" : ""}>One special character</li>
                   </ul>
+                  <div className="register-password-strength" aria-label={`Password strength ${passwordStrength} of 4`}>
+                    <div className="register-password-strength-track"><span style={{ width: `${passwordStrength * 25}%` }} /></div>
+                    <span className={passwordStrength < 2 ? "is-weak" : passwordStrength < 4 ? "is-building" : "is-strong"}>
+                      {passwordStrength === 0 ? "Password strength" : passwordStrength < 2 ? "Keep going" : passwordStrength < 4 ? "Getting stronger" : "Strong password"}
+                    </span>
+                  </div>
                 </Field>
                 <Button
                   variant="outline"
-                  disabled={name.trim().length < 2 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim()) || !isValidPassword(password)}
+                  disabled={name.trim().length < 2 || Boolean(emailError) || !email.trim() || !isValidPassword(password)}
                   onClick={() => setStep(2)}
                 >
-                  Continue
+                  Continue <ArrowRight size={16} />
                 </Button>
               </div>
             </div>
           ) : null}
 
           {step === 2 ? (
-            <div>
+            <div key="register-step-2" className="register-step-content">
               <h2 className="text-2xl">Select your track</h2>
               <div className="mt-5 grid gap-3">
-                {TRACKS.map((t) => (
-                  <button
-                    key={t.name}
-                    onClick={() => setTrack(t.name)}
-                    className={`rounded-lg border p-4 text-left transition-colors ${
-                      track === t.name ? "border-primary bg-surface-2" : "border-border"
-                    }`}
-                  >
-                    <div className="flex items-center justify-between">
-                      <span className="font-display text-xl">{t.name}</span>
-                      <span className="text-xs text-primary">{t.blurb}</span>
-                    </div>
-                    <p className="mt-1 text-sm text-muted-foreground">{t.detail}</p>
-                  </button>
-                ))}
+                {TRACKS.map((t) => {
+                  const TrackIcon = TRACK_ICONS[t.name];
+                  return (
+                    <button
+                      key={t.name}
+                      onClick={() => setTrack(t.name)}
+                      style={{ "--track-index": TRACKS.indexOf(t) } as CSSProperties}
+                      className={`register-track-option rounded-lg border p-4 text-left transition-colors ${
+                        track === t.name ? "border-primary bg-surface-2" : "border-border"
+                      }`}
+                      aria-pressed={track === t.name}
+                    >
+                      <div className="flex items-center justify-between">
+                        <span className="flex items-center gap-3 font-display text-xl">
+                          <span className="register-track-icon"><TrackIcon size={18} /></span>
+                          {t.name}
+                        </span>
+                        <span className="flex items-center gap-2 text-xs text-primary">{t.blurb}{track === t.name ? <Check className="register-track-check" size={16} /> : null}</span>
+                      </div>
+                      <p className="mt-1 text-sm text-muted-foreground">{t.detail}</p>
+                    </button>
+                  );
+                })}
               </div>
               <Nav onBack={() => setStep(1)} onNext={() => setStep(3)} />
             </div>
           ) : null}
 
           {step === 3 ? (
-            <div>
+            <div key="register-step-3" className="register-step-content">
               <h2 className="text-2xl">Complete your profile</h2>
               <p className="mt-1 text-sm text-muted-foreground">
                 Fields shown are specific to the {track} track.
               </p>
               <div className="mt-5 grid gap-4 sm:grid-cols-2">
-                <Field label="City">
+                <Field label="City" icon={<MapPin size={15} />}>
                   <input
                     className={inputClass}
                     value={city}
                     onChange={(e) => setCity(e.target.value)}
                   />
                 </Field>
-                <Field label="Mobile / WhatsApp">
-                  <input
-                    className={inputClass}
-                    type="tel"
-                    inputMode="tel"
-                    autoComplete="tel"
-                    maxLength={16}
-                    placeholder="+971 50 000 0000"
-                    value={profileDetails["Mobile / WhatsApp"] ?? ""}
-                    onChange={(e) => setPhoneNumber(e.target.value)}
-                  />
+                <Field label="Mobile / WhatsApp" icon={<Phone size={15} />}>
+                  <div className={`register-phone-control ${phoneError ? "has-error" : ""}`}>
+                    <select
+                      className="register-phone-country"
+                      value={phoneCountryCode}
+                      onChange={(event) => setPhoneCountryCode(event.target.value as PhoneCountryCode)}
+                      aria-label="Phone country code"
+                    >
+                      {PHONE_COUNTRIES.map((item) => (
+                        <option key={item.code} value={item.code}>
+                          {item.code} · {item.country}
+                        </option>
+                      ))}
+                    </select>
+                    <input
+                      className="register-phone-number"
+                      type="tel"
+                      inputMode="tel"
+                      autoComplete="tel-national"
+                      maxLength={24}
+                      placeholder={selectedPhoneCountry.example}
+                      value={formatPhoneNational(mobile, phoneCountryCode)}
+                      onChange={(event) => setPhoneNumber(event.target.value)}
+                      aria-invalid={Boolean(phoneError)}
+                      aria-describedby={phoneError ? "register-phone-error" : "register-phone-help"}
+                    />
+                  </div>
+                  <p id="register-phone-help" className="mt-2 text-xs text-muted-foreground">
+                    Example: {phoneCountryCode} {selectedPhoneCountry.example} ({selectedPhoneCountry.digits} digits).
+                  </p>
+                  {phoneError ? <p id="register-phone-error" className="mt-2 text-xs text-destructive" role="alert">{phoneError}</p> : null}
                 </Field>
-                <Field label="Instagram profile">
+                <Field label="Instagram profile" icon={<Instagram size={15} />}>
                   <input
                     className={inputClass}
                     placeholder="@yourhandle or instagram.com/yourhandle"
@@ -256,7 +371,7 @@ function RegisterPage() {
                     autoComplete="url"
                   />
                 </Field>
-                <Field label="Instagram follower count">
+                <Field label="Instagram follower count" icon={<UsersRound size={15} />}>
                   <input
                     className={inputClass}
                     type="number"
@@ -273,9 +388,17 @@ function RegisterPage() {
                   Our membership team reviews your profile and follower count before making a
                   decision. Follower counts may be checked.
                 </p>
+                <label className="register-whatsapp-consent sm:col-span-2">
+                  <input
+                    type="checkbox"
+                    checked={whatsappOptIn}
+                    onChange={(event) => setWhatsappOptIn(event.target.checked)}
+                  />
+                  <span>Send me a WhatsApp welcome message from RSVP DXB after I submit my application.</span>
+                </label>
                 {track === "Media" ? (
                   <>
-                    <Field label="Outlet">
+                    <Field label="Outlet" icon={<Building2 size={15} />}>
                       <input
                         className={inputClass}
                         placeholder="Outlet"
@@ -283,7 +406,7 @@ function RegisterPage() {
                         onChange={(e) => setProfileDetail("Outlet", e.target.value)}
                       />
                     </Field>
-                    <Field label="Role">
+                    <Field label="Role" icon={<BriefcaseBusiness size={15} />}>
                       <input
                         className={inputClass}
                         placeholder="Role"
@@ -291,7 +414,7 @@ function RegisterPage() {
                         onChange={(e) => setProfileDetail("Role", e.target.value)}
                       />
                     </Field>
-                    <Field label="Subjects covered">
+                    <Field label="Subjects covered" icon={<Compass size={15} />}>
                       <input
                         className={inputClass}
                         placeholder="Food, travel, luxury"
@@ -299,7 +422,7 @@ function RegisterPage() {
                         onChange={(e) => setProfileDetail("Subjects", e.target.value)}
                       />
                     </Field>
-                    <Field label="Link to recent work">
+                    <Field label="Link to recent work" icon={<Link2 size={15} />}>
                       <input
                         className={inputClass}
                         placeholder="Link to recent work"
@@ -311,7 +434,7 @@ function RegisterPage() {
                 ) : null}
                 {track === "Creators" ? (
                   <>
-                    <Field label="TikTok / YouTube">
+                    <Field label="TikTok / YouTube" icon={<AtSign size={15} />}>
                       <input
                         className={inputClass}
                         placeholder="@handle"
@@ -319,7 +442,7 @@ function RegisterPage() {
                         onChange={(e) => setProfileDetail("TikTok / YouTube", e.target.value)}
                       />
                     </Field>
-                    <Field label="Niche">
+                    <Field label="Niche" icon={<Sparkles size={15} />}>
                       <input
                         className={inputClass}
                         placeholder="Fashion & lifestyle"
@@ -331,7 +454,7 @@ function RegisterPage() {
                 ) : null}
                 {track === "Tastemakers" ? (
                   <>
-                    <Field label="Company">
+                    <Field label="Company" icon={<Building2 size={15} />}>
                       <input
                         className={inputClass}
                         placeholder="Company"
@@ -339,7 +462,7 @@ function RegisterPage() {
                         onChange={(e) => setProfileDetail("Company", e.target.value)}
                       />
                     </Field>
-                    <Field label="Role">
+                    <Field label="Role" icon={<BriefcaseBusiness size={15} />}>
                       <input
                         className={inputClass}
                         placeholder="Role"
@@ -347,7 +470,7 @@ function RegisterPage() {
                         onChange={(e) => setProfileDetail("Role", e.target.value)}
                       />
                     </Field>
-                    <Field label="Industry">
+                    <Field label="Industry" icon={<Compass size={15} />}>
                       <input
                         className={inputClass}
                         placeholder="Hospitality"
@@ -359,7 +482,7 @@ function RegisterPage() {
                 ) : null}
                 {track === "Private Circle" ? (
                   <>
-                    <Field label="Profession / company">
+                    <Field label="Profession / company" icon={<BriefcaseBusiness size={15} />}>
                       <input
                         className={inputClass}
                         placeholder="Profession / company"
@@ -367,7 +490,7 @@ function RegisterPage() {
                         onChange={(e) => setProfileDetail("Profession / company", e.target.value)}
                       />
                     </Field>
-                    <Field label="Preferred events">
+                    <Field label="Preferred events" icon={<Sparkles size={15} />}>
                       <input
                         className={inputClass}
                         placeholder="Private dinners, previews"
@@ -375,7 +498,7 @@ function RegisterPage() {
                         onChange={(e) => setProfileDetail("Preferred events", e.target.value)}
                       />
                     </Field>
-                    <Field label="Assistant contact">
+                    <Field label="Assistant contact" icon={<Phone size={15} />}>
                       <input
                         className={inputClass}
                         placeholder="Name & number"
@@ -413,7 +536,8 @@ function RegisterPage() {
                 busyLabel="Submitting…"
                 disabled={
                   !profileDetails["Instagram"]?.trim() ||
-                  !/^\d+$/.test(profileDetails["Follower count"]?.trim() ?? "")
+                  !/^\d+$/.test(profileDetails["Follower count"]?.trim() ?? "") ||
+                  Boolean(phoneError)
                 }
               />
               {submitError ? (
@@ -438,6 +562,7 @@ function RegisterPage() {
                 profile and send an update to {email.trim()}, typically within 48 hours.
               </p>
               {emailNotice ? <p className="mx-auto mt-3 max-w-md text-sm text-muted-foreground" role="status">{emailNotice}</p> : null}
+              {whatsappNotice ? <p className="mx-auto mt-3 max-w-md text-sm text-muted-foreground" role="status">{whatsappNotice}</p> : null}
               <div className="mt-8 flex justify-center gap-3">
                 <Link to="/">
                   <Button className="register-success-cta">Back to RSVP DXB</Button>

@@ -9,6 +9,8 @@ import propertyImage from "@/assets/event-property.jpg";
 import { getSql } from "./db.server";
 import { applicationAdminEmail, applicationConfirmationEmail, memberEmailHtml, memberPasswordResetEmail, newsletterAdminEmail, newsletterConfirmationEmail, sendMemberEmail } from "./email.server";
 import { profileSlug, type EventItem, type Track, type WallPost } from "./data";
+import { getEmailValidationMessage } from "./email";
+import { normalizeWhatsAppNumber } from "./phone";
 import { isValidPassword } from "./password";
 
 export type HomepageMediaItem = { id: string; slot: "gallery" | "top_pick"; title: string; caption: string; imageUrl: string; mediaType: "image" | "video"; linkUrl: string; displayOrder: number };
@@ -439,14 +441,58 @@ export const respondToGuestInvitation = createServerFn({ method: "POST" })
     return rows[0];
   });
 
+async function sendApplicationWelcomeWhatsApp(name: string, phone: string): Promise<boolean> {
+  const accessToken = process.env["WHATSAPP_ACCESS_TOKEN"]?.trim();
+  const phoneNumberId = process.env["WHATSAPP_PHONE_NUMBER_ID"]?.trim();
+  const apiVersion = process.env["WHATSAPP_GRAPH_API_VERSION"]?.trim();
+  const templateName = process.env["WHATSAPP_WELCOME_TEMPLATE_NAME"]?.trim();
+  const language = process.env["WHATSAPP_TEMPLATE_LANGUAGE"]?.trim() || "en_US";
+  if (!accessToken || !phoneNumberId || !apiVersion || !templateName || !/^v\d+\.\d+$/.test(apiVersion)) {
+    return false;
+  }
+
+  try {
+    const response = await fetch(
+      `https://graph.facebook.com/${apiVersion}/${encodeURIComponent(phoneNumberId)}/messages`,
+      {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          messaging_product: "whatsapp",
+          to: phone.replace(/\D/g, ""),
+          type: "template",
+          template: {
+            name: templateName,
+            language: { code: language },
+            components: [{ type: "body", parameters: [{ type: "text", text: name }] }],
+          },
+        }),
+        signal: AbortSignal.timeout(10000),
+      },
+    );
+    if (!response.ok) {
+      console.error("WhatsApp welcome message was not accepted", response.status);
+      return false;
+    }
+    return true;
+  } catch (error) {
+    console.error("Could not reach WhatsApp Cloud API", error instanceof Error ? error.name : "Unknown error");
+    return false;
+  }
+}
+
 export const submitApplication = createServerFn({ method: "POST" })
-  .validator((input: { name: string; email: string; password: string; track: Track; city: string; detail: string; instagramProfile: string; instagramFollowers: string; mobile: string; outlet: string; applicationRole: string; platform: string; allProfiles: string }) => input)
+  .validator((input: { name: string; email: string; password: string; track: Track; city: string; detail: string; instagramProfile: string; instagramFollowers: string; mobile: string; mobileCountryCode: string; whatsappOptIn: boolean; outlet: string; applicationRole: string; platform: string; allProfiles: string }) => input)
   .handler(async ({ data }) => {
     const name = data.name.trim();
     const email = data.email.trim().toLowerCase();
     const password = data.password;
     if (name.length < 2 || name.length > 120) throw new Error("Enter your full name.");
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) throw new Error("Enter a valid email address.");
+    const emailError = getEmailValidationMessage(email);
+    if (emailError) throw new Error(emailError);
     if (!isValidPassword(password)) throw new Error("Password must be at least 8 characters and include an uppercase letter, a number, and a special character.");
     if (!["Media", "Creators", "Tastemakers", "Private Circle"].includes(data.track)) throw new Error("Choose a valid membership track.");
     const submittedProfile = String(data.instagramProfile ?? "").trim();
@@ -464,7 +510,15 @@ export const submitApplication = createServerFn({ method: "POST" })
     const followers = followerCount;
     const profileUrl = `https://www.instagram.com/${instagramHandle}/`;
     const handle = `@${instagramHandle}`;
-    const mobile = String(data.mobile ?? "").trim().slice(0, 100);
+    const mobileInput = String(data.mobile ?? "").trim();
+    const mobile = mobileInput ? normalizeWhatsAppNumber(mobileInput, data.mobileCountryCode) : "";
+    const whatsappOptIn = data.whatsappOptIn === true;
+    if (mobileInput && !mobile) {
+      throw new Error("Enter a valid WhatsApp number, such as +971 50 123 4567.");
+    }
+    if (whatsappOptIn && !mobile) {
+      throw new Error("Enter a valid WhatsApp number to receive the welcome message.");
+    }
     const outlet = String(data.outlet ?? "").trim().slice(0, 180);
     const applicationRole = String(data.applicationRole ?? "").trim().slice(0, 180);
     const platform = String(data.platform ?? "Instagram").trim().slice(0, 80) || "Instagram";
@@ -479,20 +533,22 @@ export const submitApplication = createServerFn({ method: "POST" })
     const rows = (await sql`
       INSERT INTO applications (
         id, name, email, track, city, detail, followers, profile_url, handle, platform,
-        mobile, outlet, application_role, all_profiles, source_track, password_hash, submitted, status
+        mobile, outlet, application_role, all_profiles, source_track, password_hash, submitted, status,
+        whatsapp_opt_in, whatsapp_opt_in_at
       )
       VALUES (
         ${crypto.randomUUID()}, ${name}, ${email}, ${data.track},
         ${data.city.trim().slice(0, 100) || "Dubai"}, ${detail}, ${followers},
         ${profileUrl}, ${handle}, ${platform}, ${mobile}, ${outlet},
-        ${applicationRole}, ${allProfiles}, ${data.track}, ${passwordHash}, CURRENT_DATE, 'pending'
+        ${applicationRole}, ${allProfiles}, ${data.track}, ${passwordHash}, CURRENT_DATE, 'pending',
+        ${whatsappOptIn}, CASE WHEN ${whatsappOptIn} THEN now() ELSE NULL END
       )
       RETURNING id, name, email
     `) as unknown as { id: string; name: string; email: string }[];
     const application = rows[0];
     if (!application) throw new Error("Could not save your application. Please try again.");
     const adminEmail = process.env["RSVP_ADMIN_EMAIL"] || "vinitahirani@rsvpdxb.com";
-    const [customerEmailResult, adminEmailResult] = await Promise.all([
+    const [customerEmailResult, adminEmailResult, whatsappSent] = await Promise.all([
       sendMemberEmail({
         to: application.email,
         subject: "RSVP DXB membership application received",
@@ -512,6 +568,7 @@ export const submitApplication = createServerFn({ method: "POST" })
           `Instagram: ${handle}`,
           `Followers: ${followers}`,
           `Mobile / WhatsApp: ${mobile || "Not provided"}`,
+          `WhatsApp welcome opt-in: ${whatsappOptIn ? "Yes" : "No"}`,
           `Outlet: ${outlet || "Not provided"}`,
           `Role: ${applicationRole || "Not provided"}`,
           `Profile details: ${allProfiles || "Not provided"}`,
@@ -535,12 +592,14 @@ export const submitApplication = createServerFn({ method: "POST" })
           ...(process.env["ADMIN_DASHBOARD_URL"] ? { dashboardUrl: process.env["ADMIN_DASHBOARD_URL"] } : {}),
         }),
       }),
+      whatsappOptIn ? sendApplicationWelcomeWhatsApp(application.name, mobile) : Promise.resolve(false),
     ]);
     return {
       id: application.id,
       status: "pending" as const,
       emailSent: customerEmailResult.sent,
       adminEmailSent: adminEmailResult.sent,
+      whatsappSent,
     };
   });
 

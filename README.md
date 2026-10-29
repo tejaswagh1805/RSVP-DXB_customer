@@ -47,6 +47,15 @@ SES must have production access enabled in the same region before it can send to
 customer addresses. While the account remains in the sandbox, verify each recipient in SES for
 testing. A successful SES API response confirms acceptance by SES, not final inbox delivery.
 
+Applicants can separately opt in to a WhatsApp welcome message on the registration form. To enable
+delivery, configure `WHATSAPP_ACCESS_TOKEN`, `WHATSAPP_PHONE_NUMBER_ID`,
+`WHATSAPP_GRAPH_API_VERSION`, `WHATSAPP_WELCOME_TEMPLATE_NAME`, and
+`WHATSAPP_TEMPLATE_LANGUAGE` in the customer runtime environment. Meta requires the welcome
+template to be approved before it can send business-initiated messages; configure its body with a
+single text parameter for the applicant's name. Run `npm run db:migrate` to store opt-in and
+timestamp data. UAE mobile numbers entered locally are normalized to `+971`; other international
+numbers must include their country code.
+
 Member password reset links are sent only to approved members already in the database. Reset
 tokens are stored as hashes, expire after 30 minutes, work once, and revoke existing member
 sessions after a successful reset. Apply the database migration with `npm run db:migrate` before
