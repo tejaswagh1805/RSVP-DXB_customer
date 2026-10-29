@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 import { Button } from "./ui-kit";
 import { EventImage } from "./EventImage";
+import { SafeImage } from "./SafeImage";
 import { WhatsAppAction } from "./WhatsAppAction";
 import { useStore } from "@/lib/store";
 import { formatDate, profileSlug, type EventItem } from "@/lib/data";
@@ -229,7 +230,7 @@ export function SiteMediaRibbon({ media }: { media: HomepageMediaItem[] }) {
                       {item.mediaType === "video" ? (
                         <video src={item.imageUrl} muted autoPlay loop playsInline preload="metadata" aria-label={item.title} className="h-full w-full object-contain bg-black" />
                       ) : (
-                        <img src={item.imageUrl} alt={item.title} className="h-full w-full object-cover" />
+                        <SafeImage src={item.imageUrl} alt={item.title} className="h-full w-full object-cover" />
                       )}
                       <span className="tile-category">RSVP TOP Pick</span>
                       <ArrowUpRight className="tile-arrow" />
@@ -303,7 +304,7 @@ export function EventGallery({ media = [], previewLimit }: { media?: HomepageMed
                   {item.mediaType === "video" ? (
                     <video src={item.imageUrl} muted playsInline preload="metadata" aria-label={item.title} className="h-full w-full object-contain bg-black" />
                   ) : (
-                    <img src={item.imageUrl} alt={item.title} className="h-full w-full object-cover" />
+                    <SafeImage src={item.imageUrl} alt={item.title} className="h-full w-full object-cover" />
                   )}
                   <span className="gallery-label">
                     {item.title}
@@ -341,7 +342,7 @@ export function EventGallery({ media = [], previewLimit }: { media?: HomepageMed
               selected.mediaType === "video" ? (
                 <video src={selected.imageUrl} controls autoPlay playsInline className="max-h-[65vh] w-full object-contain" />
               ) : (
-                <img src={selected.imageUrl} alt={selected.title} className="max-h-[65vh] w-full object-contain" />
+                <SafeImage src={selected.imageUrl} alt={selected.title} loading="eager" className="max-h-[65vh] w-full object-contain" />
               )
             ) : (
               <EventImage event={selected} className="max-h-[65vh] w-full" />
@@ -420,7 +421,7 @@ export function ArtistCard({
             aria-label={`View ${artist.name}'s profile`}
             className={`artist-photo-link${homeInteractive ? " artist-photo-link-home" : ""}`}
           >
-            <img src={artist.image} alt={artist.name} width={768} height={1024} loading="lazy" />
+            <SafeImage src={artist.image} alt={artist.name} className="h-full w-full object-cover" />
             {homeInteractive ? (
               <span className="artist-home-hover">
                 <span className="artist-home-hover-heading">
@@ -440,7 +441,7 @@ export function ArtistCard({
             ) : null}
           </Link>
         ) : (
-          <img src={artist.image} alt={artist.name} width={768} height={1024} loading="lazy" />
+          <SafeImage src={artist.image} alt={artist.name} className="h-full w-full object-cover" />
         )}
       </div>
       {!homeInteractive ? (

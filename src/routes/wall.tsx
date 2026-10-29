@@ -124,7 +124,20 @@ function WallPage() {
                       >
                         {p.eventId && saved.includes(p.eventId) ? "Saved" : "Save"}
                       </button>
-                      <button className="hover:text-primary">Share</button>
+                      <button
+                        type="button"
+                        className="hover:text-primary"
+                        onClick={async () => {
+                          const shareUrl = `${window.location.origin}/events/${encodeURIComponent(p.eventId || "")}`;
+                          try {
+                            if (navigator.share) await navigator.share({ title: event?.title || p.brand, text: p.body, url: shareUrl });
+                            else if (navigator.clipboard) await navigator.clipboard.writeText(shareUrl);
+                            else window.prompt("Copy this event link", shareUrl);
+                          } catch {
+                            // Closing the native share sheet is not an error.
+                          }
+                        }}
+                      >Share</button>
                     </div>
                   </div>
                 </div>

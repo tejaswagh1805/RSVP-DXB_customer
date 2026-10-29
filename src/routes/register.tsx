@@ -185,7 +185,7 @@ function RegisterPage() {
                 </Field>
                 <Button
                   variant="outline"
-                  disabled={!name.trim() || !email.trim() || password.length < 12}
+                  disabled={name.trim().length < 2 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim()) || password.length < 12}
                   onClick={() => setStep(2)}
                 >
                   Continue

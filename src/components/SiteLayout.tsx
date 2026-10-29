@@ -3,7 +3,7 @@ import { useEffect, useState, type ReactNode } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { useStore } from "@/lib/store";
 import { Button } from "./ui-kit";
-import { Apple, MessageCircle, Play, Send, Ticket } from "lucide-react";
+import { Apple, Menu, MessageCircle, Play, Send, Ticket, X } from "lucide-react";
 import { CursorBlob } from "./GenZFx";
 import clientLogoUrl from "@/assets/rsvp-client-logo.png";
 import { getMemberSession, signOutMember } from "@/lib/database";
@@ -34,6 +34,8 @@ export function SiteHeader({ overlay = false }: { overlay?: boolean }) {
   const readMemberSession = useServerFn(getMemberSession);
   const endMemberSession = useServerFn(signOutMember);
   const [scrolled, setScrolled] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const closeMobileMenu = () => setMobileMenuOpen(false);
 
   useEffect(() => {
     let current = true;
@@ -52,6 +54,20 @@ export function SiteHeader({ overlay = false }: { overlay?: boolean }) {
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
+  useEffect(() => {
+    if (!mobileMenuOpen) return;
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setMobileMenuOpen(false);
+    };
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    window.addEventListener("keydown", onKeyDown);
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      window.removeEventListener("keydown", onKeyDown);
+    };
+  }, [mobileMenuOpen]);
+
   return (
     <header className={`customer-header sticky top-0 z-50 border-b border-border/70 bg-background/95 backdrop-blur${overlay ? " customer-header-overlay" : ""}${scrolled ? " is-scrolled" : ""}`}>
       <div className="header-main mx-auto min-h-20 w-full max-w-[1600px] items-center gap-4 px-5 lg:px-10">
@@ -59,17 +75,19 @@ export function SiteHeader({ overlay = false }: { overlay?: boolean }) {
           <img src={clientLogo.url} alt="RSVP DXB" width={132} height={60} />
         </Link>
 
-        <nav className="customer-nav flex items-center gap-5" aria-label="Main navigation">
+        <nav id="customer-main-navigation" className={`customer-nav flex items-center gap-5${mobileMenuOpen ? " is-open" : ""}`} aria-label="Main navigation">
           {NAV.map((item) => (
             <Link
               key={item.to}
               to={item.to}
+              onClick={() => setMobileMenuOpen(false)}
               className="header-nav-link text-xs font-medium uppercase text-foreground transition-colors hover:text-primary"
               activeProps={{ className: "text-primary" }}
             >
               {item.label}
             </Link>
           ))}
+          {!profile.signedIn ? <Link to="/signin" className="mobile-only-link" onClick={() => setMobileMenuOpen(false)}>Sign in</Link> : null}
         </nav>
 
         <div className="header-actions flex items-center gap-2">
@@ -108,7 +126,18 @@ export function SiteHeader({ overlay = false }: { overlay?: boolean }) {
             </>
           )}
         </div>
+        <button
+          type="button"
+          className="mobile-menu-toggle"
+          aria-label={mobileMenuOpen ? "Close navigation menu" : "Open navigation menu"}
+          aria-controls="customer-main-navigation"
+          aria-expanded={mobileMenuOpen}
+          onClick={() => setMobileMenuOpen((open) => !open)}
+        >
+          {mobileMenuOpen ? <X size={23} /> : <Menu size={23} />}
+        </button>
       </div>
+      {mobileMenuOpen ? <button type="button" className="mobile-menu-backdrop" aria-label="Close navigation menu" onClick={closeMobileMenu} /> : null}
 
     </header>
   );
@@ -181,7 +210,7 @@ function NewsletterForm() {
   const [email, setEmail] = useState("");
   const [done, setDone] = useState(false);
   return done ? (
-    <p className="footer-newsletter-done">You're on the list. Watch your inbox.</p>
+    <p className="footer-newsletter-done">Thanks for your interest. Newsletter signup is not connected yet; please contact the RSVP DXB team.</p>
   ) : (
     <form
       className="footer-newsletter-form"
@@ -193,9 +222,10 @@ function NewsletterForm() {
       <input
         type="email"
         required
+        maxLength={254}
         value={email}
         onChange={(e) => setEmail(e.target.value)}
-        placeholder="your@email.com"
+      placeholder="your@email.com"
         aria-label="Email address"
       />
       <button type="submit" aria-label="Subscribe"><Send size={16} aria-hidden="true" />Subscribe</button>

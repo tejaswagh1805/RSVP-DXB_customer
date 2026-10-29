@@ -4,7 +4,7 @@ import type React from "react";
 import { LayoutDashboard, CalendarDays, Video, Award, UserRound, ArrowUpRight, Camera, Trash2, Bell, Settings, Crown, MessageCircle, WalletCards, Clock3, ChevronDown, X } from "lucide-react";
 import { SitePage, memberWhatsappChatUrl } from "@/components/SiteLayout";
 import { EventImage } from "@/components/EventImage";
-import { Badge, Button, Card, Field, PasswordInput, inputClass } from "@/components/ui-kit";
+import { Badge, Button, Card, Field, inputClass } from "@/components/ui-kit";
 import { POINT_RULES, RANKS, formatDate, rankFor } from "@/lib/data";
 import { useStore } from "@/lib/store";
 import { getMemberRsvps, getMemberSession, listPublishedEvents, updateMemberProfile } from "@/lib/database";
@@ -71,8 +71,6 @@ function MemberArea() {
   const [tab, setTab] = useState("Dashboard");
   const [avatar, setAvatar] = useState<string | null>(null);
   const [avatarError, setAvatarError] = useState("");
-  const [pw, setPw] = useState({ current: "", next: "", confirm: "" });
-  const [pwMsg, setPwMsg] = useState<{ ok: boolean; text: string } | null>(null);
   const [avatarMsg, setAvatarMsg] = useState("");
   const [profileMsg, setProfileMsg] = useState("");
   const [profileSaving, setProfileSaving] = useState(false);
@@ -103,14 +101,6 @@ function MemberArea() {
     const r = new FileReader();
     r.onload = () => saveAvatar(String(r.result));
     r.readAsDataURL(f);
-  };
-  const onChangePassword = (ev: React.FormEvent) => {
-    ev.preventDefault();
-    if (!pw.current) return setPwMsg({ ok: false, text: "Enter your current password." });
-    if (pw.next.length < 8) return setPwMsg({ ok: false, text: "New password must be at least 8 characters." });
-    if (pw.next !== pw.confirm) return setPwMsg({ ok: false, text: "New passwords don't match." });
-    setPw({ current: "", next: "", confirm: "" });
-    setPwMsg({ ok: true, text: "Password updated." });
   };
   const onSaveProfile = async (ev: React.FormEvent<HTMLFormElement>) => {
     ev.preventDefault();
@@ -416,15 +406,8 @@ function MemberArea() {
           </Card>
           <Card>
             <h2 className="text-2xl">Update password</h2>
-            <form className="mt-5 grid gap-4" onSubmit={onChangePassword}>
-              <Field label="Current password"><PasswordInput value={pw.current} onChange={(v) => setPw({ ...pw, current: v })} /></Field>
-              <div className="grid gap-4 sm:grid-cols-2">
-                <Field label="New password"><PasswordInput autoComplete="new-password" value={pw.next} onChange={(v) => setPw({ ...pw, next: v })} /></Field>
-                <Field label="Confirm new password"><PasswordInput autoComplete="new-password" value={pw.confirm} onChange={(v) => setPw({ ...pw, confirm: v })} /></Field>
-              </div>
-              {pwMsg ? <p className={`text-sm ${pwMsg.ok ? "text-primary" : "text-destructive"}`}>{pwMsg.text}</p> : null}
-              <div><Button type="submit">Update password</Button></div>
-            </form>
+            <p className="mt-2 text-sm text-muted-foreground">For account security, password changes use a one-time reset link sent to your email.</p>
+            <Link to="/forgot-password" className="mt-4 inline-flex min-h-11 items-center rounded-md border border-border px-4 text-sm font-medium hover:bg-surface-2">Request password reset</Link>
           </Card>
           </div>
         ) : null}

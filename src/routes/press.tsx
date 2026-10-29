@@ -61,15 +61,13 @@ function PressPage() {
                   <p className="text-sm">{r.title}</p>
                   <p className="text-xs text-muted-foreground">{r.date}</p>
                 </div>
-                <Button size="sm" variant="outline">
-                  {r.pdf ? "Download PDF" : "Read"}
-                </Button>
+                <a className="inline-flex h-8 items-center justify-center rounded-md border border-border px-3 text-xs font-medium" href={`mailto:vinitahirani@tickboxuae.com?subject=${encodeURIComponent(`Request: ${r.title}`)}`}>{r.pdf ? "Request PDF" : "Request release"}</a>
               </Card>
             ))}
           </div>
           <div className="mt-8 flex gap-3">
-            <Button variant="outline">Download media kit</Button>
-            <Button variant="ghost">Logos & imagery</Button>
+            <a className="inline-flex h-10 items-center justify-center rounded-md border border-border px-5 text-sm hover:bg-surface-2" href="mailto:vinitahirani@tickboxuae.com?subject=RSVP%20DXB%20media%20kit">Request media kit</a>
+            <a className="inline-flex h-10 items-center justify-center rounded-md px-5 text-sm hover:bg-surface-2" href="mailto:vinitahirani@tickboxuae.com?subject=RSVP%20DXB%20logos%20and%20imagery">Request logos & imagery</a>
           </div>
         </Section>
       </div>
@@ -78,24 +76,47 @@ function PressPage() {
         <Card className="mt-8 max-w-xl">
           {sent ? (
             <p className="py-6 text-center text-sm text-muted-foreground">
-              Thank you — our press team will respond within 24 hours.
+              Your email app should open with the enquiry ready to send. If it did not open, email vinitahirani@tickboxuae.com.
             </p>
           ) : (
             <form
               className="grid gap-5"
               onSubmit={(e) => {
                 e.preventDefault();
+                const values = new FormData(e.currentTarget);
+                const name = String(values.get("name") || "").trim();
+                const outlet = String(values.get("outlet") || "").trim();
+                const email = String(values.get("email") || "").trim();
+                const enquiry = String(values.get("enquiry") || "").trim();
+                const form = e.currentTarget;
+                const nameField = form.elements.namedItem("name") as HTMLInputElement;
+                const outletField = form.elements.namedItem("outlet") as HTMLInputElement;
+                const enquiryField = form.elements.namedItem("enquiry") as HTMLTextAreaElement;
+                nameField.setCustomValidity(name.length >= 2 ? "" : "Enter your name.");
+                outletField.setCustomValidity(outlet.length >= 2 ? "" : "Enter your outlet or organisation.");
+                enquiryField.setCustomValidity(enquiry.length >= 10 ? "" : "Please enter at least 10 characters.");
+                const isValid = form.reportValidity();
+                nameField.setCustomValidity("");
+                outletField.setCustomValidity("");
+                enquiryField.setCustomValidity("");
+                if (!isValid) return;
+                const subject = encodeURIComponent(`Press enquiry from ${name} (${outlet})`);
+                const body = encodeURIComponent(`Name: ${name}\nOutlet: ${outlet}\nEmail: ${email}\n\n${enquiry}`);
+                window.location.href = `mailto:vinitahirani@tickboxuae.com?subject=${subject}&body=${body}`;
                 setSent(true);
               }}
             >
               <Field label="Name">
-                <input className={inputClass} required />
+                <input className={inputClass} name="name" autoComplete="name" required minLength={2} maxLength={120} />
               </Field>
               <Field label="Outlet">
-                <input className={inputClass} required />
+                <input className={inputClass} name="outlet" required minLength={2} maxLength={180} />
+              </Field>
+              <Field label="Email">
+                <input className={inputClass} type="email" name="email" autoComplete="email" required maxLength={254} />
               </Field>
               <Field label="Enquiry">
-                <textarea className={inputClass} rows={4} required />
+                <textarea className={inputClass} name="enquiry" rows={4} required minLength={10} maxLength={3000} />
               </Field>
               <Button type="submit">Send enquiry</Button>
             </form>

@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui-kit";
 import { SitePage } from "@/components/SiteLayout";
 import type { Venue } from "@/lib/database";
+import { SafeImage } from "./SafeImage";
 
 export const VENUE_GUIDE_CATEGORIES = [
   "Our partners",
@@ -28,7 +29,7 @@ function VenueCard({ venue, featured = false }: { venue: Venue; featured?: boole
       className={`venue-guide-card${featured ? " venue-guide-card-featured" : ""}`}
     >
       <div className="venue-guide-card-image">
-        <img src={venue.imageUrl} alt={venue.name} loading="lazy" />
+        <SafeImage src={venue.imageUrl} alt={venue.name} />
         {!featured ? <span className="venue-guide-card-category">{venue.category}</span> : null}
         <span className="venue-guide-card-arrow">
           <ArrowUpRight size={19} />
@@ -119,7 +120,7 @@ export function VenueDirectory({ venues }: { venues: Venue[] }) {
           <div className="venue-directory-hero-image">
             {venues[0] ? (
               <>
-                <img src={venues[0].imageUrl} alt={venues[0].name} />
+                <SafeImage src={venues[0].imageUrl} alt={venues[0].name} loading="eager" />
                 <div>
                   <span>THE RSVP EDIT</span>
                   <strong>{venues[0].name}</strong>
@@ -207,7 +208,7 @@ export function VenueDetails({ venue }: { venue: Venue | null }) {
       <main className="venue-detail-page">
         <section className="venue-detail-layout">
           <div className="venue-detail-visual">
-            <img src={venue.imageUrl} alt={venue.name} />
+            <SafeImage src={venue.imageUrl} alt={venue.name} />
             <span className="venue-detail-image-caption">RSVP DXB · CITY GUIDE</span>
             <span className="venue-detail-image-number">
               01 / {String(venue.displayOrder + 1).padStart(2, "0")}

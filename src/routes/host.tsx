@@ -71,9 +71,9 @@ function HostPage() {
           <Card className="mt-8 max-w-2xl bg-background">
             {sent ? (
               <div className="py-8 text-center">
-                <h3 className="text-2xl">Thank you.</h3>
+                <h3 className="text-2xl">Enquiry prepared.</h3>
                 <p className="mt-2 text-sm text-muted-foreground">
-                  Our team will come back to you within 24 hours with a plan for {pkg}.
+                  Your email app should open with the enquiry ready to send. If it did not open, contact vinitahirani@tickboxuae.com.
                 </p>
                 <Button className="mt-6" variant="outline" onClick={() => setSent(false)}>
                   Send another
@@ -84,26 +84,46 @@ function HostPage() {
                 className="grid gap-5 sm:grid-cols-2"
                 onSubmit={(e) => {
                   e.preventDefault();
+                  const values = new FormData(e.currentTarget);
+                  const name = String(values.get("name") || "").trim();
+                  const contact = String(values.get("contact") || "").trim();
+                  const date = String(values.get("date") || "");
+                  const guests = String(values.get("guests") || "");
+                  const area = String(values.get("area") || "").trim();
+                  const occasion = String(values.get("occasion") || "");
+                  const nameField = e.currentTarget.elements.namedItem("name") as HTMLInputElement;
+                  const contactField = e.currentTarget.elements.namedItem("contact") as HTMLInputElement;
+                  const emailContact = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(contact);
+                  const phoneContact = /^\+?\d{8,15}$/.test(contact.replace(/[\s().-]/g, ""));
+                  nameField.setCustomValidity(name.length >= 2 ? "" : "Enter your name.");
+                  contactField.setCustomValidity(emailContact || phoneContact ? "" : "Enter a valid email or international phone number.");
+                  const isValid = e.currentTarget.reportValidity();
+                  nameField.setCustomValidity("");
+                  contactField.setCustomValidity("");
+                  if (!isValid) return;
+                  const subject = encodeURIComponent(`Event hosting enquiry: ${occasion}`);
+                  const body = encodeURIComponent(`Name: ${name}\nContact: ${contact}\nDate: ${date}\nGuests: ${guests}\nArea: ${area}\nOccasion: ${occasion}\nPackage: ${pkg}`);
+                  window.location.href = `mailto:vinitahirani@tickboxuae.com?subject=${subject}&body=${body}`;
                   setSent(true);
                 }}
               >
                 <Field label="Your name">
-                  <input className={inputClass} required placeholder="Full name" />
+                  <input className={inputClass} name="name" autoComplete="name" required minLength={2} maxLength={120} placeholder="Full name" />
                 </Field>
                 <Field label="Email or WhatsApp">
-                  <input className={inputClass} required placeholder="+971 50 000 0000" />
+                  <input className={inputClass} name="contact" required minLength={8} maxLength={254} placeholder="Email or WhatsApp number" />
                 </Field>
                 <Field label="Date">
-                  <input className={inputClass} type="date" required />
+                  <input className={inputClass} name="date" type="date" required min={new Date().toISOString().slice(0, 10)} />
                 </Field>
                 <Field label="Guests">
-                  <input className={inputClass} type="number" defaultValue={40} min={5} />
+                  <input className={inputClass} name="guests" type="number" defaultValue={40} min={5} max={10000} required />
                 </Field>
                 <Field label="Area">
-                  <input className={inputClass} placeholder="Palm Jumeirah" />
+                  <input className={inputClass} name="area" maxLength={120} placeholder="Palm Jumeirah" />
                 </Field>
                 <Field label="Occasion">
-                  <select className={inputClass} defaultValue="Birthday">
+                  <select className={inputClass} name="occasion" defaultValue="Birthday" required>
                     <option>Birthday</option>
                     <option>Brand launch</option>
                     <option>Private dinner</option>

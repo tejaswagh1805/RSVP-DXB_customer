@@ -5,17 +5,14 @@ export function WhatsAppAction({ event, purpose }: { event: EventItem; purpose?:
   const phoneNumber = String(import.meta.env["VITE_RSVP_WHATSAPP_NUMBER"] || "").replace(/\D/g, "");
   const today = new Date().toISOString().slice(0, 10);
   const ticketRequestOpen = event.status === "published" && event.date >= today && (!event.applicationDeadline || event.applicationDeadline >= today);
+  const isApplicationAction = /nominate|application|apply|creator pass/i.test(event.actionLabel || "");
 
-  if (!purpose && event.ticketUrl && ticketRequestOpen) {
-    return (
-      <a href={event.ticketUrl} target="_blank" rel="noopener noreferrer" className="inline-flex h-8 items-center justify-center gap-2 rounded-md border border-primary bg-primary px-3 text-xs font-medium text-primary-foreground">
-        {event.actionLabel || "Buy tickets"}
-      </a>
-    );
+  // Preserve explicit nomination/application destinations; the ticket action
+  // itself is routed through the tracked WhatsApp request flow for every event.
+  if (!purpose && event.ticketUrl && isApplicationAction && ticketRequestOpen) {
+    return <a href={event.ticketUrl} target="_blank" rel="noopener noreferrer" className="inline-flex h-8 items-center justify-center gap-2 rounded-md border border-primary bg-primary px-3 text-xs font-medium text-primary-foreground">{event.actionLabel}</a>;
   }
-  if (!purpose && !event.ticketUrl && /ticket link (to add|coming soon)/i.test(event.actionLabel || "")) {
-    return <span className="inline-flex h-8 items-center px-1 text-xs text-muted-foreground">{event.actionLabel}</span>;
-  }
+
   if (!ticketRequestOpen) {
     return <span className="inline-flex h-8 items-center px-1 text-xs text-muted-foreground">{event.applicationDeadline && event.applicationDeadline < today ? "Applications closed" : "Event closed"}</span>;
   }
@@ -23,8 +20,8 @@ export function WhatsAppAction({ event, purpose }: { event: EventItem; purpose?:
     return <span className="inline-flex h-8 items-center px-1 text-xs text-muted-foreground">Contact RSVP DXB to request</span>;
   }
 
-  const requestUrl = `https://wa.me/${phoneNumber}?text=${encodeURIComponent(`RSVPDXB ${purpose || "event ticket"} ${event.title}`)}`;
-  const label = purpose || (event.actionLabel && !/ticket link (to add|coming soon)/i.test(event.actionLabel) ? event.actionLabel : "Request ticket");
+  const requestUrl = `https://wa.me/${phoneNumber}?text=${encodeURIComponent(purpose ? `RSVPDXB ${purpose} ${event.title}` : `RSVPDXB EVENT ${event.id}`)}`;
+  const label = purpose || "Request ticket on WhatsApp";
   return (
     <a
       href={requestUrl}

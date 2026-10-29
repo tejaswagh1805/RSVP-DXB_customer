@@ -3,6 +3,7 @@ import { ArrowLeft, ArrowUpRight, Instagram, Youtube, MoveDown } from "lucide-re
 import { SitePage } from "@/components/SiteLayout";
 import { Button } from "@/components/ui-kit";
 import { getPeopleProfileById } from "@/lib/database";
+import { SafeImage } from "@/components/SafeImage";
 
 export const Route = createFileRoute("/artists/$profileId")({
   loader: ({ params }) => getPeopleProfileById({ data: params.profileId }),
@@ -34,7 +35,7 @@ function ArtistProfilePage() {
       <div className="artist-profile-page">
         <section className="artist-profile-split">
           <div className="artist-profile-visual">
-            <img src={profile.imageUrl} alt={profile.name} />
+            <SafeImage src={profile.imageUrl} alt={profile.name} loading="eager" className="h-full w-full object-cover" />
             <span className="artist-profile-image-caption">RSVP DXB Â· {profile.category === "artist" ? "Artist" : "Influencer"}</span>
           </div>
           <div className="artist-profile-panel">

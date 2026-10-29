@@ -81,11 +81,20 @@ function AboutPage() {
             <h2>Drop us a line</h2>
             <form onSubmit={(event) => {
               event.preventDefault();
-              const form = new FormData(event.currentTarget);
+              const formElement = event.currentTarget;
+              const form = new FormData(formElement);
               const name = String(form.get("name") ?? "").trim();
               const email = String(form.get("email") ?? "").trim();
               const organisation = String(form.get("organisation") ?? "").trim();
               const project = String(form.get("project") ?? "").trim();
+              const nameField = formElement.elements.namedItem("name") as HTMLInputElement;
+              const organisationField = formElement.elements.namedItem("organisation") as HTMLInputElement;
+              nameField.setCustomValidity(name.length >= 2 ? "" : "Enter your name.");
+              organisationField.setCustomValidity(organisation.length >= 2 ? "" : "Enter your organisation.");
+              const isValid = formElement.reportValidity();
+              nameField.setCustomValidity("");
+              organisationField.setCustomValidity("");
+              if (!isValid) return;
               const message = ["Hello RSVP DXB, I would like to get in touch.", `Name: ${name}`, `Email: ${email}`, `Organisation: ${organisation}`, project ? `Project: ${project}` : ""].filter(Boolean).join("\n");
               window.location.href = `https://wa.me/${whatsappDigits}?text=${encodeURIComponent(message)}`;
             }}>
