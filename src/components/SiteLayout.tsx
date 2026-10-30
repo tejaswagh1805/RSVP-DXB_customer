@@ -199,6 +199,7 @@ export function SiteFooter() {
 
 function NewsletterForm() {
   const [email, setEmail] = useState("");
+  const [consent, setConsent] = useState(false);
   const [done, setDone] = useState(false);
   const [deliveryWarning, setDeliveryWarning] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -217,7 +218,7 @@ function NewsletterForm() {
         setBusy(true);
         setError("");
         try {
-          const result = await subscribe({ data: { email } });
+          const result = await subscribe({ data: { email, consent } });
           setDone(true);
           setDeliveryWarning(!result.confirmationEmailSent || !result.adminEmailSent);
         } catch (submitError) {
@@ -227,17 +228,23 @@ function NewsletterForm() {
         }
       }}
     >
-      <input
-        type="email"
-        required
-        maxLength={254}
-        value={email}
-        autoComplete="email"
-        onChange={(e) => setEmail(e.target.value)}
-        placeholder="your@email.com"
-        aria-label="Email address"
-      />
-      <button type="submit" aria-label="Subscribe" disabled={busy}><Send size={16} aria-hidden="true" />{busy ? "Sending…" : "Subscribe"}</button>
+      <div className="footer-newsletter-field">
+        <input
+          type="email"
+          required
+          maxLength={254}
+          value={email}
+          autoComplete="email"
+          onChange={(e) => setEmail(e.target.value)}
+          placeholder="your@email.com"
+          aria-label="Email address"
+        />
+        <button type="submit" aria-label="Subscribe" disabled={busy || !consent}><Send size={16} aria-hidden="true" />{busy ? "Sending…" : "Subscribe"}</button>
+      </div>
+      <label className="footer-newsletter-consent">
+        <input type="checkbox" required checked={consent} onChange={(event) => setConsent(event.target.checked)} />
+        <span>Email me RSVP DXB event and offer updates. I can unsubscribe at any time.</span>
+      </label>
       {error ? <p className="footer-newsletter-error" role="alert">{error}</p> : null}
     </form>
   );

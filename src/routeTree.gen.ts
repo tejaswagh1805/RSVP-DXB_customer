@@ -26,6 +26,7 @@ import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as SigninRouteImport } from './routes/signin'
 import { Route as TicketsRouteImport } from './routes/tickets'
 import { Route as TopPicksRouteImport } from './routes/top-picks'
+import { Route as UnsubscribeRouteImport } from './routes/unsubscribe'
 import { Route as WallRouteImport } from './routes/wall'
 import { Route as ArtistsProfileIdRouteImport } from './routes/artists.$profileId'
 import { Route as EventsIndexRouteImport } from './routes/events.index'
@@ -118,6 +119,11 @@ const TopPicksRoute = TopPicksRouteImport.update({
   path: '/top-picks',
   getParentRoute: () => rootRouteImport,
 } as any)
+const UnsubscribeRoute = UnsubscribeRouteImport.update({
+  id: '/unsubscribe',
+  path: '/unsubscribe',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const WallRoute = WallRouteImport.update({
   id: '/wall',
   path: '/wall',
@@ -167,6 +173,7 @@ export interface FileRoutesByFullPath {
   '/signin': typeof SigninRoute
   '/tickets': typeof TicketsRoute
   '/top-picks': typeof TopPicksRouteWithChildren
+  '/unsubscribe': typeof UnsubscribeRoute
   '/wall': typeof WallRoute
   '/artists/$profileId': typeof ArtistsProfileIdRoute
   '/events/$eventId': typeof EventsEventIdRoute
@@ -192,6 +199,7 @@ export interface FileRoutesByTo {
   '/signin': typeof SigninRoute
   '/tickets': typeof TicketsRoute
   '/top-picks': typeof TopPicksRouteWithChildren
+  '/unsubscribe': typeof UnsubscribeRoute
   '/wall': typeof WallRoute
   '/artists/$profileId': typeof ArtistsProfileIdRoute
   '/events/$eventId': typeof EventsEventIdRoute
@@ -218,6 +226,7 @@ export interface FileRoutesById {
   '/signin': typeof SigninRoute
   '/tickets': typeof TicketsRoute
   '/top-picks': typeof TopPicksRouteWithChildren
+  '/unsubscribe': typeof UnsubscribeRoute
   '/wall': typeof WallRoute
   '/artists/$profileId': typeof ArtistsProfileIdRoute
   '/events/$eventId': typeof EventsEventIdRoute
@@ -245,6 +254,7 @@ export interface FileRouteTypes {
     | '/signin'
     | '/tickets'
     | '/top-picks'
+    | '/unsubscribe'
     | '/wall'
     | '/artists/$profileId'
     | '/events/$eventId'
@@ -270,6 +280,7 @@ export interface FileRouteTypes {
     | '/signin'
     | '/tickets'
     | '/top-picks'
+    | '/unsubscribe'
     | '/wall'
     | '/artists/$profileId'
     | '/events/$eventId'
@@ -295,6 +306,7 @@ export interface FileRouteTypes {
     | '/signin'
     | '/tickets'
     | '/top-picks'
+    | '/unsubscribe'
     | '/wall'
     | '/artists/$profileId'
     | '/events/$eventId'
@@ -321,6 +333,7 @@ export interface RootRouteChildren {
   SigninRoute: typeof SigninRoute
   TicketsRoute: typeof TicketsRoute
   TopPicksRoute: typeof TopPicksRouteWithChildren
+  UnsubscribeRoute: typeof UnsubscribeRoute
   WallRoute: typeof WallRoute
   EventsEventIdRoute: typeof EventsEventIdRoute
   RsvpTokenRoute: typeof RsvpTokenRoute
@@ -448,6 +461,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof TopPicksRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/unsubscribe': {
+      id: '/unsubscribe'
+      path: '/unsubscribe'
+      fullPath: '/unsubscribe'
+      preLoaderRoute: typeof UnsubscribeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/wall': {
       id: '/wall'
       path: '/wall'
@@ -534,6 +554,7 @@ const rootRouteChildren: RootRouteChildren = {
   SigninRoute: SigninRoute,
   TicketsRoute: TicketsRoute,
   TopPicksRoute: TopPicksRouteWithChildren,
+  UnsubscribeRoute: UnsubscribeRoute,
   WallRoute: WallRoute,
   EventsEventIdRoute: EventsEventIdRoute,
   RsvpTokenRoute: RsvpTokenRoute,

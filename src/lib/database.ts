@@ -266,26 +266,31 @@ export const getMemberRsvps = createServerFn({ method: "GET" }).handler(async ()
 });
 
 export const submitNewsletterSubscription = createServerFn({ method: "POST" })
-  .validator((input: { email: string }) => input)
+  .validator((input: { email: string; consent: boolean }) => input)
   .handler(async ({ data }) => {
     const email = String(data.email ?? "").trim().toLowerCase();
     const emailError = getEmailValidationMessage(email);
     if (email.length > 254 || emailError) throw new Error(emailError || "Enter a valid email address.");
+    if (data.consent !== true) throw new Error("Please agree to receive RSVP DXB email updates.");
 
     const sql = getSql();
+    const unsubscribeToken = randomBytes(32).toString("hex");
     await sql`
-      INSERT INTO newsletter_subscribers (email)
-      VALUES (${email})
-      ON CONFLICT (email) DO UPDATE SET active = TRUE, updated_at = NOW()
+      INSERT INTO newsletter_subscribers (email, active, consented_at, unsubscribe_token)
+      VALUES (${email}, TRUE, NOW(), ${unsubscribeToken})
+      ON CONFLICT (email) DO UPDATE
+        SET active = TRUE, consented_at = NOW(), unsubscribe_token = ${unsubscribeToken}, updated_at = NOW()
     `;
 
+    const siteUrl = String(process.env["PUBLIC_SITE_URL"] || "https://rsvpdxb.com").replace(/\/$/, "");
+    const unsubscribeUrl = `${siteUrl}/unsubscribe?token=${unsubscribeToken}`;
     const adminEmail = process.env["RSVP_ADMIN_EMAIL"] || "vinitahirani@rsvpdxb.com";
     const [subscriberResult, adminResult] = await Promise.all([
       sendMemberEmail({
         to: email,
         subject: "You’re on the RSVP DXB list",
-        text: "Thanks for subscribing to RSVP DXB. We’ll send you occasional updates about upcoming events, new openings, and last-minute offers. You can ignore this email if you did not sign up.",
-        html: newsletterConfirmationEmail(),
+        text: `Thanks for subscribing to RSVP DXB. We’ll send you occasional updates about upcoming events, new openings, and last-minute offers.\n\nUnsubscribe at any time: ${unsubscribeUrl}\n\nYou can ignore this email if you did not sign up.`,
+        html: newsletterConfirmationEmail(unsubscribeUrl),
       }),
       sendMemberEmail({
         to: adminEmail,
@@ -295,6 +300,21 @@ export const submitNewsletterSubscription = createServerFn({ method: "POST" })
       }),
     ]);
     return { subscribed: true, confirmationEmailSent: subscriberResult.sent, adminEmailSent: adminResult.sent };
+  });
+
+export const unsubscribeNewsletter = createServerFn({ method: "POST" })
+  .validator((input: { token: string }) => input)
+  .handler(async ({ data }) => {
+    const token = String(data.token ?? "").trim();
+    if (!/^[a-f0-9]{64}$/.test(token)) throw new Error("This unsubscribe link is invalid.");
+    const sql = getSql();
+    const rows = (await sql`
+      UPDATE newsletter_subscribers
+      SET active = FALSE, updated_at = NOW()
+      WHERE unsubscribe_token = ${token} AND active = TRUE
+      RETURNING email
+    `) as unknown as { email: string }[];
+    return { unsubscribed: rows.length > 0 };
   });
 
 const enquiryAdminEmail = () => process.env["RSVP_ADMIN_EMAIL"] || "vinitahirani@rsvpdxb.com";

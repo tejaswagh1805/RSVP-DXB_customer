@@ -12,8 +12,8 @@ export function EventCard({ event }: { event: EventItem }) {
   const eligible = event.tracks.includes(profile.track);
   const isPast = event.status === "closed" || (event.endDate || event.date) < new Date().toISOString().slice(0, 10);
   return (
-    <article className="event-listing-card group flex h-full flex-col overflow-hidden rounded-2xl border border-border bg-card shadow-sm transition-all duration-300 hover:-translate-y-1 hover:border-primary/50 hover:shadow-xl">
-      <Link to="/events/$eventId" params={{ eventId: event.id }}>
+    <article className="event-listing-card group relative flex h-full flex-col overflow-hidden rounded-2xl border border-border bg-card shadow-sm transition-all duration-300 hover:-translate-y-1 hover:border-primary/50 hover:shadow-xl">
+      <Link className="event-card-whole-link" to="/events/$eventId" params={{ eventId: event.id }} aria-label={`View ${event.title}`} />
         <div className="event-card-media relative h-56 overflow-hidden bg-[#211a14] sm:h-64">
           <EventImage event={event} fit="cover" className="event-card-backdrop" />
           <span className="event-card-media-shade" aria-hidden="true" />
@@ -25,20 +25,17 @@ export function EventCard({ event }: { event: EventItem }) {
             {event.tracks.length > 0 && full ? <Badge tone="red">Full</Badge> : null}
           </div>
         </div>
-      </Link>
       <div className="event-listing-content flex flex-1 flex-col p-5 sm:p-6">
         <p className="event-card-date eyebrow min-h-4">
           {formatDate(event.date)}{event.time ? ` · ${event.time}` : ""}{event.area ? ` · ${event.area}` : ""}
         </p>
-        <Link className="event-card-title mt-1 block min-h-[3.25rem]" to="/events/$eventId" params={{ eventId: event.id }}>
-          <h3 className="line-clamp-2 text-xl leading-snug transition-colors group-hover:text-primary">{event.title}</h3>
-        </Link>
+        <h3 className="event-card-title mt-1 block min-h-[3.25rem] line-clamp-2 text-xl leading-snug transition-colors group-hover:text-primary">{event.title}</h3>
         {event.brand ? <p className="event-card-brand mt-1 min-h-4 truncate text-sm text-muted-foreground">{event.brand}</p> : null}
         <p className="event-card-detail mt-1 line-clamp-1 min-h-5 text-xs leading-relaxed text-muted-foreground">
           {isPast ? event.about.slice(0, 150) : event.applicationDeadline ? `Nominations close ${formatDate(event.applicationDeadline)}` : event.ageRestriction ? event.ageRestriction : event.hashtag || (event.tracks.length ? `Open to ${event.tracks.join(", ")}` : event.about)}
         </p>
 
-        <div className="event-card-actions">
+        <div className="event-card-actions relative z-[2]">
             {isPast ? <Link to="/events/$eventId" params={{ eventId: event.id }}><Button size="sm" variant="primary">View recap</Button></Link> : event.tracks.length && !eligible ? (
               <Button size="sm" variant="outline" disabled>Not on your list</Button>
             ) : event.tracks.length ? (

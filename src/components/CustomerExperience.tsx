@@ -183,8 +183,9 @@ export function EventRibbon({
               inert={copy === 1 ? true : undefined}
             >
               {tiles.map((event, i) => (
-                <article key={`${event.id}-${i}`} className="ribbon-tile" aria-hidden={copy === 1 || i >= live.length ? true : undefined} inert={copy === 1 || i >= live.length ? true : undefined}>
-                  <Link to="/events/$eventId" params={{ eventId: event.id }}>
+                <article key={`${event.id}-${i}`} className="ribbon-tile" aria-hidden={copy === 1 ? true : undefined} inert={copy === 1 ? true : undefined}>
+                  <Link className="ribbon-tile-link" to="/events/$eventId" params={{ eventId: event.id }} aria-label={`View event: ${event.title}`} />
+                  <div className="ribbon-tile-content">
                     <div className="ribbon-photo">
                       <EventImage event={event} className="h-full w-full" />
                       <span className="tile-category">{event.category}</span>
@@ -194,7 +195,7 @@ export function EventRibbon({
                       {formatDate(event.date)} · {event.area}
                     </p>
                     <h3 className="mt-1 text-2xl">{event.title}</h3>
-                  </Link>
+                  </div>
                   <div className="mt-3 ribbon-action">
                     <WhatsAppAction event={event} />
                   </div>
@@ -236,12 +237,15 @@ export function SiteMediaRibbon({ media }: { media: HomepageMediaItem[] }) {
               inert={copy === 1 ? true : undefined}
             >
               {tiles.map((item, i) => (
-                <article className="ribbon-tile" key={`${copy}-${item.id}-${i}`} aria-hidden={copy === 1 || i >= media.length ? true : undefined} inert={copy === 1 || i >= media.length ? true : undefined}>
+                <article className="ribbon-tile" key={`${copy}-${item.id}-${i}`} aria-hidden={copy === 1 ? true : undefined} inert={copy === 1 ? true : undefined}>
                   <a
+                    className="ribbon-tile-link"
                     href={item.linkUrl || "/top-picks"}
                     target={item.linkUrl ? "_blank" : undefined}
                     rel={item.linkUrl ? "noreferrer" : undefined}
-                  >
+                    aria-label={`Explore: ${item.title}`}
+                  />
+                  <div className="ribbon-tile-content">
                     <div className="ribbon-photo">
                       {item.mediaType === "video" ? (
                         <video src={item.imageUrl} muted autoPlay loop playsInline preload="metadata" aria-label={item.title} className="h-full w-full object-contain bg-black" />
@@ -255,7 +259,7 @@ export function SiteMediaRibbon({ media }: { media: HomepageMediaItem[] }) {
                     {item.caption ? (
                       <p className="mt-1 text-sm text-muted-foreground">{item.caption}</p>
                     ) : null}
-                  </a>
+                  </div>
                 </article>
               ))}
             </div>

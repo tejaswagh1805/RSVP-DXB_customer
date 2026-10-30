@@ -68,13 +68,15 @@ export function applicationConfirmationEmail(name: string, track: string, email:
   });
 }
 
-export function newsletterConfirmationEmail(): string {
+export function newsletterConfirmationEmail(unsubscribeUrl: string): string {
   return emailShell({
     eyebrow: "Newsletter subscription",
     title: "You’re on the list.",
     greeting: "Hello,",
     message: "Thanks for subscribing to RSVP DXB. We’ll send you occasional updates about upcoming events, new openings, and last-minute offers. You can ignore this email if you did not sign up.",
-    footer: "You received this email because this address was used to subscribe to RSVP DXB updates.",
+    actionLabel: "Unsubscribe",
+    actionUrl: unsubscribeUrl,
+    footer: "You received this email because this address was used to subscribe to RSVP DXB updates. Use the unsubscribe link above to stop future emails.",
   });
 }
 
