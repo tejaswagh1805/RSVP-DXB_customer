@@ -179,11 +179,9 @@ export function EventRibbon({
             <div
               key={copy}
               className="ribbon-set"
-              aria-hidden={copy === 1 ? true : undefined}
-              inert={copy === 1 ? true : undefined}
             >
               {tiles.map((event, i) => (
-                <article key={`${event.id}-${i}`} className="ribbon-tile" aria-hidden={copy === 1 ? true : undefined} inert={copy === 1 ? true : undefined}>
+                <article key={`${copy}-${event.id}-${i}`} className="ribbon-tile">
                   <Link className="ribbon-tile-link" to="/events/$eventId" params={{ eventId: event.id }} aria-label={`View event: ${event.title}`} />
                   <div className="ribbon-tile-content">
                     <div className="ribbon-photo">
@@ -233,11 +231,9 @@ export function SiteMediaRibbon({ media }: { media: HomepageMediaItem[] }) {
             <div
               key={copy}
               className="ribbon-set"
-              aria-hidden={copy === 1 ? true : undefined}
-              inert={copy === 1 ? true : undefined}
             >
               {tiles.map((item, i) => (
-                <article className="ribbon-tile" key={`${copy}-${item.id}-${i}`} aria-hidden={copy === 1 ? true : undefined} inert={copy === 1 ? true : undefined}>
+                <article className="ribbon-tile" key={`${copy}-${item.id}-${i}`}>
                   <a
                     className="ribbon-tile-link"
                     href={item.linkUrl || "/top-picks"}

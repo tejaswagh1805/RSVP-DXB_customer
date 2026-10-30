@@ -73,7 +73,7 @@ export function VenueTopPicks({ venues }: { venues: Venue[] }) {
       <div className="ribbon-window" aria-label="Featured venue picks">
         <div className="ribbon-track venue-home-track">
           {[0, 1].map((copy) => (
-            <div key={copy} className="ribbon-set" aria-hidden={copy === 1 ? true : undefined} inert={copy === 1 ? true : undefined}>
+            <div key={copy} className="ribbon-set">
               {venues.map((venue) => (
                 <article key={`${copy}-${venue.id}`} className="ribbon-tile venue-ribbon-tile">
                   <VenueCard venue={venue} featured />
