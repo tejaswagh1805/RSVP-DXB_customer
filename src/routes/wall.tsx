@@ -15,7 +15,7 @@ export const Route = createFileRoute("/wall")({
   },
   head: () => ({
     meta: [
-      { title: "Events Wall â€” RSVP DXB" },
+      { title: "Events Wall — RSVP DXB" },
       {
         name: "description",
         content:
@@ -23,7 +23,7 @@ export const Route = createFileRoute("/wall")({
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
-      { property: "og:title", content: "Events Wall â€” RSVP DXB" },
+      { property: "og:title", content: "Events Wall — RSVP DXB" },
       {
         property: "og:description",
         content: "Last-minute places, new events, recaps and member offers from Dubai brands.",
@@ -109,7 +109,7 @@ function WallPage() {
                     <EventImage event={event} className="wall-event-image" />
                     <div className="wall-event-info">
                       <strong>{event.venue || event.area || "Event details"}</strong>
-                      <span>{[event.area, `${Math.max(0, event.capacity - event.confirmed)} places left`].filter(Boolean).join(" | ")}</span>
+                      <span>{[event.area, event.capacity > 0 ? `${Math.max(0, event.capacity - event.confirmed)} places left` : ""].filter(Boolean).join(" | ")}</span>
                     </div>
                     <Link to="/events/$eventId" params={{ eventId: event.id }} className="wall-event-link">
                       View event <ArrowUpRight size={15} aria-hidden="true" />

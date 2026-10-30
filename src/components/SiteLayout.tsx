@@ -92,14 +92,10 @@ export function SiteHeader({ overlay = false }: { overlay?: boolean }) {
         </nav>
 
         <div className="header-actions flex items-center gap-2">
-          <Link to="/tickets" className="header-ticket"><Button size="sm"><Ticket size={15} />Last minute ticket</Button></Link>
+          <Link to="/tickets" className="header-ticket"><span className="inline-flex h-9 items-center justify-center gap-2 rounded-md bg-primary px-3 text-xs font-medium text-primary-foreground"><Ticket size={15} />Last minute ticket</span></Link>
           {profile.signedIn ? (
             <>
-              <Link to="/me">
-                <Button size="sm" variant="outline">
-                  My account
-                </Button>
-              </Link>
+              <Link to="/me" className="inline-flex h-9 items-center justify-center rounded-md border border-input bg-background px-3 text-xs font-medium text-foreground">My account</Link>
               <Button size="sm" variant="ghost" onClick={async () => {
                 try {
                   await endMemberSession();
@@ -116,14 +112,8 @@ export function SiteHeader({ overlay = false }: { overlay?: boolean }) {
             </>
           ) : (
             <>
-              <Link to="/signin" className="hidden sm:block">
-                <Button size="sm" variant="ghost">
-                  Sign in
-                </Button>
-              </Link>
-              <Link to="/register">
-                <Button size="sm">Register</Button>
-              </Link>
+              <Link to="/signin" className="hidden h-9 items-center justify-center rounded-md px-3 text-xs font-medium text-foreground hover:bg-accent sm:inline-flex">Sign in</Link>
+              <Link to="/register" className="inline-flex h-9 items-center justify-center rounded-md bg-primary px-3 text-xs font-medium text-primary-foreground">Register</Link>
             </>
           )}
         </div>
@@ -210,11 +200,15 @@ export function SiteFooter() {
 function NewsletterForm() {
   const [email, setEmail] = useState("");
   const [done, setDone] = useState(false);
+  const [deliveryWarning, setDeliveryWarning] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const subscribe = useServerFn(submitNewsletterSubscription);
   return done ? (
-    <p className="footer-newsletter-done">Thanks for subscribing. Check your inbox for a confirmation email from RSVP DXB.</p>
+    <div className="footer-newsletter-done" role="status">
+      <p>Thanks for subscribing. Your email has been added to the RSVP DXB list.</p>
+      {deliveryWarning ? <p className="footer-newsletter-error">Your subscription was saved, but an email could not be sent. Please contact RSVP DXB if you need confirmation.</p> : null}
+    </div>
   ) : (
     <form
       className="footer-newsletter-form"
@@ -225,7 +219,7 @@ function NewsletterForm() {
         try {
           const result = await subscribe({ data: { email } });
           setDone(true);
-          if (!result.adminEmailSent) setError("Your confirmation was sent, but our team notification failed. Please contact RSVP DXB to confirm your subscription.");
+          setDeliveryWarning(!result.confirmationEmailSent || !result.adminEmailSent);
         } catch (submitError) {
           setError(submitError instanceof Error ? submitError.message : "We couldn’t complete your subscription. Please try again.");
         } finally {

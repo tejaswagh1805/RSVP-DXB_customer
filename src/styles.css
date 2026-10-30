@@ -1079,6 +1079,7 @@
 .scroll-showcase {
   height: calc(100svh + 2000px);
   position: relative;
+  overflow: clip;
 }
 
 .showcase-sticky {
@@ -1093,11 +1094,13 @@
   display: flex;
   width: 500%;
   height: 100%;
+  overflow: hidden;
   will-change: transform;
 }
 
 .showcase-scene {
   width: 20%;
+  flex: 0 0 20%;
   flex-shrink: 0;
   position: relative;
   overflow: hidden;
@@ -1451,9 +1454,12 @@
 @keyframes event-orbit { to { transform: rotate(360deg); } }
 
 @media (max-width: 760px) {
-  .event-detail-hero { min-height: 440px; }
-  .event-detail-hero-content { padding-inline: 20px; padding-bottom: 34px; }
-  .event-detail-hero-shade { background: linear-gradient(0deg, rgb(24 15 9 / .8), transparent 82%); }
+  .event-detail-hero { min-height: 0; display: grid; grid-template-rows: minmax(280px, 52vh) auto; align-items: stretch; background: var(--surface); color: var(--foreground); }
+  .event-detail-hero-image { position: absolute; inset: 0 0 auto; z-index: 0; height: min(52vh, 520px); object-position: center 30%; }
+  .event-detail-hero-content { position: relative; z-index: 1; grid-row: 2; width: 100%; padding: 24px 20px 28px; background: var(--surface); color: var(--foreground); }
+  .event-detail-hero-content h1 { font-size: clamp(36px, 10vw, 56px); }
+  .event-detail-hero-content > p:not(.event-detail-brand) { color: var(--muted-foreground); }
+  .event-detail-hero-shade { display: none; }
   .event-detail-hero-orbit { top: 12%; right: 8%; }
   .event-detail-layout { grid-template-columns: 1fr; gap: 34px; padding: 38px 20px 68px; }
   .event-detail-aside { position: static; grid-row: 1; }
@@ -3824,10 +3830,11 @@ textarea {
 
 /* Curated RSVP Top Picks venue guide */
 .customer-scope .venue-home-picks {
-  max-width: 1600px;
-  margin-inline: auto;
-  padding: 76px 40px 82px;
-  border-block: 1px solid var(--border);
+  width: 100%;
+  max-width: none;
+  margin: 0;
+  padding: 80px 0 50px;
+  border-bottom: 1px solid var(--border);
   background: var(--surface);
 }
 
@@ -4620,23 +4627,23 @@ textarea {
   }
 }
 
-/* Homepage venue picks auto-scroll through every featured venue. */
-.venue-home-window { overflow:hidden; }
-.venue-home-track { display:flex; width:max-content; will-change:transform; animation:venue-picks-flow 70s linear infinite; }
-.venue-home-set { display:flex; flex:none; align-items:stretch; gap:18px; padding-right:18px; }
-.venue-home-set .venue-guide-card-featured { flex:0 0 clamp(280px, 31vw, 550px); }
-@keyframes venue-picks-flow { to { transform:translate3d(-50%, 0, 0); } }
-.venue-home-window:hover .venue-home-track,
-.venue-home-window:focus-within .venue-home-track { animation-play-state:paused; }
+/* Keep venue picks in step with the latest events ribbon dimensions. */
+.venue-home-picks .venue-home-heading { max-width:1600px; margin-inline:auto; padding-inline:40px; }
+.venue-ribbon-tile { width:300px; }
+.venue-ribbon-tile .venue-guide-card { display:flex; flex:1 0 auto; flex-direction:column; }
+.venue-ribbon-tile .venue-guide-card-image { height:330px; aspect-ratio:auto; border-radius:14px; }
+.venue-ribbon-tile .venue-guide-card-copy { padding:13px 0 5px; }
 @media(max-width:700px) {
-  .venue-home-set { gap:13px; padding-right:13px; }
-  .venue-home-set .venue-guide-card-featured { flex-basis:82vw; }
+  .customer-scope .venue-home-picks { padding:42px 0; }
+  .venue-home-picks .experience-heading { padding-inline:20px; }
+  .venue-ribbon-tile { width:250px; }
+  .venue-ribbon-tile .venue-guide-card-image { height:290px; }
 }
 @media(prefers-reduced-motion:reduce) {
-  .venue-home-window { overflow-x:auto; scrollbar-width:none; }
-  .venue-home-window::-webkit-scrollbar { display:none; }
-  .venue-home-track { width:max-content; animation:none; }
-  .venue-home-set[aria-hidden="true"] { display:none; }
+  .venue-home-picks .ribbon-track { animation:none; }
+  .venue-home-picks .ribbon-set[aria-hidden="true"] { display:none; }
+  .venue-home-picks .ribbon-window { overflow-x:auto; scrollbar-width:none; }
+  .venue-home-picks .ribbon-window::-webkit-scrollbar { display:none; }
 }
 
 /* Keep the mobile navigation rules after all legacy page breakpoints. */

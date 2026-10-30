@@ -44,7 +44,7 @@ function ArtistsPage() {
         <div className="experience-heading">
           <div>
             <p className="eyebrow">The people behind the energy</p>
-            <h1>Artist's & Influencers</h1>
+            <h1>Artists & Influencers</h1>
           </div>
           <p className="text-xs text-muted-foreground">Featured RSVP community</p>
         </div>

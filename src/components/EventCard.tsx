@@ -21,7 +21,7 @@ export function EventCard({ event }: { event: EventItem }) {
           <div className="event-card-badges absolute inset-x-4 top-4 flex flex-wrap gap-2">
             <Badge tone="gold">{event.category}</Badge>
             {isPast ? <Badge tone="muted">Past event</Badge> : null}
-            {event.tracks.length > 0 && left <= 10 && !full ? <Badge tone="amber">{left} places left</Badge> : null}
+            {event.tracks.length > 0 && event.capacity > 0 && left <= 10 && !full ? <Badge tone="amber">{left} places left</Badge> : null}
             {event.tracks.length > 0 && full ? <Badge tone="red">Full</Badge> : null}
           </div>
         </div>
@@ -35,7 +35,7 @@ export function EventCard({ event }: { event: EventItem }) {
         </Link>
         {event.brand ? <p className="event-card-brand mt-1 min-h-4 truncate text-sm text-muted-foreground">{event.brand}</p> : null}
         <p className="event-card-detail mt-1 line-clamp-1 min-h-5 text-xs leading-relaxed text-muted-foreground">
-          {isPast ? event.about.slice(0, 150) : event.applicationDeadline ? `Nominations close ${formatDate(event.applicationDeadline)}` : event.ageRestriction ? event.ageRestriction : event.hashtag || (event.tracks.length ? `Open to ${event.tracks.join(", ")}` : "Event details and booking information")}
+          {isPast ? event.about.slice(0, 150) : event.applicationDeadline ? `Nominations close ${formatDate(event.applicationDeadline)}` : event.ageRestriction ? event.ageRestriction : event.hashtag || (event.tracks.length ? `Open to ${event.tracks.join(", ")}` : event.about)}
         </p>
 
         <div className="event-card-actions">

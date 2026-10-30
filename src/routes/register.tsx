@@ -225,7 +225,7 @@ function RegisterPage() {
             <div key="register-step-1" className="register-step-content">
               <h2 className="text-2xl">Create your account</h2>
               <div className="my-6 flex items-center gap-3 text-xs text-muted-foreground">
-                <div className="h-px flex-1 bg-border" /> register with email
+                <div className="h-px flex-1 bg-border" /> Register with email
                 <div className="h-px flex-1 bg-border" />
               </div>
               <div className="grid gap-4">

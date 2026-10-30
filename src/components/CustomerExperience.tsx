@@ -20,6 +20,14 @@ import type { HomepageMediaItem } from "@/lib/database";
 import type { PeopleProfile } from "@/lib/database";
 import videoUrl from "@/assets/banner-clip.webm";
 const videoAsset = { url: videoUrl };
+
+function consistentGalleryLabel(label: string) {
+  const normalized = label.trim().toLocaleLowerCase();
+  if (normalized === "event" || normalized === "events") return "Event";
+  if (normalized === "today dubai") return "Today Dubai";
+  if (normalized === "ha dubai") return "Ha Dubai";
+  return label.trim();
+}
 import creators from "@/assets/community-creators.jpg";
 import mixer from "@/assets/community-mixer.jpg";
 import sessions from "@/assets/community-sessions.jpg";
@@ -51,7 +59,10 @@ export function ScrollShowcase() {
       frame = requestAnimationFrame(() => {
         const section = ref.current;
         if (!section || !rail.current || !sticky.current) return;
-        const scrollDistance = window.innerWidth * (SCENES.length - 1);
+        // Use the visible layout width. window.innerWidth includes the scrollbar,
+        // while each scene is sized from the page's content width.
+        const viewportWidth = sticky.current.clientWidth;
+        const scrollDistance = viewportWidth * (SCENES.length - 1);
         const requiredHeight = sticky.current.offsetHeight + scrollDistance;
         if (Math.abs(section.offsetHeight - requiredHeight) > 1) {
           section.style.height = `${requiredHeight}px`;
@@ -63,11 +74,16 @@ export function ScrollShowcase() {
           Math.min(1, (top - section.getBoundingClientRect().top) / Math.max(range, 1)),
         );
         // Five viewport-width scenes need four viewport widths of travel.
-        rail.current.style.transform = `translate3d(${-progress * (SCENES.length - 1) * 100}vw,0,0)`;
+        // Move by a percentage of the rail itself so every transition lands on
+        // an exact scene boundary, including when a scrollbar changes viewport width.
+        rail.current.style.transform = `translate3d(${-progress * (SCENES.length - 1) * 20}%,0,0)`;
         section.style.setProperty("--story-progress", String(progress));
         rail.current.querySelectorAll<HTMLElement>(".showcase-scene").forEach((scene, i) => {
           const distance = Math.min(1, Math.abs(progress * 4 - i));
-          scene.style.setProperty("--scene-scale", String(1.02 + distance * 0.12));
+          // The banner video has a visible rounded edge artifact at its far left.
+          // Crop that edge slightly while keeping the still scenes on their usual scale.
+          const baseScale = i === 0 ? 1.12 : 1.02;
+          scene.style.setProperty("--scene-scale", String(baseScale + distance * 0.12));
           scene.style.setProperty("--copy-offset", `${distance * 60}px`);
         });
       });
@@ -167,7 +183,7 @@ export function EventRibbon({
               inert={copy === 1 ? true : undefined}
             >
               {tiles.map((event, i) => (
-                <article key={`${event.id}-${i}`} className="ribbon-tile">
+                <article key={`${event.id}-${i}`} className="ribbon-tile" aria-hidden={copy === 1 || i >= live.length ? true : undefined} inert={copy === 1 || i >= live.length ? true : undefined}>
                   <Link to="/events/$eventId" params={{ eventId: event.id }}>
                     <div className="ribbon-photo">
                       <EventImage event={event} className="h-full w-full" />
@@ -220,7 +236,7 @@ export function SiteMediaRibbon({ media }: { media: HomepageMediaItem[] }) {
               inert={copy === 1 ? true : undefined}
             >
               {tiles.map((item, i) => (
-                <article className="ribbon-tile" key={`${copy}-${item.id}-${i}`}>
+                <article className="ribbon-tile" key={`${copy}-${item.id}-${i}`} aria-hidden={copy === 1 || i >= media.length ? true : undefined} inert={copy === 1 || i >= media.length ? true : undefined}>
                   <a
                     href={item.linkUrl || "/top-picks"}
                     target={item.linkUrl ? "_blank" : undefined}
@@ -307,7 +323,7 @@ export function EventGallery({ media = [], previewLimit, className = "" }: { med
                     <SafeImage src={item.imageUrl} alt={item.title} className="gallery-media gallery-media-image" />
                   )}
                   <span className="gallery-label">
-                    {item.title}
+                    {consistentGalleryLabel(item.title)}
                     <ArrowUpRight size={20} />
                   </span>
                 </Button>
@@ -347,7 +363,7 @@ export function EventGallery({ media = [], previewLimit, className = "" }: { med
             ) : (
               <EventImage event={selected} className="max-h-[65vh] w-full" />
             )}
-            <h3 className="mt-4 text-3xl">{selected.title}</h3>
+            <h3 className="mt-4 text-3xl">{consistentGalleryLabel(selected.title)}</h3>
             {"imageUrl" in selected ? (
               selected.caption ? (
                 <p className="mt-2 text-muted-foreground">{selected.caption}</p>
@@ -520,7 +536,7 @@ export function ArtistGallery({ profiles = [] }: { profiles?: PeopleProfile[] })
       <div className="experience-heading">
         <div>
           <p className="eyebrow">The people behind the energy</p>
-          <h2>Artist's & Influencers</h2>
+          <h2>Artists & Influencers</h2>
         </div>
         <Link to="/artists">
           <Button variant="outline">

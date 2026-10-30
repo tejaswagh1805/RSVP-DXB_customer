@@ -58,8 +58,8 @@ function VenueCard({ venue, featured = false }: { venue: Venue; featured?: boole
 export function VenueTopPicks({ venues }: { venues: Venue[] }) {
   if (!venues.length) return null;
   return (
-    <section className="venue-home-picks">
-      <div className="venue-home-heading">
+    <section className="event-ribbon venue-home-picks">
+      <div className="experience-heading">
         <div>
           <p className="eyebrow">
             <Sparkles size={13} /> CURATED FOR YOUR NEXT RSVP
@@ -70,12 +70,14 @@ export function VenueTopPicks({ venues }: { venues: Venue[] }) {
           Explore the venue guide <ArrowUpRight size={16} />
         </Link>
       </div>
-      <div className="venue-home-window">
-        <div className="venue-home-track" aria-label="Featured venue picks">
+      <div className="ribbon-window" aria-label="Featured venue picks">
+        <div className="ribbon-track venue-home-track">
           {[0, 1].map((copy) => (
-            <div key={copy} className="venue-home-set" aria-hidden={copy === 1 ? true : undefined} inert={copy === 1 ? true : undefined}>
+            <div key={copy} className="ribbon-set" aria-hidden={copy === 1 ? true : undefined} inert={copy === 1 ? true : undefined}>
               {venues.map((venue) => (
-                <VenueCard key={`${copy}-${venue.id}`} venue={venue} featured />
+                <article key={`${copy}-${venue.id}`} className="ribbon-tile venue-ribbon-tile">
+                  <VenueCard venue={venue} featured />
+                </article>
               ))}
             </div>
           ))}

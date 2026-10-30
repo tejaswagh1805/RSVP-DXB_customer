@@ -111,8 +111,8 @@ function MembershipPage() {
             ))}
           </div>
           <div className="mt-10">
-            <Link to="/register">
-              <Button size="lg">Apply for membership</Button>
+            <Link to="/register" className="inline-flex h-11 items-center justify-center rounded-md bg-primary px-6 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+              Apply for membership
             </Link>
           </div>
         </Section>

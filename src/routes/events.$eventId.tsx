@@ -5,7 +5,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { SitePage } from "@/components/SiteLayout";
 import { EventImage } from "@/components/EventImage";
 import { Badge, Button, Card } from "@/components/ui-kit";
-import { formatDate } from "@/lib/data";
+import { formatDate, internationalPhoneHref } from "@/lib/data";
 import { useStore } from "@/lib/store";
 import { WhatsAppAction } from "@/components/WhatsAppAction";
 import { getEventById, getMemberRsvps, submitEventRsvpRequest } from "@/lib/database";
@@ -18,16 +18,29 @@ export const Route = createFileRoute("/events/$eventId")({
     ]);
     return { event, rsvps };
   },
-  head: () => ({
-    meta: [
-      { title: "Event — RSVP DXB" },
-      { name: "description", content: "Event details, dress code and RSVP for RSVP DXB members." },
-      { property: "og:type", content: "website" },
-      { name: "twitter:card", content: "summary_large_image" },
-      { property: "og:title", content: "Event — RSVP DXB" },
-      { property: "og:description", content: "Event details and RSVP for RSVP DXB members." },
-    ],
-  }),
+  head: ({ loaderData }) => {
+    const event = loaderData?.event;
+    const title = event ? `${event.title} \u2014 RSVP DXB` : 'Event \u2014 RSVP DXB';
+    const description = event
+      ? [formatDate(event.date), event.venue, event.area, event.about].filter(Boolean).join('. ').slice(0, 300)
+      : 'Event details, dress code and RSVP for RSVP DXB members.';
+    const image = event?.image
+      ? new URL(event.image, 'https://www.rsvpdxb.com').toString()
+      : 'https://www.rsvpdxb.com/icon-512.png';
+    return {
+      meta: [
+        { title },
+        { name: 'description', content: description },
+        { property: 'og:type', content: 'website' },
+        { property: 'og:title', content: title },
+        { property: 'og:description', content: description },
+        { property: 'og:image', content: image },
+        { name: 'twitter:card', content: 'summary_large_image' },
+        { name: 'twitter:image', content: image },
+      ],
+      links: event ? [{ rel: 'canonical', href: `https://www.rsvpdxb.com/events/${encodeURIComponent(event.id)}` }] : [],
+    };
+  },
   component: EventDetail,
 });
 
@@ -147,7 +160,7 @@ function EventDetail() {
             {event.whoIsInvited ? <Block title="Who is invited">{event.whoIsInvited}</Block> : null}
             {event.creatorPassNote ? <Block title="Creator passes / nominations">{event.creatorPassNote}</Block> : null}
             {event.ageRestriction ? <Block title="Age restriction">{event.ageRestriction}</Block> : null}
-            {event.reservationPhone ? <Block title="Reservations"><a className="text-primary underline" href={`tel:${event.reservationPhone.replace(/[^+\d]/g, "")}`}>{event.reservationPhone}</a></Block> : null}
+            {event.reservationPhone ? <Block title="Reservations"><a className="text-primary underline" href={`tel:${internationalPhoneHref(event.reservationPhone)}`}>{event.reservationPhone}</a></Block> : null}
             {event.hashtag ? <Block title="Event hashtag">{event.hashtag}</Block> : null}
             {event.venue || event.mapUrl ? <Block title="Location">{event.venue}{event.area ? `, ${event.area}` : ""}{event.mapUrl ? <> <a className="text-primary underline" href={event.mapUrl} target="_blank" rel="noreferrer">Open map and directions</a></> : null}</Block> : null}
             {(event.images?.length || event.image) ? <div>
@@ -215,13 +228,13 @@ function EventDetail() {
             </div> : <div className="mt-5 rounded-md border border-primary/20 bg-surface px-4 py-3 text-center">
               <p className="eyebrow">RSVP STATUS</p>
               <p className="mt-1 text-sm">{statusLabel[state] ?? "Pending review"}</p>
-            </div>) : <p className="mt-5 text-sm text-muted-foreground">Use the event booking details below to reserve your place.</p>}
+            </div>) : null}
             {rsvpError ? <p className="mt-2 text-center text-xs text-destructive">{rsvpError}</p> : null}
             {rsvpMessage ? <p className="mt-2 text-center text-xs text-muted-foreground">{rsvpMessage}</p> : null}
             {state === "pending" ? <p className="mt-2 text-center text-xs text-muted-foreground">Your place is not confirmed until the RSVP DXB team reviews your request.</p> : null}
 
             <div className="event-detail-actions">
-              {event.reservationPhone ? <a href={`tel:${event.reservationPhone.replace(/[^+\d]/g, "")}`} className="event-detail-action-link">Call to reserve</a> : null}
+              {event.reservationPhone ? <a href={`tel:${internationalPhoneHref(event.reservationPhone)}`} className="event-detail-action-link">Call to reserve</a> : null}
               <Button variant="outline" size="sm" onClick={() => toggleSave(event.id)}>
                 {saved.includes(event.id) ? "Saved" : "Save"}
               </Button>

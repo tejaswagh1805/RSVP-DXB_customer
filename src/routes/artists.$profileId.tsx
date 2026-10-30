@@ -9,7 +9,7 @@ export const Route = createFileRoute("/artists/$profileId")({
   loader: ({ params }) => getPeopleProfileById({ data: params.profileId }),
   head: ({ loaderData }) => ({
     meta: [
-      { title: loaderData ? `${loaderData.name} â€” RSVP DXB` : "Profile â€” RSVP DXB" },
+      { title: loaderData ? `${loaderData.name} — RSVP DXB` : "Profile — RSVP DXB" },
       { name: "description", content: loaderData?.bio || "Meet the people behind RSVP DXB." },
     ],
   }),
@@ -36,12 +36,12 @@ function ArtistProfilePage() {
         <section className="artist-profile-split">
           <div className="artist-profile-visual">
             <SafeImage src={profile.imageUrl} alt={profile.name} loading="eager" className="h-full w-full object-cover" />
-            <span className="artist-profile-image-caption">RSVP DXB Â· {profile.category === "artist" ? "Artist" : "Influencer"}</span>
+            <span className="artist-profile-image-caption">RSVP DXB · {profile.category === "artist" ? "Artist" : "Influencer"}</span>
           </div>
           <div className="artist-profile-panel">
             <Link to="/artists" className="artist-profile-back"><ArrowLeft size={16} /> All artists & influencers</Link>
             <div className="artist-profile-copy">
-              <p className="artist-profile-kicker">PEOPLE BEHIND THE ENERGY Â· 01</p>
+              <p className="artist-profile-kicker">PEOPLE BEHIND THE ENERGY · 01</p>
               <h1>{profile.name}</h1>
               {profile.subtitle ? <p className="artist-profile-subtitle">{profile.subtitle}</p> : null}
               {profile.role ? <p className="artist-profile-role">{profile.role}</p> : null}

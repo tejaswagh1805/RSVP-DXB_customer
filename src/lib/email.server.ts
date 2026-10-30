@@ -89,6 +89,32 @@ export function newsletterAdminEmail(email: string): string {
   });
 }
 
+export function publicEnquiryEmail(input: {
+  kind: string;
+  name: string;
+  email: string;
+  fields: EmailField[];
+}): string {
+  return emailShell({
+    eyebrow: `New ${input.kind}`,
+    title: input.name || input.kind,
+    greeting: "A new request was submitted through the RSVP DXB website.",
+    message: "The request has been saved. Please follow up with the contact details below.",
+    fields: input.fields,
+    footer: "Internal RSVP DXB notification · Public website enquiry",
+  });
+}
+
+export function enquiryConfirmationEmail(name: string, kind: string): string {
+  return emailShell({
+    eyebrow: "Enquiry received",
+    title: "Thank you for getting in touch.",
+    greeting: `Hello ${name},`,
+    message: `Your ${kind} enquiry has been received by RSVP DXB. Our team will review it and get back to you shortly.`,
+    footer: "You received this confirmation because an enquiry was submitted using this email address.",
+  });
+}
+
 export function applicationAdminEmail(input: { name: string; email: string; track: string; city: string; handle: string; followers: string; mobile: string; outlet: string; role: string; profiles: string; detail: string; id: string; dashboardUrl?: string }): string {
   return emailShell({
     eyebrow: "New membership application",

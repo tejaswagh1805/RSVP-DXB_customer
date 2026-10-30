@@ -1,7 +1,9 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
+import { useServerFn } from "@tanstack/react-start";
 import { PageHero, SitePage } from "@/components/SiteLayout";
 import { Badge, Button, Card, Field, Section, inputClass } from "@/components/ui-kit";
+import { submitHostEnquiry } from "@/lib/database";
 import { PACKAGES } from "@/lib/data";
 
 export const Route = createFileRoute("/host")({
@@ -27,7 +29,11 @@ export const Route = createFileRoute("/host")({
 
 function HostPage() {
   const [sent, setSent] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState("");
+  const [deliveryWarning, setDeliveryWarning] = useState(false);
   const [pkg, setPkg] = useState(PACKAGES[0]!.name);
+  const submitEnquiry = useServerFn(submitHostEnquiry);
 
   return (
     <SitePage>
@@ -71,10 +77,11 @@ function HostPage() {
           <Card className="mt-8 max-w-2xl bg-background">
             {sent ? (
               <div className="py-8 text-center">
-                <h3 className="text-2xl">Enquiry prepared.</h3>
+                <h3 className="text-2xl">Enquiry received.</h3>
                 <p className="mt-2 text-sm text-muted-foreground">
-                  Your email app should open with the enquiry ready to send. If it did not open, contact vinitahirani@tickboxuae.com.
+                  Your request has been saved. Our team will follow up using the contact details you provided.
                 </p>
+                {deliveryWarning ? <p className="mt-3 text-sm text-destructive" role="status">Your request is saved, but an email notification could not be sent. Please contact vinitahirani@rsvpdxb.com.</p> : null}
                 <Button className="mt-6" variant="outline" onClick={() => setSent(false)}>
                   Send another
                 </Button>
@@ -82,29 +89,37 @@ function HostPage() {
             ) : (
               <form
                 className="grid gap-5 sm:grid-cols-2"
-                onSubmit={(e) => {
+                onSubmit={async (e) => {
                   e.preventDefault();
-                  const values = new FormData(e.currentTarget);
+                  const form = e.currentTarget;
+                  const values = new FormData(form);
                   const name = String(values.get("name") || "").trim();
                   const contact = String(values.get("contact") || "").trim();
                   const date = String(values.get("date") || "");
-                  const guests = String(values.get("guests") || "");
+                  const guests = Number(values.get("guests"));
                   const area = String(values.get("area") || "").trim();
                   const occasion = String(values.get("occasion") || "");
-                  const nameField = e.currentTarget.elements.namedItem("name") as HTMLInputElement;
-                  const contactField = e.currentTarget.elements.namedItem("contact") as HTMLInputElement;
+                  const nameField = form.elements.namedItem("name") as HTMLInputElement;
+                  const contactField = form.elements.namedItem("contact") as HTMLInputElement;
                   const emailContact = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(contact);
                   const phoneContact = /^\+?\d{8,15}$/.test(contact.replace(/[\s().-]/g, ""));
                   nameField.setCustomValidity(name.length >= 2 ? "" : "Enter your name.");
                   contactField.setCustomValidity(emailContact || phoneContact ? "" : "Enter a valid email or international phone number.");
-                  const isValid = e.currentTarget.reportValidity();
+                  const isValid = form.reportValidity();
                   nameField.setCustomValidity("");
                   contactField.setCustomValidity("");
                   if (!isValid) return;
-                  const subject = encodeURIComponent(`Event hosting enquiry: ${occasion}`);
-                  const body = encodeURIComponent(`Name: ${name}\nContact: ${contact}\nDate: ${date}\nGuests: ${guests}\nArea: ${area}\nOccasion: ${occasion}\nPackage: ${pkg}`);
-                  window.location.href = `mailto:vinitahirani@tickboxuae.com?subject=${subject}&body=${body}`;
-                  setSent(true);
+                  setBusy(true);
+                  setError("");
+                  try {
+                    const result = await submitEnquiry({ data: { name, contact, date, guests, area, occasion, packageName: pkg } });
+                    setDeliveryWarning(!result.adminEmailSent || (emailContact && !result.confirmationEmailSent));
+                    setSent(true);
+                  } catch (submitError) {
+                    setError(submitError instanceof Error ? submitError.message : "We couldn't send your enquiry. Please try again.");
+                  } finally {
+                    setBusy(false);
+                  }
                 }}
               >
                 <Field label="Your name">
@@ -145,10 +160,11 @@ function HostPage() {
                   </Field>
                 </div>
                 <div className="sm:col-span-2">
-                  <Button type="submit" size="lg" className="w-full">
-                    Plan my party
+                  <Button type="submit" size="lg" className="w-full" disabled={busy}>
+                    {busy ? "Sending enquiry…" : "Plan my party"}
                   </Button>
                 </div>
+                {error ? <p className="sm:col-span-2 text-sm text-destructive" role="alert">{error}</p> : null}
               </form>
             )}
           </Card>

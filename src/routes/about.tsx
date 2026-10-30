@@ -36,7 +36,7 @@ function AboutPage() {
       <Section>
         <div className="grid gap-4 sm:grid-cols-4">
           <AnimatedStat label="Members" value="4,280" hint="Approved across four tracks" />
-          <AnimatedStat label="Events hosted" value="612" hint="Till Now" />
+          <AnimatedStat label="Events hosted" value="612" hint="To date" />
           <AnimatedStat label="Brand partners" value="140" />
           <AnimatedStat label="Avg. attendance" value="87%" hint="Of confirmed RSVPs" />
         </div>
@@ -116,7 +116,7 @@ function AboutPage() {
 
 function AnimatedStat({ label, value, hint }: { label: string; value: string; hint?: string }) {
   const ref = useRef<HTMLParagraphElement>(null);
-  const [displayValue, setDisplayValue] = useState("0");
+  const [displayValue, setDisplayValue] = useState(value);
 
   useEffect(() => {
     const target = Number(value.replace(/[^\d.]/g, ""));

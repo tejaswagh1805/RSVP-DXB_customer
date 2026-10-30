@@ -7,7 +7,7 @@ import fashionImage from "@/assets/event-fashion.jpg";
 import nightlifeImage from "@/assets/event-nightlife.jpg";
 import propertyImage from "@/assets/event-property.jpg";
 import { getSql } from "./db.server";
-import { applicationAdminEmail, applicationConfirmationEmail, memberEmailHtml, memberPasswordResetEmail, newsletterAdminEmail, newsletterConfirmationEmail, sendMemberEmail } from "./email.server";
+import { applicationAdminEmail, applicationConfirmationEmail, enquiryConfirmationEmail, memberEmailHtml, memberPasswordResetEmail, newsletterAdminEmail, newsletterConfirmationEmail, publicEnquiryEmail, sendMemberEmail } from "./email.server";
 import { profileSlug, type EventItem, type Track, type WallPost } from "./data";
 import { getEmailValidationMessage } from "./email";
 import { normalizeWhatsAppNumber } from "./phone";
@@ -94,7 +94,7 @@ function mapEvent(row: EventRow): EventItem {
     creatorPassNote: creator_pass_note ?? "",
     ageRestriction: age_restriction ?? "",
     applicationDeadline: application_deadline ?? "",
-    actionLabel: action_label ?? "",
+    actionLabel: /ticket link to add/i.test(action_label ?? "") ? "" : action_label ?? "",
     ...(video_url ? { video: video_url } : {}),
   };
 }
@@ -118,11 +118,14 @@ export const listPublishedEvents = createServerFn({ method: "GET" }).handler(asy
 export const listLiveWallPosts = createServerFn({ method: "GET" }).handler(async () => {
   const sql = getSql();
   const rows = (await sql`
-    SELECT post.id, post.brand, post.type, post.body, post.posted, post.boosted,
+    SELECT post.id, post.brand, post.type, post.body,
+      to_char(post.created_at AT TIME ZONE 'Asia/Dubai', 'DD Mon YYYY') AS posted,
+      post.boosted,
       post.status, post.event_id AS "eventId"
     FROM wall_posts AS post
     LEFT JOIN events AS event ON event.id = post.event_id
     WHERE post.status = 'live'
+      AND post.created_at >= now() - interval '30 days'
       AND (
         post.event_id IS NULL
         OR (
@@ -266,11 +269,17 @@ export const submitNewsletterSubscription = createServerFn({ method: "POST" })
   .validator((input: { email: string }) => input)
   .handler(async ({ data }) => {
     const email = String(data.email ?? "").trim().toLowerCase();
-    if (email.length > 254 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-      throw new Error("Enter a valid email address.");
-    }
+    const emailError = getEmailValidationMessage(email);
+    if (email.length > 254 || emailError) throw new Error(emailError || "Enter a valid email address.");
 
-    const adminEmail = "vinitahirani@rsvpdxb.com";
+    const sql = getSql();
+    await sql`
+      INSERT INTO newsletter_subscribers (email)
+      VALUES (${email})
+      ON CONFLICT (email) DO UPDATE SET active = TRUE, updated_at = NOW()
+    `;
+
+    const adminEmail = process.env["RSVP_ADMIN_EMAIL"] || "vinitahirani@rsvpdxb.com";
     const [subscriberResult, adminResult] = await Promise.all([
       sendMemberEmail({
         to: email,
@@ -285,10 +294,162 @@ export const submitNewsletterSubscription = createServerFn({ method: "POST" })
         html: newsletterAdminEmail(email),
       }),
     ]);
-    if (!subscriberResult.sent) {
-      throw new Error("We couldn’t send your confirmation email. Please try again later.");
+    return { subscribed: true, confirmationEmailSent: subscriberResult.sent, adminEmailSent: adminResult.sent };
+  });
+
+const enquiryAdminEmail = () => process.env["RSVP_ADMIN_EMAIL"] || "vinitahirani@rsvpdxb.com";
+
+export const submitHostEnquiry = createServerFn({ method: "POST" })
+  .validator((input: {
+    name: string;
+    contact: string;
+    date: string;
+    guests: number;
+    area: string;
+    occasion: string;
+    packageName: string;
+  }) => input)
+  .handler(async ({ data }) => {
+    const name = String(data.name ?? "").trim();
+    const contact = String(data.contact ?? "").trim();
+    const date = String(data.date ?? "");
+    const guests = Number(data.guests);
+    const area = String(data.area ?? "").trim();
+    const occasion = String(data.occasion ?? "").trim();
+    const packageName = String(data.packageName ?? "").trim();
+    const emailContact = !getEmailValidationMessage(contact);
+    const phoneContact = /^\+?\d{8,15}$/.test(contact.replace(/[\s().-]/g, ""));
+    const todayInDubai = new Intl.DateTimeFormat("en-CA", {
+      timeZone: "Asia/Dubai",
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+    }).format(new Date());
+    const parsedDate = new Date(`${date}T00:00:00Z`);
+    const isRealDate = Number.isFinite(parsedDate.getTime()) && parsedDate.toISOString().slice(0, 10) === date;
+
+    if (name.length < 2 || name.length > 120) throw new Error("Enter your name.");
+    if (!emailContact && !phoneContact) throw new Error("Enter a valid email or international phone number.");
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(date) || !isRealDate || date < todayInDubai) throw new Error("Choose a valid upcoming date.");
+    if (!Number.isSafeInteger(guests) || guests < 5 || guests > 10_000) throw new Error("Enter a guest count between 5 and 10,000.");
+    if (area.length > 120 || occasion.length < 2 || occasion.length > 120 || packageName.length < 2 || packageName.length > 120) {
+      throw new Error("Check the occasion, area, and package details.");
     }
-    return { adminEmailSent: adminResult.sent };
+
+    const id = randomBytes(16).toString("hex");
+    const payload = { date, guests, area, occasion, packageName };
+    const sql = getSql();
+    await sql`
+      INSERT INTO public_enquiries (id, kind, name, contact, payload)
+      VALUES (${id}, 'host', ${name}, ${contact}, ${JSON.stringify(payload)}::jsonb)
+    `;
+    const fields = [
+      { label: "Name", value: name },
+      { label: "Contact", value: contact },
+      { label: "Date", value: date },
+      { label: "Guests", value: String(guests) },
+      { label: "Area", value: area || "Not provided" },
+      { label: "Occasion", value: occasion },
+      { label: "Package", value: packageName },
+      { label: "Reference", value: id },
+    ];
+    const [adminDelivery, confirmationDelivery] = await Promise.all([
+      sendMemberEmail({
+        to: enquiryAdminEmail(),
+        subject: `New hosting enquiry: ${occasion}`,
+        text: fields.map(({ label, value }) => `${label}: ${value}`).join("\n"),
+        html: publicEnquiryEmail({ kind: "hosting enquiry", name, email: contact, fields }),
+      }),
+      emailContact
+        ? sendMemberEmail({
+            to: contact,
+            subject: "We received your RSVP DXB hosting enquiry",
+            text: "Thank you for contacting RSVP DXB. Our team has received your hosting enquiry and will follow up shortly.",
+            html: enquiryConfirmationEmail(name, "hosting"),
+          })
+        : Promise.resolve({ sent: false as const, reason: "not_configured" as const }),
+    ]);
+    return { saved: true, adminEmailSent: adminDelivery.sent, confirmationEmailSent: confirmationDelivery.sent };
+  });
+
+export const submitPressEnquiry = createServerFn({ method: "POST" })
+  .validator((input: { name: string; outlet: string; email: string; enquiry: string }) => input)
+  .handler(async ({ data }) => {
+    const name = String(data.name ?? "").trim();
+    const outlet = String(data.outlet ?? "").trim();
+    const email = String(data.email ?? "").trim().toLowerCase();
+    const enquiry = String(data.enquiry ?? "").trim();
+    const emailError = getEmailValidationMessage(email);
+    if (name.length < 2 || name.length > 120) throw new Error("Enter your name.");
+    if (outlet.length < 2 || outlet.length > 180) throw new Error("Enter your outlet or organisation.");
+    if (emailError) throw new Error(emailError);
+    if (enquiry.length < 10 || enquiry.length > 3000) throw new Error("Enter an enquiry between 10 and 3,000 characters.");
+
+    const id = randomBytes(16).toString("hex");
+    const sql = getSql();
+    await sql`
+      INSERT INTO public_enquiries (id, kind, name, contact, payload)
+      VALUES (${id}, 'press', ${name}, ${email}, ${JSON.stringify({ outlet, enquiry })}::jsonb)
+    `;
+    const fields = [
+      { label: "Name", value: name },
+      { label: "Outlet", value: outlet },
+      { label: "Email", value: email },
+      { label: "Enquiry", value: enquiry },
+      { label: "Reference", value: id },
+    ];
+    const [adminDelivery, confirmationDelivery] = await Promise.all([
+      sendMemberEmail({
+        to: enquiryAdminEmail(),
+        subject: `Press enquiry from ${name} (${outlet})`,
+        text: fields.map(({ label, value }) => `${label}: ${value}`).join("\n\n"),
+        html: publicEnquiryEmail({ kind: "press enquiry", name, email, fields }),
+      }),
+      sendMemberEmail({
+        to: email,
+        subject: "We received your RSVP DXB press enquiry",
+        text: "Thank you for contacting RSVP DXB. Our press team has received your enquiry and will follow up shortly.",
+        html: enquiryConfirmationEmail(name, "press"),
+      }),
+    ]);
+    return { saved: true, adminEmailSent: adminDelivery.sent, confirmationEmailSent: confirmationDelivery.sent };
+  });
+
+export const requestPressAsset = createServerFn({ method: "POST" })
+  .validator((input: { asset: string; email: string }) => input)
+  .handler(async ({ data }) => {
+    const asset = String(data.asset ?? "").trim();
+    const email = String(data.email ?? "").trim().toLowerCase();
+    if (asset.length < 3 || asset.length > 180) throw new Error("Choose a valid press asset.");
+    const emailError = getEmailValidationMessage(email);
+    if (emailError) throw new Error(emailError);
+
+    const id = randomBytes(16).toString("hex");
+    const sql = getSql();
+    await sql`
+      INSERT INTO public_enquiries (id, kind, name, contact, payload)
+      VALUES (${id}, 'press_asset', 'Press asset request', ${email}, ${JSON.stringify({ asset })}::jsonb)
+    `;
+    const fields = [
+      { label: "Requested asset", value: asset },
+      { label: "Reply to", value: email },
+      { label: "Reference", value: id },
+    ];
+    const [adminDelivery, confirmationDelivery] = await Promise.all([
+      sendMemberEmail({
+        to: enquiryAdminEmail(),
+        subject: `Press asset request: ${asset}`,
+        text: fields.map(({ label, value }) => `${label}: ${value}`).join("\n"),
+        html: publicEnquiryEmail({ kind: "press asset request", name: asset, email, fields }),
+      }),
+      sendMemberEmail({
+        to: email,
+        subject: "We received your RSVP DXB press asset request",
+        text: `Thank you. We received your request for: ${asset}. Our press team will follow up by email.`,
+        html: enquiryConfirmationEmail("there", "press asset"),
+      }),
+    ]);
+    return { saved: true, adminEmailSent: adminDelivery.sent, confirmationEmailSent: confirmationDelivery.sent };
   });
 
 export const submitEventRsvpRequest = createServerFn({ method: "POST" })

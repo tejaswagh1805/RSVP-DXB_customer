@@ -1,8 +1,10 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
+import { useServerFn } from "@tanstack/react-start";
 import { PageHero, SitePage } from "@/components/SiteLayout";
 import { Badge, Button, Card, Field, Section, inputClass } from "@/components/ui-kit";
 import { PRESS } from "@/lib/data";
+import { requestPressAsset, submitPressEnquiry } from "@/lib/database";
 
 export const Route = createFileRoute("/press")({
   head: () => ({
@@ -29,6 +31,29 @@ const RELEASES = [
 
 function PressPage() {
   const [sent, setSent] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState("");
+  const [deliveryWarning, setDeliveryWarning] = useState(false);
+  const [assetEmail, setAssetEmail] = useState("");
+  const [assetBusy, setAssetBusy] = useState(false);
+  const [assetMessage, setAssetMessage] = useState("");
+  const submitEnquiry = useServerFn(submitPressEnquiry);
+  const requestAsset = useServerFn(requestPressAsset);
+
+  async function sendAssetRequest(asset: string) {
+    setAssetBusy(true);
+    setAssetMessage("");
+    try {
+      const result = await requestAsset({ data: { asset, email: assetEmail } });
+      setAssetMessage(result.adminEmailSent
+        ? `Your request for “${asset}” was sent to our press team. We’ll reply to ${assetEmail}.`
+        : `Your request for “${asset}” was saved, but the team notification could not be sent. Please email vinitahirani@rsvpdxb.com.`);
+    } catch (requestError) {
+      setAssetMessage(requestError instanceof Error ? requestError.message : "We couldn't send your request. Please try again.");
+    } finally {
+      setAssetBusy(false);
+    }
+  }
 
   return (
     <SitePage>
@@ -61,13 +86,19 @@ function PressPage() {
                   <p className="text-sm">{r.title}</p>
                   <p className="text-xs text-muted-foreground">{r.date}</p>
                 </div>
-                <a className="inline-flex h-8 items-center justify-center rounded-md border border-border px-3 text-xs font-medium" href={`mailto:vinitahirani@tickboxuae.com?subject=${encodeURIComponent(`Request: ${r.title}`)}`}>{r.pdf ? "Request PDF" : "Request release"}</a>
+                <Button type="button" size="sm" variant="outline" disabled={assetBusy} onClick={() => void sendAssetRequest(r.title)}>{r.pdf ? "Request PDF" : "Request release"}</Button>
               </Card>
             ))}
           </div>
-          <div className="mt-8 flex gap-3">
-            <a className="inline-flex h-10 items-center justify-center rounded-md border border-border px-5 text-sm hover:bg-surface-2" href="mailto:vinitahirani@tickboxuae.com?subject=RSVP%20DXB%20media%20kit">Request media kit</a>
-            <a className="inline-flex h-10 items-center justify-center rounded-md px-5 text-sm hover:bg-surface-2" href="mailto:vinitahirani@tickboxuae.com?subject=RSVP%20DXB%20logos%20and%20imagery">Request logos & imagery</a>
+          <div className="mt-8 grid max-w-xl gap-3">
+            <Field label="Email for press asset requests">
+              <input className={inputClass} type="email" autoComplete="email" required maxLength={254} value={assetEmail} onChange={(event) => setAssetEmail(event.target.value)} placeholder="you@publication.com" />
+            </Field>
+            <div className="flex flex-wrap gap-3">
+              <Button type="button" variant="outline" disabled={assetBusy} onClick={() => void sendAssetRequest("RSVP DXB media kit")}>Request media kit</Button>
+              <Button type="button" variant="outline" disabled={assetBusy} onClick={() => void sendAssetRequest("RSVP DXB logos and imagery")}>Request logos & imagery</Button>
+            </div>
+            {assetMessage ? <p className="text-sm text-muted-foreground" role="status">{assetMessage}</p> : null}
           </div>
         </Section>
       </div>
@@ -75,20 +106,22 @@ function PressPage() {
       <Section eyebrow="Press enquiries" title="Talk to the team">
         <Card className="mt-8 max-w-xl">
           {sent ? (
-            <p className="py-6 text-center text-sm text-muted-foreground">
-              Your email app should open with the enquiry ready to send. If it did not open, email vinitahirani@tickboxuae.com.
-            </p>
+            <div className="py-6 text-center text-sm text-muted-foreground" role="status">
+              <p>Your enquiry has been saved. Our press team will follow up by email.</p>
+              {deliveryWarning ? <p className="mt-2 text-destructive">The team notification could not be sent automatically. Please contact vinitahirani@rsvpdxb.com.</p> : null}
+              <Button className="mt-5" type="button" variant="outline" onClick={() => setSent(false)}>Send another</Button>
+            </div>
           ) : (
             <form
               className="grid gap-5"
-              onSubmit={(e) => {
+              onSubmit={async (e) => {
                 e.preventDefault();
-                const values = new FormData(e.currentTarget);
+                const form = e.currentTarget;
+                const values = new FormData(form);
                 const name = String(values.get("name") || "").trim();
                 const outlet = String(values.get("outlet") || "").trim();
                 const email = String(values.get("email") || "").trim();
                 const enquiry = String(values.get("enquiry") || "").trim();
-                const form = e.currentTarget;
                 const nameField = form.elements.namedItem("name") as HTMLInputElement;
                 const outletField = form.elements.namedItem("outlet") as HTMLInputElement;
                 const enquiryField = form.elements.namedItem("enquiry") as HTMLTextAreaElement;
@@ -100,10 +133,17 @@ function PressPage() {
                 outletField.setCustomValidity("");
                 enquiryField.setCustomValidity("");
                 if (!isValid) return;
-                const subject = encodeURIComponent(`Press enquiry from ${name} (${outlet})`);
-                const body = encodeURIComponent(`Name: ${name}\nOutlet: ${outlet}\nEmail: ${email}\n\n${enquiry}`);
-                window.location.href = `mailto:vinitahirani@tickboxuae.com?subject=${subject}&body=${body}`;
-                setSent(true);
+                setBusy(true);
+                setError("");
+                try {
+                  const result = await submitEnquiry({ data: { name, outlet, email, enquiry } });
+                  setDeliveryWarning(!result.adminEmailSent || !result.confirmationEmailSent);
+                  setSent(true);
+                } catch (submitError) {
+                  setError(submitError instanceof Error ? submitError.message : "We couldn't send your enquiry. Please try again.");
+                } finally {
+                  setBusy(false);
+                }
               }}
             >
               <Field label="Name">
@@ -118,7 +158,8 @@ function PressPage() {
               <Field label="Enquiry">
                 <textarea className={inputClass} name="enquiry" rows={4} required minLength={10} maxLength={3000} />
               </Field>
-              <Button type="submit">Send enquiry</Button>
+              <Button type="submit" disabled={busy}>{busy ? "Sending enquiry…" : "Send enquiry"}</Button>
+              {error ? <p className="text-sm text-destructive" role="alert">{error}</p> : null}
             </form>
           )}
         </Card>

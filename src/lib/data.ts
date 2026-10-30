@@ -45,6 +45,16 @@ export interface EventItem {
 
 export const profileSlug = (name: string) => name.trim().toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") || "talent";
 
+export function internationalPhoneHref(phone: string, countryCode = "+971") {
+  let digits = phone.replace(/\D/g, "");
+  if (digits.startsWith("00")) return `+${digits.slice(2)}`;
+  const callingCode = countryCode.replace(/\D/g, "");
+  if (phone.trim().startsWith("+")) return `+${digits}`;
+  if (digits.startsWith(callingCode)) return `+${digits}`;
+  digits = digits.replace(/^0/, "");
+  return `+${callingCode}${digits}`;
+}
+
 export interface WallPost {
   id: string;
   brand: string;
