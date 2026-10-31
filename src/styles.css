@@ -1323,6 +1323,32 @@
   gap: 16px;
 }
 
+.gallery-filter-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 0 0 24px;
+}
+
+.gallery-filter-tab {
+  display: inline-flex;
+  min-height: 42px;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 15px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--foreground);
+  font-size: 13px;
+  transition: background .2s, color .2s, border-color .2s, transform .2s;
+}
+
+.gallery-filter-tab:hover { transform: translateY(-1px); border-color: var(--primary); }
+.gallery-filter-tab.is-active { border-color: var(--primary); background: var(--primary); color: var(--primary-foreground); }
+.gallery-filter-tab span { font-size: 11px; opacity: .75; }
+.gallery-empty-state { grid-column: 1 / -1; padding: 32px 0; color: var(--muted-foreground); }
+
 /* Event detail: editorial hero, calm motion, and a clear booking path. */
 .event-detail-hero {
   position: relative;

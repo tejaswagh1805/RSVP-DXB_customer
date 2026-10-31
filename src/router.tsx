@@ -9,6 +9,9 @@ export const getRouter = () => {
     routeTree,
     context: { queryClient },
     scrollRestoration: true,
+    // Keep the source page's data and layout warm for browser Back so the
+    // router can restore its saved scroll position without waiting on loaders.
+    defaultStaleTime: 60_000,
     // Reuse loader results fetched by hover/focus preloading for 30 seconds.
     defaultPreload: "intent",
     defaultPreloadStaleTime: 30_000,

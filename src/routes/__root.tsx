@@ -14,6 +14,38 @@ import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
 import { StoreProvider } from "../lib/store";
 
+const scrollPositionsKey = "rsvp-scroll-positions-v1";
+
+function getEntryScrollKey(location: { state: object; href: string }) {
+  const state = location.state as Record<string, unknown>;
+  return String(state["__TSR_key"] || state["key"] || location.href);
+}
+
+type ScrollSnapshot = { y: number; sectionIndex?: number; sectionOffset?: number };
+
+function readScrollSnapshot(key: string): ScrollSnapshot | null {
+  try {
+    const positions = JSON.parse(sessionStorage.getItem(scrollPositionsKey) || "{}");
+    const value = positions[key];
+    if (typeof value === "number") return { y: value };
+    if (!value || !Number.isFinite(Number(value.y))) return null;
+    return value;
+  } catch {
+    return null;
+  }
+}
+
+function saveScrollY(key: string, snapshot: ScrollSnapshot) {
+  try {
+    const positions = JSON.parse(sessionStorage.getItem(scrollPositionsKey) || "{}");
+    positions[key] = snapshot;
+    const recentEntries = Object.entries(positions).slice(-40);
+    sessionStorage.setItem(scrollPositionsKey, JSON.stringify(Object.fromEntries(recentEntries)));
+  } catch {
+    // Scroll restoration remains usable through TanStack Router if storage is unavailable.
+  }
+}
+
 function NotFoundComponent() {
   return (
     <div className="flex min-h-screen items-center justify-center bg-background px-4">
@@ -131,6 +163,108 @@ function RootShell({ children }: { children: ReactNode }) {
 
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
+  const router = useRouter();
+
+  useEffect(() => {
+    let pendingBackKey: string | null = null;
+    let restoreTimer: ReturnType<typeof setTimeout> | undefined;
+    let userInteracted = false;
+    let restoreOnInitialLoad = false;
+
+    const navigationEntry = performance.getEntriesByType("navigation")[0] as PerformanceNavigationTiming | undefined;
+    restoreOnInitialLoad = navigationEntry?.type === "reload";
+
+    const saveCurrentPosition = () => {
+      const state = window.history.state || {};
+      const key = String(state["__TSR_key"] || state["key"] || window.location.href);
+      const sections = Array.from(document.querySelectorAll<HTMLElement>(".customer-home > section"));
+      const activeSectionIndex = sections.findIndex((section) => section.offsetTop + section.offsetHeight > window.scrollY);
+      const activeSection = activeSectionIndex >= 0 ? sections[activeSectionIndex] : undefined;
+      saveScrollY(key, {
+        y: window.scrollY,
+        ...(activeSection ? { sectionIndex: activeSectionIndex, sectionOffset: Math.max(0, window.scrollY - activeSection.offsetTop) } : {}),
+      });
+    };
+    const onScroll = () => {
+      // A browser Back can emit scroll events before the route render completes.
+      // Do not replace the destination's saved position with that transient Y.
+      if (!pendingBackKey) saveCurrentPosition();
+    };
+    const onPopState = () => {
+      pendingBackKey = String(window.history.state?.["__TSR_key"] || window.history.state?.["key"] || window.location.href);
+      userInteracted = false;
+    };
+    const onUserScrollIntent = () => { userInteracted = true; restoreOnInitialLoad = false; };
+
+    const restorePosition = (destinationKey: string, startedAt = Date.now()) => {
+      const currentState = window.history.state || {};
+      const currentKey = String(currentState["__TSR_key"] || currentState["key"] || window.location.href);
+      if (currentKey !== destinationKey) return;
+      const snapshot = readScrollSnapshot(destinationKey);
+      if (!snapshot || userInteracted) return;
+      const isHome = window.location.pathname === "/";
+      const sections = isHome ? Array.from(document.querySelectorAll<HTMLElement>(".customer-home > section")) : [];
+      const section = snapshot.sectionIndex === undefined ? undefined : sections[snapshot.sectionIndex];
+      const targetY = section
+        ? section.offsetTop + (snapshot.sectionOffset || 0)
+        : snapshot.y;
+      const maxScrollY = Math.max(0, document.documentElement.scrollHeight - window.innerHeight);
+      // Homepage media and the pinned showcase can change document height after
+      // hydration. Wait for the saved section to exist and fit before restoring;
+      // clamping to the temporary page bottom is what sent users to the footer.
+      if ((!document.querySelector(".customer-home") || maxScrollY < targetY) && Date.now() - startedAt < 10_000) {
+        restoreTimer = setTimeout(() => restorePosition(destinationKey, startedAt), 100);
+        return;
+      }
+      window.scrollTo({ top: Math.min(targetY, maxScrollY), left: 0, behavior: "auto" });
+    };
+
+    const unsubscribeBeforeLoad = router.subscribe("onBeforeLoad", (event) => {
+      if (event.fromLocation) {
+        const sections = Array.from(document.querySelectorAll<HTMLElement>(".customer-home > section"));
+        const activeSectionIndex = sections.findIndex((section) => section.offsetTop + section.offsetHeight > window.scrollY);
+        const activeSection = activeSectionIndex >= 0 ? sections[activeSectionIndex] : undefined;
+        saveScrollY(getEntryScrollKey(event.fromLocation), {
+          y: window.scrollY,
+          ...(activeSection ? { sectionIndex: activeSectionIndex, sectionOffset: Math.max(0, window.scrollY - activeSection.offsetTop) } : {}),
+        });
+      }
+    });
+    const unsubscribeRendered = router.subscribe("onRendered", (event) => {
+      const destinationKey = getEntryScrollKey(event.toLocation);
+      if (!pendingBackKey || pendingBackKey !== destinationKey) return;
+      pendingBackKey = null;
+      userInteracted = false;
+      if (restoreTimer) clearTimeout(restoreTimer);
+      requestAnimationFrame(() => requestAnimationFrame(() => restorePosition(destinationKey)));
+    });
+
+    if (restoreOnInitialLoad) {
+      requestAnimationFrame(() => requestAnimationFrame(() => {
+        const state = window.history.state || {};
+        restorePosition(String(state["__TSR_key"] || state["key"] || window.location.href));
+      }));
+    }
+
+    window.addEventListener("scroll", onScroll, { passive: true });
+    window.addEventListener("popstate", onPopState, true);
+    window.addEventListener("wheel", onUserScrollIntent, { passive: true });
+    window.addEventListener("touchstart", onUserScrollIntent, { passive: true });
+    window.addEventListener("keydown", onUserScrollIntent);
+    window.addEventListener("pagehide", saveCurrentPosition);
+
+    return () => {
+      unsubscribeBeforeLoad();
+      unsubscribeRendered();
+      window.removeEventListener("scroll", onScroll);
+      window.removeEventListener("popstate", onPopState, true);
+      window.removeEventListener("wheel", onUserScrollIntent);
+      window.removeEventListener("touchstart", onUserScrollIntent);
+      window.removeEventListener("keydown", onUserScrollIntent);
+      window.removeEventListener("pagehide", saveCurrentPosition);
+      if (restoreTimer) clearTimeout(restoreTimer);
+    };
+  }, [router]);
 
   return (
     <QueryClientProvider client={queryClient}>

@@ -266,9 +266,10 @@ export function SiteMediaRibbon({ media }: { media: HomepageMediaItem[] }) {
   );
 }
 
-export function EventGallery({ media = [], previewLimit, className = "" }: { media?: HomepageMediaItem[]; previewLimit?: number; className?: string }) {
+export function EventGallery({ media = [], previewLimit, className = "", showMediaTabs = false }: { media?: HomepageMediaItem[]; previewLimit?: number; className?: string; showMediaTabs?: boolean }) {
   const { events } = useStore();
   const [category, setCategory] = useState("All");
+  const [mediaType, setMediaType] = useState<"all" | "image" | "video">("all");
   const [selected, setSelected] = useState<EventItem | HomepageMediaItem | null>(null);
   const categories = [
     "All",
@@ -277,7 +278,13 @@ export function EventGallery({ media = [], previewLimit, className = "" }: { med
   const gallery = events.filter(
     (e) => e.status === "published" && (category === "All" || e.category === category),
   );
-  const visibleMedia = previewLimit ? media.slice(0, previewLimit) : media;
+  const allMediaCount = media.length || gallery.length;
+  const imageCount = media.length
+    ? media.filter((item) => item.mediaType === "image").length
+    : gallery.length;
+  const visibleMedia = (previewLimit ? media.slice(0, previewLimit) : media).filter(
+    (item) => mediaType === "all" || item.mediaType === mediaType,
+  );
   useEffect(() => {
     if (!selected) return;
     const listener = (e: KeyboardEvent) => {
@@ -312,9 +319,29 @@ export function EventGallery({ media = [], previewLimit, className = "" }: { med
           </div>
         ) : null}
       </div>
+      {showMediaTabs ? (
+        <div className="gallery-filter-tabs" role="tablist" aria-label="Filter gallery by media type">
+          {([
+            ["all", "All media", allMediaCount],
+            ["image", "Images", imageCount],
+            ["video", "Videos", media.filter((item) => item.mediaType === "video").length],
+          ] as const).map(([type, label, count]) => (
+            <button
+              key={type}
+              type="button"
+              role="tab"
+              aria-selected={mediaType === type}
+              className={`gallery-filter-tab${mediaType === type ? " is-active" : ""}`}
+              onClick={() => setMediaType(type)}
+            >
+              {label}<span>{count}</span>
+            </button>
+          ))}
+        </div>
+      ) : null}
       <div className="event-gallery">
         {media.length
-          ? visibleMedia.map((item) => (
+          ? visibleMedia.length ? visibleMedia.map((item) => (
               <div className="gallery-item" key={item.id}>
                 <Button variant="ghost" className="gallery-photo" onClick={() => setSelected(item)}>
                   {item.mediaType === "video" ? (
@@ -328,7 +355,8 @@ export function EventGallery({ media = [], previewLimit, className = "" }: { med
                   </span>
                 </Button>
               </div>
-            ))
+            )) : <p className="gallery-empty-state" role="status">No {mediaType === "video" ? "videos" : "images"} in the gallery yet.</p>
+          : showMediaTabs && mediaType === "video" ? <p className="gallery-empty-state" role="status">No videos in the gallery yet.</p>
           : gallery.map((e) => (
               <div className="gallery-item gallery-event-item" key={e.id}>
                 <Button variant="ghost" className="gallery-photo" onClick={() => setSelected(e)}>
