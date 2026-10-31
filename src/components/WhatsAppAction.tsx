@@ -20,7 +20,7 @@ export function WhatsAppAction({ event, purpose }: { event: EventItem; purpose?:
     return <span className="inline-flex h-8 items-center px-1 text-xs text-muted-foreground">Contact RSVP DXB to request</span>;
   }
 
-  const requestUrl = `https://wa.me/${phoneNumber}?text=${encodeURIComponent(purpose ? `RSVPDXB ${purpose} ${event.title}` : `RSVPDXB EVENT ${event.id}`)}`;
+  const requestUrl = `https://wa.me/${phoneNumber}?text=${encodeURIComponent(purpose ? `RSVPDXB ${purpose}: ${event.title}` : `Hi RSVP DXB, I'd like to request a place for ${event.title}.`)}`;
   const label = purpose || "Request ticket on WhatsApp";
   return (
     <a

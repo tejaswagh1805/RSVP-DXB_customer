@@ -244,7 +244,9 @@ export function SiteMediaRibbon({ media }: { media: HomepageMediaItem[] }) {
                   <div className="ribbon-tile-content">
                     <div className="ribbon-photo">
                       {item.mediaType === "video" ? (
-                        <video src={item.imageUrl} muted autoPlay loop playsInline preload="metadata" aria-label={item.title} className="h-full w-full object-contain bg-black" />
+                        <video src={item.imageUrl} muted autoPlay loop playsInline preload="metadata" aria-label={item.title} className="h-full w-full object-contain bg-black">
+                          {item.captionsUrl ? <track kind="captions" src={item.captionsUrl} srcLang="en" label="English" default /> : null}
+                        </video>
                       ) : (
                         <SafeImage src={item.imageUrl} alt={item.title} className="h-full w-full object-cover" />
                       )}
@@ -345,7 +347,9 @@ export function EventGallery({ media = [], previewLimit, className = "", showMed
               <div className="gallery-item" key={item.id}>
                 <Button variant="ghost" className="gallery-photo" onClick={() => setSelected(item)}>
                   {item.mediaType === "video" ? (
-                    <video src={item.imageUrl} muted playsInline preload="metadata" aria-label={item.title} className="gallery-media gallery-media-video" />
+                    <video src={item.imageUrl} muted playsInline preload="metadata" aria-label={item.title} className="gallery-media gallery-media-video">
+                      {item.captionsUrl ? <track kind="captions" src={item.captionsUrl} srcLang="en" label="English" default /> : null}
+                    </video>
                   ) : (
                     <SafeImage src={item.imageUrl} alt={item.title} className="gallery-media gallery-media-image" />
                   )}
@@ -384,7 +388,9 @@ export function EventGallery({ media = [], previewLimit, className = "", showMed
             </Button>
             {"imageUrl" in selected ? (
               selected.mediaType === "video" ? (
-                <video src={selected.imageUrl} controls autoPlay playsInline className="max-h-[65vh] w-full object-contain" />
+                <video src={selected.imageUrl} controls autoPlay playsInline className="max-h-[65vh] w-full object-contain">
+                  {selected.captionsUrl ? <track kind="captions" src={selected.captionsUrl} srcLang="en" label="English" default /> : null}
+                </video>
               ) : (
                 <SafeImage src={selected.imageUrl} alt={selected.title} loading="eager" className="max-h-[65vh] w-full object-contain" />
               )

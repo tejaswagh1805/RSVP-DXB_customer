@@ -41,7 +41,7 @@ function ArtistProfilePage() {
           <div className="artist-profile-panel">
             <Link to="/artists" className="artist-profile-back"><ArrowLeft size={16} /> All artists & influencers</Link>
             <div className="artist-profile-copy">
-              <p className="artist-profile-kicker">PEOPLE BEHIND THE ENERGY · 01</p>
+              <p className="artist-profile-kicker">PEOPLE BEHIND THE ENERGY</p>
               <h1>{profile.name}</h1>
               {profile.subtitle ? <p className="artist-profile-subtitle">{profile.subtitle}</p> : null}
               {profile.role ? <p className="artist-profile-role">{profile.role}</p> : null}

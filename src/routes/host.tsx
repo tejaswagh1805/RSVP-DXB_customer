@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { PageHero, SitePage } from "@/components/SiteLayout";
@@ -165,6 +165,7 @@ function HostPage() {
                   </Button>
                 </div>
                 {error ? <p className="sm:col-span-2 text-sm text-destructive" role="alert">{error}</p> : null}
+                <p className="sm:col-span-2 text-xs text-muted-foreground">We use these details to respond to your enquiry. See our <Link to="/privacy" className="underline underline-offset-4">Privacy Policy</Link>.</p>
               </form>
             )}
           </Card>

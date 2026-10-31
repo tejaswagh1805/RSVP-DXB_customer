@@ -13,7 +13,7 @@ import { getEmailValidationMessage } from "./email";
 import { normalizeWhatsAppNumber } from "./phone";
 import { isValidPassword } from "./password";
 
-export type HomepageMediaItem = { id: string; slot: "gallery" | "top_pick"; title: string; caption: string; imageUrl: string; mediaType: "image" | "video"; linkUrl: string; displayOrder: number };
+export type HomepageMediaItem = { id: string; slot: "gallery" | "top_pick"; title: string; caption: string; imageUrl: string; mediaType: "image" | "video"; captionsUrl?: string; linkUrl: string; displayOrder: number };
 export type PeopleProfile = { id: string; category: "artist" | "influencer"; name: string; role: string; subtitle: string; bio: string; imageUrl: string; instagramUrl: string; tiktokUrl: string; youtubeUrl: string; xUrl: string; displayOrder: number };
 export type Venue = { id: string; slug: string; category: string; name: string; tagline: string; description: string; location: string; highlights: string[]; offer: string; featuredDate: string | null; imageUrl: string; websiteUrl: string; moreInfoUrl: string; displayOrder: number; featured: boolean };
 
@@ -160,7 +160,7 @@ export const getEventById = createServerFn({ method: "GET" })
 export const listHomepageMedia = createServerFn({ method: "GET" }).handler(async () => {
   const sql = getSql();
   const rows = (await sql`
-    SELECT id, slot, title, caption, image_url AS "imageUrl", COALESCE(media_type, 'image') AS "mediaType", link_url AS "linkUrl", display_order AS "displayOrder"
+    SELECT id, slot, title, caption, image_url AS "imageUrl", COALESCE(media_type, 'image') AS "mediaType", COALESCE(captions_url, '') AS "captionsUrl", link_url AS "linkUrl", display_order AS "displayOrder"
     FROM site_media WHERE active = TRUE ORDER BY slot, display_order, created_at DESC
   `) as unknown as HomepageMediaItem[];
   return rows;
@@ -172,7 +172,7 @@ export const listPeopleProfiles = createServerFn({ method: "GET" }).handler(asyn
     SELECT id, category, name, role, subtitle, bio, image_url AS "imageUrl",
       instagram_url AS "instagramUrl", tiktok_url AS "tiktokUrl",
       youtube_url AS "youtubeUrl", x_url AS "xUrl", display_order AS "displayOrder"
-    FROM people_profiles WHERE active = TRUE ORDER BY category, display_order, created_at DESC
+    FROM people_profiles WHERE active = TRUE AND lower(trim(name)) <> 'influencers' ORDER BY category, display_order, created_at DESC
   `) as unknown as PeopleProfile[];
   return rows;
 });
@@ -240,7 +240,7 @@ export const getPeopleProfileById = createServerFn({ method: "GET" })
       SELECT id, category, name, role, subtitle, bio, image_url AS "imageUrl",
         instagram_url AS "instagramUrl", tiktok_url AS "tiktokUrl",
         youtube_url AS "youtubeUrl", x_url AS "xUrl", display_order AS "displayOrder"
-      FROM people_profiles WHERE active = TRUE AND id = ${profileKey} LIMIT 1
+      FROM people_profiles WHERE active = TRUE AND lower(trim(name)) <> 'influencers' AND id = ${profileKey} LIMIT 1
     `) as unknown as PeopleProfile[];
     if (byId[0]) return byId[0];
 
@@ -250,7 +250,7 @@ export const getPeopleProfileById = createServerFn({ method: "GET" })
       SELECT id, category, name, role, subtitle, bio, image_url AS "imageUrl",
         instagram_url AS "instagramUrl", tiktok_url AS "tiktokUrl",
         youtube_url AS "youtubeUrl", x_url AS "xUrl", display_order AS "displayOrder"
-      FROM people_profiles WHERE active = TRUE
+      FROM people_profiles WHERE active = TRUE AND lower(trim(name)) <> 'influencers'
     `) as unknown as PeopleProfile[];
     return profiles.find((profile) => profileSlug(profile.name) === profileKey) ?? null;
   });
@@ -732,8 +732,8 @@ export const submitApplication = createServerFn({ method: "POST" })
     const [customerEmailResult, adminEmailResult, whatsappSent] = await Promise.all([
       sendMemberEmail({
         to: application.email,
-        subject: "RSVP DXB membership application received",
-        text: `Hello ${application.name},\n\nYour RSVP DXB membership application has been received and is now pending review.\n\nMembership track: ${data.track}\nStatus: Pending review\n\nOur membership team will review your profile and contact you at this email address with an update, typically within 48 hours.\n\nIf you did not submit this application, you can disregard this email.\n\nKind regards,\nRSVP DXB Membership Team`,
+        subject: "You're on the list. Almost.",
+        text: `Hi ${application.name},\n\nWe've received your request, and you're now on the waitlist. Our team reviews every request personally. Until then, act natural.\n\nTeam RSVP DXB`,
         html: applicationConfirmationEmail(application.name, data.track, application.email),
       }),
       sendMemberEmail({

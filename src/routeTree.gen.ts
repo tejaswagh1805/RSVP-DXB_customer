@@ -21,9 +21,11 @@ import { Route as HostRouteImport } from './routes/host'
 import { Route as MeRouteImport } from './routes/me'
 import { Route as MembershipRouteImport } from './routes/membership'
 import { Route as PressRouteImport } from './routes/press'
+import { Route as PrivacyRouteImport } from './routes/privacy'
 import { Route as RegisterRouteImport } from './routes/register'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as SigninRouteImport } from './routes/signin'
+import { Route as TermsRouteImport } from './routes/terms'
 import { Route as TicketsRouteImport } from './routes/tickets'
 import { Route as TopPicksRouteImport } from './routes/top-picks'
 import { Route as UnsubscribeRouteImport } from './routes/unsubscribe'
@@ -94,6 +96,11 @@ const PressRoute = PressRouteImport.update({
   path: '/press',
   getParentRoute: () => rootRouteImport,
 } as any)
+const PrivacyRoute = PrivacyRouteImport.update({
+  id: '/privacy',
+  path: '/privacy',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const RegisterRoute = RegisterRouteImport.update({
   id: '/register',
   path: '/register',
@@ -107,6 +114,11 @@ const ResetPasswordRoute = ResetPasswordRouteImport.update({
 const SigninRoute = SigninRouteImport.update({
   id: '/signin',
   path: '/signin',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const TermsRoute = TermsRouteImport.update({
+  id: '/terms',
+  path: '/terms',
   getParentRoute: () => rootRouteImport,
 } as any)
 const TicketsRoute = TicketsRouteImport.update({
@@ -168,9 +180,11 @@ export interface FileRoutesByFullPath {
   '/me': typeof MeRoute
   '/membership': typeof MembershipRoute
   '/press': typeof PressRoute
+  '/privacy': typeof PrivacyRoute
   '/register': typeof RegisterRoute
   '/reset-password': typeof ResetPasswordRoute
   '/signin': typeof SigninRoute
+  '/terms': typeof TermsRoute
   '/tickets': typeof TicketsRoute
   '/top-picks': typeof TopPicksRouteWithChildren
   '/unsubscribe': typeof UnsubscribeRoute
@@ -194,9 +208,11 @@ export interface FileRoutesByTo {
   '/me': typeof MeRoute
   '/membership': typeof MembershipRoute
   '/press': typeof PressRoute
+  '/privacy': typeof PrivacyRoute
   '/register': typeof RegisterRoute
   '/reset-password': typeof ResetPasswordRoute
   '/signin': typeof SigninRoute
+  '/terms': typeof TermsRoute
   '/tickets': typeof TicketsRoute
   '/top-picks': typeof TopPicksRouteWithChildren
   '/unsubscribe': typeof UnsubscribeRoute
@@ -221,9 +237,11 @@ export interface FileRoutesById {
   '/me': typeof MeRoute
   '/membership': typeof MembershipRoute
   '/press': typeof PressRoute
+  '/privacy': typeof PrivacyRoute
   '/register': typeof RegisterRoute
   '/reset-password': typeof ResetPasswordRoute
   '/signin': typeof SigninRoute
+  '/terms': typeof TermsRoute
   '/tickets': typeof TicketsRoute
   '/top-picks': typeof TopPicksRouteWithChildren
   '/unsubscribe': typeof UnsubscribeRoute
@@ -249,9 +267,11 @@ export interface FileRouteTypes {
     | '/me'
     | '/membership'
     | '/press'
+    | '/privacy'
     | '/register'
     | '/reset-password'
     | '/signin'
+    | '/terms'
     | '/tickets'
     | '/top-picks'
     | '/unsubscribe'
@@ -275,9 +295,11 @@ export interface FileRouteTypes {
     | '/me'
     | '/membership'
     | '/press'
+    | '/privacy'
     | '/register'
     | '/reset-password'
     | '/signin'
+    | '/terms'
     | '/tickets'
     | '/top-picks'
     | '/unsubscribe'
@@ -301,9 +323,11 @@ export interface FileRouteTypes {
     | '/me'
     | '/membership'
     | '/press'
+    | '/privacy'
     | '/register'
     | '/reset-password'
     | '/signin'
+    | '/terms'
     | '/tickets'
     | '/top-picks'
     | '/unsubscribe'
@@ -328,9 +352,11 @@ export interface RootRouteChildren {
   MeRoute: typeof MeRoute
   MembershipRoute: typeof MembershipRoute
   PressRoute: typeof PressRoute
+  PrivacyRoute: typeof PrivacyRoute
   RegisterRoute: typeof RegisterRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
   SigninRoute: typeof SigninRoute
+  TermsRoute: typeof TermsRoute
   TicketsRoute: typeof TicketsRoute
   TopPicksRoute: typeof TopPicksRouteWithChildren
   UnsubscribeRoute: typeof UnsubscribeRoute
@@ -426,6 +452,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PressRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/privacy': {
+      id: '/privacy'
+      path: '/privacy'
+      fullPath: '/privacy'
+      preLoaderRoute: typeof PrivacyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/register': {
       id: '/register'
       path: '/register'
@@ -445,6 +478,13 @@ declare module '@tanstack/react-router' {
       path: '/signin'
       fullPath: '/signin'
       preLoaderRoute: typeof SigninRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/terms': {
+      id: '/terms'
+      path: '/terms'
+      fullPath: '/terms'
+      preLoaderRoute: typeof TermsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/tickets': {
@@ -549,9 +589,11 @@ const rootRouteChildren: RootRouteChildren = {
   MeRoute: MeRoute,
   MembershipRoute: MembershipRoute,
   PressRoute: PressRoute,
+  PrivacyRoute: PrivacyRoute,
   RegisterRoute: RegisterRoute,
   ResetPasswordRoute: ResetPasswordRoute,
   SigninRoute: SigninRoute,
+  TermsRoute: TermsRoute,
   TicketsRoute: TicketsRoute,
   TopPicksRoute: TopPicksRouteWithChildren,
   UnsubscribeRoute: UnsubscribeRoute,

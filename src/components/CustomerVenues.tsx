@@ -6,6 +6,29 @@ import { SitePage } from "@/components/SiteLayout";
 import type { Venue } from "@/lib/database";
 import { SafeImage } from "./SafeImage";
 
+const editorialListingHosts = [
+  "thenationalnews.com",
+  "restaurantonline.co.uk",
+  "factmagazines.com",
+  "fact-magazine.com",
+  "moqa.com",
+  "moqa.ae",
+  "platinumlist.net",
+  "platinumlist.com",
+  "whatson.ae",
+  "privilee.ae",
+  "privilee.com",
+];
+
+function isEditorialListing(url: string) {
+  try {
+    const host = new URL(url).hostname.toLowerCase().replace(/^www\./, "");
+    return editorialListingHosts.some((blockedHost) => host === blockedHost || host.endsWith(`.${blockedHost}`));
+  } catch {
+    return false;
+  }
+}
+
 export const VENUE_GUIDE_CATEGORIES = [
   "Our partners",
   "Desi luxe",
@@ -212,9 +235,6 @@ export function VenueDetails({ venue }: { venue: Venue | null }) {
           <div className="venue-detail-visual">
             <SafeImage src={venue.imageUrl} alt={venue.name} />
             <span className="venue-detail-image-caption">RSVP DXB · CITY GUIDE</span>
-            <span className="venue-detail-image-number">
-              01 / {String(venue.displayOrder + 1).padStart(2, "0")}
-            </span>
           </div>
           <article className="venue-detail-copy">
             <Link to="/top-picks" className="venue-detail-back">
@@ -268,7 +288,7 @@ export function VenueDetails({ venue }: { venue: Venue | null }) {
               </aside>
             ) : null}
             <div className="venue-detail-links">
-              {venue.websiteUrl ? (
+              {venue.websiteUrl && !isEditorialListing(venue.websiteUrl) ? (
                 <a
                   href={venue.websiteUrl}
                   target="_blank"
@@ -278,9 +298,9 @@ export function VenueDetails({ venue }: { venue: Venue | null }) {
                   Visit website <ArrowUpRight size={16} />
                 </a>
               ) : null}
-              {venue.moreInfoUrl ? (
+              {venue.moreInfoUrl || (venue.websiteUrl && isEditorialListing(venue.websiteUrl)) ? (
                 <a
-                  href={venue.moreInfoUrl}
+                  href={venue.moreInfoUrl || venue.websiteUrl}
                   target="_blank"
                   rel="noreferrer"
                   className="venue-detail-secondary-link"

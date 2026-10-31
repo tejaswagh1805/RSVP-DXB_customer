@@ -3,7 +3,7 @@ import { useEffect, useState, type ReactNode } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { useStore } from "@/lib/store";
 import { Button } from "./ui-kit";
-import { Apple, Menu, MessageCircle, Play, Send, Ticket, X } from "lucide-react";
+import { Menu, MessageCircle, Send, Ticket, X } from "lucide-react";
 import { CursorBlob } from "./GenZFx";
 import clientLogoUrl from "@/assets/rsvp-client-logo.png";
 import { getMemberSession, signOutMember, submitNewsletterSubscription } from "@/lib/database";
@@ -139,16 +139,7 @@ export function SiteFooter() {
     <footer className="customer-footer border-t border-border bg-surface">
       <div className="footer-newsletter">
         <p className="eyebrow">The city is better together.</p>
-        <div className="footer-app-badges">
-          <Link to="/apps" className="app-badge" aria-label="Download on the App Store">
-            <Apple size={22} aria-hidden="true" />
-            <span><small>Download on the</small><strong>App Store</strong></span>
-          </Link>
-          <Link to="/apps" className="app-badge" aria-label="Get it on Google Play">
-            <Play size={20} aria-hidden="true" />
-            <span><small>Get it on</small><strong>Google Play</strong></span>
-          </Link>
-        </div>
+        <p className="footer-newsletter-sub"><Link to="/apps" className="underline underline-offset-4">Add RSVP DXB to your home screen</Link></p>
         <h2>GET ON THE LIST.</h2>
         <p className="footer-newsletter-sub">New rooms, secret dinners and last-minute drops — straight to your inbox.</p>
         <NewsletterForm />
@@ -169,6 +160,8 @@ export function SiteFooter() {
             ["/wall", "Events Wall"],
             ["/membership", "Membership"],
             ["/me", "Member area"],
+            ["/privacy", "Privacy policy"],
+            ["/terms", "Terms of use"],
           ]}
         />
         <FooterCol
@@ -245,6 +238,7 @@ function NewsletterForm() {
         <input type="checkbox" required checked={consent} onChange={(event) => setConsent(event.target.checked)} />
         <span>Email me RSVP DXB event and offer updates. I can unsubscribe at any time.</span>
       </label>
+      <p className="footer-newsletter-consent">Read our <Link to="/privacy" className="underline underline-offset-4">Privacy Policy</Link>.</p>
       {error ? <p className="footer-newsletter-error" role="alert">{error}</p> : null}
     </form>
   );
@@ -286,9 +280,10 @@ function FooterCol({ title, links }: { title: string; links: [string, string][] 
 export function SitePage({ children, overlayHeader = false }: { children: ReactNode; overlayHeader?: boolean }) {
   return (
     <div className={`customer-scope flex min-h-screen flex-col bg-background text-foreground${overlayHeader ? " customer-banner-page" : ""}`}>
+      <a className="customer-skip-link" href="#main-content">Skip to content</a>
       <SiteHeader overlay={overlayHeader} />
       <CursorBlob />
-      <main className="flex-1">{children}</main>
+      <main id="main-content" tabIndex={-1} className="flex-1">{children}</main>
       <SiteFooter />
       <WhatsAppFloat />
     </div>

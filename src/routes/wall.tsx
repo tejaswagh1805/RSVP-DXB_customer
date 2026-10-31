@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { PageHero, SitePage } from "@/components/SiteLayout";
 import { Badge, Button, Card } from "@/components/ui-kit";
 import { useStore } from "@/lib/store";
@@ -39,6 +39,12 @@ function WallPage() {
   const { saved, toggleSave } = useStore();
   const { events: databaseEvents, posts: databasePosts } = Route.useLoaderData();
   const [tab, setTab] = useState("Everything");
+  const [shareStatus, setShareStatus] = useState("");
+  useEffect(() => {
+    const postId = decodeURIComponent(window.location.hash.slice(1));
+    if (!postId.startsWith("wall-post-")) return;
+    requestAnimationFrame(() => document.getElementById(postId)?.scrollIntoView({ block: "start" }));
+  }, []);
 
   const todayDubai = new Intl.DateTimeFormat("en-CA", {
     timeZone: "Asia/Dubai",
@@ -79,6 +85,7 @@ function WallPage() {
       />
 
       <div className="wall-feed customer-content-section mx-auto w-full max-w-4xl px-5 py-10">
+        <p className="sr-only" role="status" aria-live="polite">{shareStatus}</p>
         <div className="wall-filter-bar flex flex-wrap gap-2" aria-label="Filter wall posts">
           {TABS.map((t) => (
             <Button key={t} size="sm" variant={tab === t ? "primary" : "outline"} onClick={() => setTab(t)}>
@@ -91,7 +98,8 @@ function WallPage() {
           {filtered.map((p) => {
             const event = p.eventId ? databaseEvents.find((e) => e.id === p.eventId) : undefined;
             return (
-              <Card key={p.id} className={`wall-post-card${p.boosted ? " is-boosted" : ""}`}>
+              <article id={`wall-post-${p.id}`} key={p.id} className="scroll-mt-24">
+              <Card className={`wall-post-card${p.boosted ? " is-boosted" : ""}`}>
                 <div className="wall-post-header">
                   <span className="wall-brand-mark" aria-hidden="true">{(event?.title || p.brand).trim().charAt(0).toUpperCase() || "R"}</span>
                   <div className="wall-post-identity">
@@ -127,18 +135,28 @@ function WallPage() {
                     onClick={async () => {
                       const shareUrl = p.eventId
                         ? `${window.location.origin}/events/${encodeURIComponent(p.eventId)}`
-                        : `${window.location.origin}/wall`;
+                        : `${window.location.origin}/wall#wall-post-${encodeURIComponent(p.id)}`;
                       try {
-                        if (navigator.share) await navigator.share({ title: event?.title || p.brand, text: p.body, url: shareUrl });
-                        else if (navigator.clipboard) await navigator.clipboard.writeText(shareUrl);
-                        else window.prompt("Copy this link", shareUrl);
-                      } catch {
-                        // Closing the native share sheet is not an error.
+                        if (navigator.share) {
+                          await navigator.share({ title: event?.title || p.brand, text: p.body, url: shareUrl });
+                          setShareStatus("Share sheet opened.");
+                        } else if (navigator.clipboard) {
+                          await navigator.clipboard.writeText(shareUrl);
+                          setShareStatus("Post link copied.");
+                        } else {
+                          window.prompt("Copy this link", shareUrl);
+                          setShareStatus("Post link ready to copy.");
+                        }
+                      } catch (error) {
+                        if (error instanceof DOMException && error.name === "AbortError") return;
+                        window.prompt("Copy this link", shareUrl);
+                        setShareStatus("Post link ready to copy.");
                       }
                     }}
                   ><Share2 size={15} aria-hidden="true" />Share</button>
                 </div>
               </Card>
+              </article>
             );
           })}
           {filtered.length === 0 ? (

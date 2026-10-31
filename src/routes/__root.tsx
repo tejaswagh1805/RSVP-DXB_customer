@@ -13,6 +13,7 @@ import { useEffect, type ReactNode } from "react";
 import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
 import { StoreProvider } from "../lib/store";
+import { SitePage } from "@/components/SiteLayout";
 
 const scrollPositionsKey = "rsvp-scroll-positions-v1";
 
@@ -47,8 +48,12 @@ function saveScrollY(key: string, snapshot: ScrollSnapshot) {
 }
 
 function NotFoundComponent() {
+  useEffect(() => {
+    document.title = "Page not found — RSVP DXB";
+  }, []);
   return (
-    <div className="flex min-h-screen items-center justify-center bg-background px-4">
+    <SitePage>
+      <section className="flex min-h-[55vh] items-center justify-center bg-background px-4 py-20">
       <div className="max-w-md text-center">
         <h1 className="text-7xl font-bold text-foreground">404</h1>
         <h2 className="mt-4 text-xl font-semibold text-foreground">Page not found</h2>
@@ -64,7 +69,8 @@ function NotFoundComponent() {
           </Link>
         </div>
       </div>
-    </div>
+      </section>
+    </SitePage>
   );
 }
 

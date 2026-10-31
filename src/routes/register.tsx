@@ -545,6 +545,7 @@ function RegisterPage() {
                   {submitError}
                 </p>
               ) : null}
+              <p className="mt-3 text-xs text-muted-foreground">Application details are used to review your request. See our <Link to="/privacy" className="underline underline-offset-4">Privacy Policy</Link>.</p>
             </div>
           ) : null}
 
