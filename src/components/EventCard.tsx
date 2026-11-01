@@ -4,11 +4,10 @@ import { useStore } from "@/lib/store";
 import { Badge, Button } from "./ui-kit";
 import { EventImage } from "./EventImage";
 import { WhatsAppAction } from "./WhatsAppAction";
+import { creatorPassFormUrl } from "@/lib/creator-pass-form";
 
 export function EventCard({ event }: { event: EventItem }) {
   const { saved, toggleSave, profile } = useStore();
-  const configuredCreatorPassFormUrl = String(import.meta.env["VITE_CREATOR_PASS_GOOGLE_FORM_URL"] || "").trim();
-  const creatorPassFormUrl = /^https:\/\/(docs\.google\.com\/forms\/|forms\.gle\/)/i.test(configuredCreatorPassFormUrl) ? configuredCreatorPassFormUrl : "";
   const full = event.capacity > 0 && event.confirmed >= event.capacity;
   const left = Math.max(event.capacity - event.confirmed, 0);
   const eligible = event.tracks.includes(profile.track);

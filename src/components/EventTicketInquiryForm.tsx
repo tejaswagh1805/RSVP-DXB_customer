@@ -4,6 +4,7 @@ import { ArrowRight, Copy, Mail, MessageCircle, TicketCheck } from "lucide-react
 import type { EventItem } from "@/lib/data";
 import { submitEventTicketInquiry } from "@/lib/database";
 import { Button, inputClass } from "@/components/ui-kit";
+import { creatorPassFormUrl } from "@/lib/creator-pass-form";
 
 export function EventTicketInquiryForm({ event, requestType = "ticket" }: { event: EventItem; requestType?: "ticket" | "creator_pass" }) {
   const submitInquiry = useServerFn(submitEventTicketInquiry);
@@ -15,8 +16,6 @@ export function EventTicketInquiryForm({ event, requestType = "ticket" }: { even
   const [submitted, setSubmitted] = useState(false);
   const [copied, setCopied] = useState(false);
   const whatsappNumber = String(import.meta.env["VITE_RSVP_WHATSAPP_NUMBER"] || "").replace(/\D/g, "");
-  const configuredGoogleFormUrl = String(import.meta.env["VITE_CREATOR_PASS_GOOGLE_FORM_URL"] || "").trim();
-  const googleFormUrl = /^https:\/\/(docs\.google\.com\/forms\/|forms\.gle\/)/i.test(configuredGoogleFormUrl) ? configuredGoogleFormUrl : "";
 
   const submit = async (form: FormEvent<HTMLFormElement>) => {
     form.preventDefault();
@@ -45,7 +44,7 @@ export function EventTicketInquiryForm({ event, requestType = "ticket" }: { even
           <p className="mt-1 text-xs leading-relaxed text-muted-foreground">{requestType === "creator_pass" ? "Send your details so the team can review your request. You can use this form or the Google Form." : "Send us your details and the RSVP DXB team will follow up. This is an inquiry, not a ticket purchase."}</p>
         </div>
       </div>
-      {requestType === "creator_pass" && googleFormUrl && !submitted ? <a className="mt-4 inline-flex h-10 items-center justify-center rounded-md border border-primary px-4 text-sm text-primary" href={googleFormUrl} target="_blank" rel="noreferrer">Open Google Form</a> : null}
+      {requestType === "creator_pass" && !submitted ? <a className="mt-4 inline-flex h-10 items-center justify-center rounded-md border border-primary px-4 text-sm text-primary" href={creatorPassFormUrl} target="_blank" rel="noreferrer">Open Google Form</a> : null}
       {submitted ? (
         <div className="mt-4 space-y-3"><p className="rounded-md border border-success/20 bg-success/10 px-3 py-3 text-sm text-success" role="status">{requestType === "creator_pass" ? "Creator pass request saved for admin review." : `Request received for ${event.title}. Our team will contact you.`}</p>{requestType === "creator_pass" ? <div className="flex flex-wrap gap-2">{whatsappNumber ? <a className="inline-flex h-10 items-center justify-center gap-2 rounded-md border border-border px-4 text-sm" href={`https://wa.me/${whatsappNumber}?text=${encodeURIComponent(`RSVPDXB creator pass request: ${event.title}. Name: ${name.trim()}. Phone: ${phone.trim()}.`)}`} target="_blank" rel="noreferrer"><MessageCircle size={16} /> Continue in WhatsApp</a> : null}<a className="inline-flex h-10 items-center justify-center gap-2 rounded-md border border-border px-4 text-sm" href={`mailto:vinitahirani@rsvpdxb.com?subject=${encodeURIComponent(`Creator pass request: ${event.title}`)}&body=${encodeURIComponent(`A creator pass request has been submitted on the RSVP DXB website.\n\nEvent: ${event.title}\nName: ${name.trim()}\nPhone: ${phone.trim()}\nEmail: ${email.trim() || "Not provided"}\n\nThe request is already saved in the admin review queue.`)}`}><Mail size={16} /> Email RSVP DXB</a><button type="button" className="inline-flex h-10 items-center justify-center gap-2 rounded-md border border-border px-4 text-sm" onClick={() => { void navigator.clipboard.writeText(`Creator pass request: ${event.title}; Name: ${name.trim()}; Phone: ${phone.trim()}; Email: ${email.trim() || "Not provided"}`).then(() => setCopied(true)).catch(() => setCopied(false)); }}><Copy size={16} /> {copied ? "Details copied" : "Copy details"}</button></div> : null}</div>
       ) : (

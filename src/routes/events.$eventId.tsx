@@ -8,6 +8,7 @@ import { Badge, Button, Card } from "@/components/ui-kit";
 import { formatDate, internationalPhoneHref } from "@/lib/data";
 import { useStore } from "@/lib/store";
 import { WhatsAppAction } from "@/components/WhatsAppAction";
+import { creatorPassFormUrl } from "@/lib/creator-pass-form";
 import { getEventById, getMemberRsvps, submitEventRsvpRequest } from "@/lib/database";
 
 export const Route = createFileRoute("/events/$eventId")({
@@ -76,8 +77,6 @@ function EventDetail() {
   const isPastEvent = event.status === "closed" || Boolean((event.endDate || event.date) && (event.endDate || event.date) < new Date().toISOString().slice(0, 10));
   const state = data.event ? (databaseRsvps[event.id] ?? "none") : (demoRsvps[event.id] ?? "none");
   const hasMemberRsvp = event.tracks.length > 0;
-  const configuredCreatorPassFormUrl = String(import.meta.env["VITE_CREATOR_PASS_GOOGLE_FORM_URL"] || "").trim();
-  const creatorPassFormUrl = /^https:\/\/(docs\.google\.com\/forms\/|forms\.gle\/)/i.test(configuredCreatorPassFormUrl) ? configuredCreatorPassFormUrl : "";
   const eligible = hasMemberRsvp && event.tracks.includes(profile.track);
   const closed = event.status === "closed";
   const spotsLeft = Math.max(event.capacity - event.confirmed, 0);
