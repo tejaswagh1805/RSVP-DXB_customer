@@ -314,6 +314,7 @@ export const PACKAGES = [
 ];
 
 export function formatDate(iso: string): string {
+  if (!iso) return "Date to be announced";
   const d = new Date(iso + "T00:00:00Z");
   const days = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
   const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];

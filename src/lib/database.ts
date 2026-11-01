@@ -102,7 +102,7 @@ function mapEvent(row: EventRow): EventItem {
 export const listPublishedEvents = createServerFn({ method: "GET" }).handler(async () => {
   const sql = getSql();
   const rows = (await sql`
-    SELECT id, title, brand, to_char(date, 'YYYY-MM-DD') AS date, time, venue, area,
+    SELECT id, title, brand, COALESCE(to_char(date, 'YYYY-MM-DD'), '') AS date, time, venue, area,
       category, tracks, capacity, confirmed, dress_code AS "dressCode", about,
       included, who_is_invited AS "whoIsInvited", host_note AS "hostNote",
       ticket_url, reservation_phone, creator_pass_note, age_restriction, hashtag,
@@ -144,7 +144,7 @@ export const getEventById = createServerFn({ method: "GET" })
   .handler(async ({ data: eventId }) => {
     const sql = getSql();
     const rows = (await sql`
-      SELECT id, title, brand, to_char(date, 'YYYY-MM-DD') AS date, time, venue, area,
+      SELECT id, title, brand, COALESCE(to_char(date, 'YYYY-MM-DD'), '') AS date, time, venue, area,
         category, tracks, capacity, confirmed, dress_code AS "dressCode", about,
         included, who_is_invited AS "whoIsInvited", host_note AS "hostNote",
         ticket_url, reservation_phone, creator_pass_note, age_restriction, hashtag,

@@ -73,7 +73,7 @@ function EventDetail() {
     );
   }
 
-  const isPastEvent = event.status === "closed" || (event.endDate || event.date) < new Date().toISOString().slice(0, 10);
+  const isPastEvent = event.status === "closed" || Boolean((event.endDate || event.date) && (event.endDate || event.date) < new Date().toISOString().slice(0, 10));
   const state = data.event ? (databaseRsvps[event.id] ?? "none") : (demoRsvps[event.id] ?? "none");
   const hasMemberRsvp = event.tracks.length > 0;
   const configuredCreatorPassFormUrl = String(import.meta.env["VITE_CREATOR_PASS_GOOGLE_FORM_URL"] || "").trim();
@@ -160,7 +160,7 @@ function EventDetail() {
             {event.gatesOpenTime ? ` · Gates open ${event.gatesOpenTime}` : ""}
             {event.applicationDeadline ? ` · Nominations close ${formatDate(event.applicationDeadline)}` : ""}
             </p>
-            {!isPastEvent ? <a className="mt-3 inline-flex text-sm text-primary underline" href={googleCalendarUrl(event)} target="_blank" rel="noreferrer">Add to calendar</a> : null}
+            {!isPastEvent && event.date ? <a className="mt-3 inline-flex text-sm text-primary underline" href={googleCalendarUrl(event)} target="_blank" rel="noreferrer">Add to calendar</a> : null}
           </div>
 
           <div className="event-detail-sections">

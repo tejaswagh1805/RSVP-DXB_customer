@@ -12,7 +12,7 @@ export function EventCard({ event }: { event: EventItem }) {
   const full = event.capacity > 0 && event.confirmed >= event.capacity;
   const left = Math.max(event.capacity - event.confirmed, 0);
   const eligible = event.tracks.includes(profile.track);
-  const isPast = event.status === "closed" || (event.endDate || event.date) < new Date().toISOString().slice(0, 10);
+  const isPast = event.status === "closed" || Boolean((event.endDate || event.date) && (event.endDate || event.date) < new Date().toISOString().slice(0, 10));
   return (
     <article className="event-listing-card group relative flex h-full flex-col overflow-hidden rounded-2xl border border-border bg-card shadow-sm transition-all duration-300 hover:-translate-y-1 hover:border-primary/50 hover:shadow-xl">
       <Link className="event-card-whole-link" to="/events/$eventId" params={{ eventId: event.id }} aria-label={`View ${event.title}`} />
