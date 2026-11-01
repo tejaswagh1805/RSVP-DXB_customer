@@ -6,6 +6,8 @@ The `.github/workflows/deploy-aws.yml` workflow deploys this Node SSR app to AWS
 
 The WhatsApp contact number defaults to RSVP DXB's UAE number. Set the repository Actions variable `VITE_RSVP_WHATSAPP_NUMBER` if it changes.
 
+Optional Google Forms links are build-time settings: after creating forms with `RSVP_admin_dashboard/google-forms/PublicIntakeForms.gs`, set repository Actions variables `VITE_RSVP_NEW_MEMBER_FORM_URL` and `VITE_RSVP_EVENT_INTEREST_FORM_URL` and redeploy. With the new-member URL configured, `/register` directs new applicants to the Google Form; existing members should continue using `/signin`.
+
 This project was built with [Lovable](https://lovable.dev).
 
 ## Build with Lovable

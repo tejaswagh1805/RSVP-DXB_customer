@@ -529,21 +529,30 @@ export const submitEventRsvpRequest = createServerFn({ method: "POST" })
   });
 
 export const submitEventTicketInquiry = createServerFn({ method: "POST" })
-  .validator((input: { eventId: string; name: string; email: string; phone: string; requestType?: "ticket" | "creator_pass" }) => input)
+  .validator((input: { eventId: string; name: string; email: string; phone: string; instagramHandle?: string; instagramFollowers?: string; creatorAddress?: string; requestType?: "ticket" | "creator_pass" }) => input)
   .handler(async ({ data }) => {
     const eventId = String(data.eventId ?? "").trim().slice(0, 180);
     const name = String(data.name ?? "").trim().slice(0, 120);
     const email = String(data.email ?? "").trim().toLowerCase().slice(0, 254);
     const phone = String(data.phone ?? "").trim().replace(/[^+\d]/g, "").slice(0, 24);
+    const instagramHandle = String(data.instagramHandle ?? "").trim().replace(/^@/, "").slice(0, 100);
+    const instagramFollowers = String(data.instagramFollowers ?? "").trim().slice(0, 40);
+    const creatorAddress = String(data.creatorAddress ?? "").trim().slice(0, 500);
     const requestType = data.requestType === "creator_pass" ? "creator_pass" : "ticket";
     if (name.length < 2) throw new Error("Enter your name so our team knows who to contact.");
     if (!/^\+?\d{7,15}$/.test(phone)) throw new Error("Enter a valid phone number with country code.");
+    if (requestType === "creator_pass" && !email) throw new Error("Enter your email address.");
     if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) throw new Error("Enter a valid email address.");
+    if (requestType === "creator_pass" && !instagramHandle) throw new Error("Enter your Instagram handle.");
+    if (requestType === "creator_pass" && !instagramFollowers) throw new Error("Enter your Instagram follower count.");
+    if (requestType === "creator_pass" && !creatorAddress) throw new Error("Enter your address.");
 
     const sql = getSql();
     const events = (await sql`
       SELECT id, title FROM events
-      WHERE id = ${eventId} AND status = 'published' AND date >= (NOW() AT TIME ZONE 'Asia/Dubai')::date
+      WHERE id = ${eventId} AND status = 'published'
+        AND (date IS NULL OR date >= (NOW() AT TIME ZONE 'Asia/Dubai')::date)
+        AND (application_deadline IS NULL OR application_deadline >= (NOW() AT TIME ZONE 'Asia/Dubai')::date)
         AND ((${requestType} = 'creator_pass' AND creator_pass_note <> '') OR (${requestType} = 'ticket' AND ticket_url <> ''))
       LIMIT 1
     `) as unknown as { id: string; title: string }[];
@@ -560,8 +569,8 @@ export const submitEventTicketInquiry = createServerFn({ method: "POST" })
     if (recent.length) throw new Error("We already received your request. Our team will be in touch shortly.");
 
     const rows = (await sql`
-      INSERT INTO event_ticket_inquiries (id, event_id, full_name, email, phone, request_type)
-      VALUES (${`ticket-inquiry-${randomBytes(16).toString("hex")}`}, ${event.id}, ${name}, ${email}, ${phone}, ${requestType})
+      INSERT INTO event_ticket_inquiries (id, event_id, full_name, email, phone, request_type, instagram_handle, instagram_followers, creator_address)
+      VALUES (${`ticket-inquiry-${randomBytes(16).toString("hex")}`}, ${event.id}, ${name}, ${email}, ${phone}, ${requestType}, ${requestType === "creator_pass" ? instagramHandle : ""}, ${requestType === "creator_pass" ? instagramFollowers : ""}, ${requestType === "creator_pass" ? creatorAddress : ""})
       RETURNING id
     `) as unknown as { id: string }[];
     if (!rows[0]) throw new Error("We could not save your request. Please try again.");

@@ -11,6 +11,7 @@ export function Button({
   type = "button",
   onClick,
   disabled,
+  title,
 }: {
   children: ReactNode;
   variant?: "primary" | "outline" | "ghost" | "danger" | "success";
@@ -19,6 +20,7 @@ export function Button({
   type?: "button" | "submit";
   onClick?: () => void;
   disabled?: boolean;
+  title?: string;
 }) {
   const variants: Record<string, string> = {
     primary: "bg-primary text-primary-foreground hover:bg-primary/90",
@@ -37,6 +39,7 @@ export function Button({
       type={type}
       onClick={onClick}
       disabled={disabled}
+      title={title}
       className={cn(
         "inline-flex items-center justify-center gap-2 rounded-md font-medium tracking-wide transition-colors disabled:opacity-40",
         variants[variant],

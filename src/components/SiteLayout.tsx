@@ -277,7 +277,7 @@ function FooterCol({ title, links }: { title: string; links: [string, string][] 
   );
 }
 
-export function SitePage({ children, overlayHeader = false }: { children: ReactNode; overlayHeader?: boolean }) {
+export function SitePage({ children, overlayHeader = false, showWhatsApp = false }: { children: ReactNode; overlayHeader?: boolean; showWhatsApp?: boolean }) {
   return (
     <div className={`customer-scope flex min-h-screen flex-col bg-background text-foreground${overlayHeader ? " customer-banner-page" : ""}`}>
       <a className="customer-skip-link" href="#main-content">Skip to content</a>
@@ -285,7 +285,7 @@ export function SitePage({ children, overlayHeader = false }: { children: ReactN
       <CursorBlob />
       <main id="main-content" tabIndex={-1} className="flex-1">{children}</main>
       <SiteFooter />
-      <WhatsAppFloat />
+      {showWhatsApp ? <WhatsAppFloat /> : null}
     </div>
   );
 }

@@ -4,7 +4,6 @@ import { useStore } from "@/lib/store";
 import { Badge, Button } from "./ui-kit";
 import { EventImage } from "./EventImage";
 import { WhatsAppAction } from "./WhatsAppAction";
-import { creatorPassFormUrlForEvent } from "@/lib/creator-pass-form";
 
 export function EventCard({ event }: { event: EventItem }) {
   const { saved, toggleSave, profile } = useStore();
@@ -46,7 +45,7 @@ export function EventCard({ event }: { event: EventItem }) {
               {saved.includes(event.id) ? "Saved" : "Save event"}
             </Button> : null}
           {!isPast ? <WhatsAppAction event={event} /> : null}
-          {!isPast && event.creatorPassNote && !event.applicationDeadline && creatorPassFormUrlForEvent(event) ? <a href={creatorPassFormUrlForEvent(event)!} target="_blank" rel="noreferrer"><Button size="sm" variant="outline">Request creator pass</Button></a> : null}
+          {!isPast && event.creatorPassNote && !event.applicationDeadline ? <a href={`/events/${event.id}#creator-pass-request`}><Button size="sm" variant="outline">Request creator pass</Button></a> : null}
         </div>
       </div>
     </article>

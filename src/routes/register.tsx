@@ -86,6 +86,7 @@ const PROFILE_FIELD_ICONS: Record<string, typeof MapPin> = {
 };
 
 function RegisterPage() {
+  const googleApplicationFormUrl = String(import.meta.env["VITE_RSVP_NEW_MEMBER_FORM_URL"] || "").trim();
   const submitToDatabase = useServerFn(submitApplication);
   const [step, setStep] = useState(1);
   const [track, setTrack] = useState<Track>("Creators");
@@ -204,6 +205,10 @@ function RegisterPage() {
       setSubmitting(false);
     }
   };
+
+  if (googleApplicationFormUrl) {
+    return <SitePage><div className="customer-auth-content mx-auto w-full max-w-2xl px-5 py-20"><Card className="register-card p-8"><p className="eyebrow">NEW MEMBER APPLICATION</p><h1 className="mt-3 text-4xl">Apply to join RSVP DXB</h1><p className="mt-4 text-sm leading-relaxed text-muted-foreground">This application is for people who do not already have an RSVP DXB account. Applications are reviewed by our team; approval activates a new account. Existing members should sign in.</p><a className="mt-7 inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-md bg-primary px-5 text-sm font-medium text-primary-foreground hover:opacity-90" href={googleApplicationFormUrl} target="_blank" rel="noreferrer">Open the Google application form <ArrowRight size={16} /></a><p className="mt-5 text-sm text-muted-foreground">Already have an account? <Link to="/signin" className="text-primary underline">Sign in</Link>.</p></Card></div></SitePage>;
+  }
 
   return (
     <SitePage>
