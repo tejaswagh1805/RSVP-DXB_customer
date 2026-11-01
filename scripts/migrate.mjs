@@ -77,6 +77,7 @@ for (const fileName of [
   "0020_newsletter_campaigns.sql",
   "0021_newsletter_campaign_image.sql",
   "0022_newsletter_campaign_event.sql",
+  "0023_site_media_captions.sql",
 ]) {
   const migration = await readFile(new URL(`../drizzle/${fileName}`, import.meta.url), "utf8");
   for (const statement of splitSqlStatements(migration)) {
