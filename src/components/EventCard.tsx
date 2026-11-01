@@ -45,7 +45,7 @@ export function EventCard({ event }: { event: EventItem }) {
               {saved.includes(event.id) ? "Saved" : "Save event"}
             </Button> : null}
           {!isPast ? <WhatsAppAction event={event} /> : null}
-          {!isPast && event.creatorPassNote && !event.applicationDeadline && String(import.meta.env["VITE_RSVP_WHATSAPP_NUMBER"] || "").replace(/\D/g, "") ? <WhatsAppAction event={event} purpose="Request creator pass" /> : null}
+          {!isPast && event.creatorPassNote && !event.applicationDeadline ? <Link to="/events/$eventId" params={{ eventId: event.id }}><Button size="sm" variant="outline">Request creator pass</Button></Link> : null}
         </div>
       </div>
     </article>

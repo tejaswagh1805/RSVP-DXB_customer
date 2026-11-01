@@ -529,12 +529,13 @@ export const submitEventRsvpRequest = createServerFn({ method: "POST" })
   });
 
 export const submitEventTicketInquiry = createServerFn({ method: "POST" })
-  .validator((input: { eventId: string; name: string; email: string; phone: string }) => input)
+  .validator((input: { eventId: string; name: string; email: string; phone: string; requestType?: "ticket" | "creator_pass" }) => input)
   .handler(async ({ data }) => {
     const eventId = String(data.eventId ?? "").trim().slice(0, 180);
     const name = String(data.name ?? "").trim().slice(0, 120);
     const email = String(data.email ?? "").trim().toLowerCase().slice(0, 254);
     const phone = String(data.phone ?? "").trim().replace(/[^+\d]/g, "").slice(0, 24);
+    const requestType = data.requestType === "creator_pass" ? "creator_pass" : "ticket";
     if (name.length < 2) throw new Error("Enter your name so our team knows who to contact.");
     if (!/^\+?\d{7,15}$/.test(phone)) throw new Error("Enter a valid phone number with country code.");
     if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) throw new Error("Enter a valid email address.");
@@ -543,7 +544,7 @@ export const submitEventTicketInquiry = createServerFn({ method: "POST" })
     const events = (await sql`
       SELECT id, title FROM events
       WHERE id = ${eventId} AND status = 'published' AND date >= (NOW() AT TIME ZONE 'Asia/Dubai')::date
-        AND ticket_url <> ''
+        AND ((${requestType} = 'creator_pass' AND creator_pass_note <> '') OR (${requestType} = 'ticket' AND ticket_url <> ''))
       LIMIT 1
     `) as unknown as { id: string; title: string }[];
     const event = events[0];
@@ -551,15 +552,16 @@ export const submitEventTicketInquiry = createServerFn({ method: "POST" })
 
     const recent = await sql`
       SELECT id FROM event_ticket_inquiries
-      WHERE event_id = ${event.id} AND phone = ${phone} AND status = 'pending'
+      WHERE event_id = ${event.id} AND phone = ${phone} AND request_type = ${requestType}
+        AND status IN ('pending', 'accepted', 'waitlisted')
         AND created_at > NOW() - INTERVAL '10 minutes'
       LIMIT 1
     `;
     if (recent.length) throw new Error("We already received your request. Our team will be in touch shortly.");
 
     const rows = (await sql`
-      INSERT INTO event_ticket_inquiries (id, event_id, full_name, email, phone)
-      VALUES (${`ticket-inquiry-${randomBytes(16).toString("hex")}`}, ${event.id}, ${name}, ${email}, ${phone})
+      INSERT INTO event_ticket_inquiries (id, event_id, full_name, email, phone, request_type)
+      VALUES (${`ticket-inquiry-${randomBytes(16).toString("hex")}`}, ${event.id}, ${name}, ${email}, ${phone}, ${requestType})
       RETURNING id
     `) as unknown as { id: string }[];
     if (!rows[0]) throw new Error("We could not save your request. Please try again.");
