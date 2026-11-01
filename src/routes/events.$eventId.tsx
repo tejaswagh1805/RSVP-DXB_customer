@@ -8,7 +8,6 @@ import { Badge, Button, Card } from "@/components/ui-kit";
 import { formatDate, internationalPhoneHref } from "@/lib/data";
 import { useStore } from "@/lib/store";
 import { WhatsAppAction } from "@/components/WhatsAppAction";
-import { EventTicketInquiryForm } from "@/components/EventTicketInquiryForm";
 import { getEventById, getMemberRsvps, submitEventRsvpRequest } from "@/lib/database";
 
 export const Route = createFileRoute("/events/$eventId")({
@@ -77,6 +76,8 @@ function EventDetail() {
   const isPastEvent = event.status === "closed" || (event.endDate || event.date) < new Date().toISOString().slice(0, 10);
   const state = data.event ? (databaseRsvps[event.id] ?? "none") : (demoRsvps[event.id] ?? "none");
   const hasMemberRsvp = event.tracks.length > 0;
+  const configuredCreatorPassFormUrl = String(import.meta.env["VITE_CREATOR_PASS_GOOGLE_FORM_URL"] || "").trim();
+  const creatorPassFormUrl = /^https:\/\/(docs\.google\.com\/forms\/|forms\.gle\/)/i.test(configuredCreatorPassFormUrl) ? configuredCreatorPassFormUrl : "";
   const eligible = hasMemberRsvp && event.tracks.includes(profile.track);
   const closed = event.status === "closed";
   const spotsLeft = Math.max(event.capacity - event.confirmed, 0);
@@ -260,7 +261,7 @@ function EventDetail() {
                 {saved.includes(event.id) ? "Saved" : "Save"}
               </Button>
               <WhatsAppAction event={event} />
-              {event.creatorPassNote && !event.applicationDeadline ? <EventTicketInquiryForm event={event} requestType="creator_pass" /> : null}
+              {event.creatorPassNote && !event.applicationDeadline && creatorPassFormUrl ? <a className="inline-flex h-10 w-full items-center justify-center rounded-md bg-primary px-4 text-sm font-medium text-primary-foreground hover:opacity-90" href={creatorPassFormUrl} target="_blank" rel="noreferrer">Request a creator pass</a> : null}
             </div>
 
             {event.tracks.length ? <div className="mt-6 border-t border-border pt-4">

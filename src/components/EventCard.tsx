@@ -7,6 +7,8 @@ import { WhatsAppAction } from "./WhatsAppAction";
 
 export function EventCard({ event }: { event: EventItem }) {
   const { saved, toggleSave, profile } = useStore();
+  const configuredCreatorPassFormUrl = String(import.meta.env["VITE_CREATOR_PASS_GOOGLE_FORM_URL"] || "").trim();
+  const creatorPassFormUrl = /^https:\/\/(docs\.google\.com\/forms\/|forms\.gle\/)/i.test(configuredCreatorPassFormUrl) ? configuredCreatorPassFormUrl : "";
   const full = event.capacity > 0 && event.confirmed >= event.capacity;
   const left = Math.max(event.capacity - event.confirmed, 0);
   const eligible = event.tracks.includes(profile.track);
@@ -45,7 +47,7 @@ export function EventCard({ event }: { event: EventItem }) {
               {saved.includes(event.id) ? "Saved" : "Save event"}
             </Button> : null}
           {!isPast ? <WhatsAppAction event={event} /> : null}
-          {!isPast && event.creatorPassNote && !event.applicationDeadline ? <Link to="/events/$eventId" params={{ eventId: event.id }}><Button size="sm" variant="outline">Request creator pass</Button></Link> : null}
+          {!isPast && event.creatorPassNote && !event.applicationDeadline && creatorPassFormUrl ? <a href={creatorPassFormUrl} target="_blank" rel="noreferrer"><Button size="sm" variant="outline">Request creator pass</Button></a> : null}
         </div>
       </div>
     </article>
