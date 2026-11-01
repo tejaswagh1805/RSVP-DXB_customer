@@ -8,7 +8,7 @@ import { Badge, Button, Card } from "@/components/ui-kit";
 import { formatDate, internationalPhoneHref } from "@/lib/data";
 import { useStore } from "@/lib/store";
 import { WhatsAppAction } from "@/components/WhatsAppAction";
-import { creatorPassFormUrl } from "@/lib/creator-pass-form";
+import { creatorPassFormUrlForEvent } from "@/lib/creator-pass-form";
 import { getEventById, getMemberRsvps, submitEventRsvpRequest } from "@/lib/database";
 
 export const Route = createFileRoute("/events/$eventId")({
@@ -260,7 +260,7 @@ function EventDetail() {
                 {saved.includes(event.id) ? "Saved" : "Save"}
               </Button>
               <WhatsAppAction event={event} />
-              {event.creatorPassNote && !event.applicationDeadline && creatorPassFormUrl ? <a className="inline-flex h-10 w-full items-center justify-center rounded-md bg-primary px-4 text-sm font-medium text-primary-foreground hover:opacity-90" href={creatorPassFormUrl} target="_blank" rel="noreferrer">Request a creator pass</a> : null}
+              {event.creatorPassNote && !event.applicationDeadline && creatorPassFormUrlForEvent(event) ? <a className="inline-flex h-10 w-full items-center justify-center rounded-md bg-primary px-4 text-sm font-medium text-primary-foreground hover:opacity-90" href={creatorPassFormUrlForEvent(event)!} target="_blank" rel="noreferrer">Request a creator pass</a> : null}
             </div>
 
             {event.tracks.length ? <div className="mt-6 border-t border-border pt-4">
