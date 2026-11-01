@@ -55,6 +55,7 @@ function EventDetail() {
   const [rsvpError, setRsvpError] = useState("");
   const [rsvpMessage, setRsvpMessage] = useState("");
   const [rsvpBusy, setRsvpBusy] = useState(false);
+  const [shareMessage, setShareMessage] = useState("");
   const [guestNames, setGuestNames] = useState<string[]>([]);
   const [deliverablesAgreed, setDeliverablesAgreed] = useState(false);
   const event = data.event ?? demoEvents.find((e) => e.id === eventId);
@@ -77,6 +78,8 @@ function EventDetail() {
   const hasMemberRsvp = event.tracks.length > 0;
   const eligible = hasMemberRsvp && event.tracks.includes(profile.track);
   const closed = event.status === "closed";
+  const spotsLeft = Math.max(event.capacity - event.confirmed, 0);
+  const limitedSpots = event.capacity > 0 && event.confirmed / event.capacity >= 0.8;
   const hasRequest = state !== "none" && state !== "declined";
   const statusLabel: Record<string, string> = {
     pending: "Pending review",
@@ -87,6 +90,17 @@ function EventDetail() {
     waitlist: "Waitlisted",
   };
   const creatorDeliverables = hasMemberRsvp && profile.track === "Creators" ? event.influencerDeliverables?.trim() ?? "" : "";
+  const shareEvent = async () => {
+    const url = window.location.href;
+    try {
+      if (navigator.share) await navigator.share({ title: event.title, text: `Join me at ${event.title}`, url });
+      else { await navigator.clipboard.writeText(url); setShareMessage("Event link copied."); }
+    } catch (error) {
+      if (error instanceof Error && error.name === "AbortError") return;
+      try { await navigator.clipboard.writeText(url); setShareMessage("Event link copied."); }
+      catch { setShareMessage("Copy this event link from your browser address bar."); }
+    }
+  };
   const submitRsvp = async () => {
     if (!profile.signedIn) {
       void navigate({ to: "/signin" });
@@ -135,6 +149,8 @@ function EventDetail() {
           <div className="event-detail-heading">
             {event.brand ? <p className="eyebrow">{event.brand}</p> : null}
             <h2>{event.title}</h2>
+            <button type="button" className="mt-2 text-sm text-primary underline" onClick={() => void shareEvent()}>Share event</button>
+            {shareMessage ? <span className="ml-3 text-xs text-muted-foreground" role="status">{shareMessage}</span> : null}
             <p className="event-detail-datetime">
             {formatDate(event.date)}{event.endDate && event.endDate !== event.date ? ` – ${formatDate(event.endDate)}` : ""}
             {event.time ? ` · ${event.time}${event.endTime ? `–${event.endTime}` : ""}` : ""}
@@ -142,6 +158,7 @@ function EventDetail() {
             {event.gatesOpenTime ? ` · Gates open ${event.gatesOpenTime}` : ""}
             {event.applicationDeadline ? ` · Nominations close ${formatDate(event.applicationDeadline)}` : ""}
             </p>
+            {!isPastEvent ? <a className="mt-3 inline-flex text-sm text-primary underline" href={googleCalendarUrl(event)} target="_blank" rel="noreferrer">Add to calendar</a> : null}
           </div>
 
           <div className="event-detail-sections">
@@ -162,7 +179,10 @@ function EventDetail() {
             {event.ageRestriction ? <Block title="Age restriction">{event.ageRestriction}</Block> : null}
             {event.reservationPhone ? <Block title="Reservations"><a className="text-primary underline" href={`tel:${internationalPhoneHref(event.reservationPhone)}`}>{event.reservationPhone}</a></Block> : null}
             {event.hashtag ? <Block title="Event hashtag">{event.hashtag}</Block> : null}
-            {event.venue || event.mapUrl ? <Block title="Location">{event.venue}{event.area ? `, ${event.area}` : ""}{event.mapUrl ? <> <a className="text-primary underline" href={event.mapUrl} target="_blank" rel="noreferrer">Open map and directions</a></> : null}</Block> : null}
+            {event.venue || event.mapUrl ? <div>
+              <Block title="Location">{event.venue}{event.area ? `, ${event.area}` : ""}{event.mapUrl ? <> <a className="text-primary underline" href={event.mapUrl} target="_blank" rel="noreferrer">Open map and directions</a></> : null}</Block>
+              {event.venue ? <iframe className="mt-4 h-64 w-full rounded-lg border border-border" title={`Map to ${event.venue}`} loading="lazy" referrerPolicy="no-referrer-when-downgrade" src={`https://www.google.com/maps?q=${encodeURIComponent([event.venue, event.area].filter(Boolean).join(", "))}&output=embed`} /> : null}
+            </div> : null}
             {(event.images?.length || event.image) ? <div>
               <p className="eyebrow">Photos</p>
               <div className="event-detail-photos">
@@ -202,7 +222,7 @@ function EventDetail() {
             <p className="event-detail-booking-copy">{event.tracks.length ? "Send your RSVP request and our team will confirm the details." : "Use the event booking details below to reserve your place."}</p>
             <div className="flex items-center justify-between">
             <Badge tone="gold">{event.category}</Badge>
-              {hasMemberRsvp && event.capacity > 0 ? <span className="text-xs text-muted-foreground">{Math.max(event.capacity - event.confirmed, 0)} of {event.capacity} places available</span> : null}
+              {hasMemberRsvp && event.capacity > 0 ? <span className="text-xs text-muted-foreground">{limitedSpots ? "Limited spots · " : ""}{spotsLeft} of {event.capacity} places available</span> : null}
             </div>
             {hasMemberRsvp && event.capacity > 0 ? <div className="mt-4 h-1.5 w-full overflow-hidden rounded-full bg-surface-2">
               <div
@@ -268,4 +288,24 @@ function Block({ title, children }: { title: string; children: ReactNode }) {
       <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{children}</p>
     </div>
   );
+}
+
+function googleCalendarUrl(event: { title: string; date: string; endDate?: string; time?: string; endTime?: string; venue?: string; area?: string; about?: string }) {
+  const calendarTime = (value: string | undefined, fallback: string) => {
+    const input = (value || fallback).trim();
+    const match = input.match(/^(\d{1,2})(?::(\d{2}))?\s*(AM|PM)?$/i);
+    if (!match) return fallback;
+    let hour = Number(match[1]);
+    const minute = Number(match[2] || 0);
+    if (match[3]) hour = (hour % 12) + (match[3].toUpperCase() === "PM" ? 12 : 0);
+    if (hour > 23 || minute > 59) return fallback;
+    return `${String(hour).padStart(2, "0")}:${String(minute).padStart(2, "0")}`;
+  };
+  const compact = (date: string, time: string) => `${date.replaceAll("-", "")}T${time.replace(":", "")}00`;
+  const startTime = calendarTime(event.time, "20:00");
+  const endTime = calendarTime(event.endTime, "22:00");
+  const dates = `${compact(event.date, startTime)}/${compact(event.endDate || event.date, endTime)}`;
+  const location = [event.venue, event.area].filter(Boolean).join(", ");
+  const query = new URLSearchParams({ action: "TEMPLATE", text: event.title, dates, ctz: "Asia/Dubai", details: event.about || "RSVP DXB event", location });
+  return `https://calendar.google.com/calendar/render?${query.toString()}`;
 }
