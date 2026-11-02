@@ -208,7 +208,7 @@ function EventDetail() {
               <p className="eyebrow">{isPastEvent ? "Our role" : "Host note"}</p>
               <p className="mt-2 text-sm text-muted-foreground">{event.hostNote}</p>
             </Card> : null}
-            {event.creatorPassNote && !event.applicationDeadline ? <div id="creator-pass-request" ref={creatorPassFormRef}>
+            {!isPastEvent ? <div id="creator-pass-request" ref={creatorPassFormRef}>
               {creatorPassFormOpen ? <>
                 <div className="mt-4 flex justify-end"><button type="button" className="text-sm text-primary underline" onClick={() => setCreatorPassFormOpen(false)}>Close request form</button></div>
                 <EventTicketInquiryForm event={event} requestType="creator_pass" onSubmitted={() => setCreatorPassFormOpen(false)} />
@@ -278,7 +278,7 @@ function EventDetail() {
               </Button>
               <WhatsAppAction event={event} />
               {eventInterestFormUrl ? <a className="inline-flex h-10 w-full items-center justify-center rounded-md border border-border px-4 text-sm font-medium hover:bg-surface-2" href={eventInterestFormUrl} target="_blank" rel="noreferrer">Ask about this event</a> : null}
-              {event.creatorPassNote && !event.applicationDeadline ? <Button className="w-full" size="sm" onClick={() => setCreatorPassFormOpen(true)}>Request a creator pass</Button> : null}
+              <Button className="w-full" size="sm" onClick={() => setCreatorPassFormOpen(true)}>Request a creator pass</Button>
             </div>
 
             {event.tracks.length ? <div className="mt-6 border-t border-border pt-4">

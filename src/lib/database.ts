@@ -552,8 +552,14 @@ export const submitEventTicketInquiry = createServerFn({ method: "POST" })
       SELECT id, title FROM events
       WHERE id = ${eventId} AND status = 'published'
         AND (date IS NULL OR date >= (NOW() AT TIME ZONE 'Asia/Dubai')::date)
-        AND (application_deadline IS NULL OR application_deadline >= (NOW() AT TIME ZONE 'Asia/Dubai')::date)
-        AND ((${requestType} = 'creator_pass' AND creator_pass_note <> '') OR (${requestType} = 'ticket' AND ticket_url <> ''))
+        AND (
+          ${requestType} = 'creator_pass'
+          OR (
+            ${requestType} = 'ticket'
+            AND (application_deadline IS NULL OR application_deadline >= (NOW() AT TIME ZONE 'Asia/Dubai')::date)
+            AND ticket_url <> ''
+          )
+        )
       LIMIT 1
     `) as unknown as { id: string; title: string }[];
     const event = events[0];
