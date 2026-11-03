@@ -1,6 +1,6 @@
 import { createFileRoute, Link, useNavigate, useRouter } from "@tanstack/react-router";
 import type { ReactNode } from "react";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { SitePage } from "@/components/SiteLayout";
 import { EventImage } from "@/components/EventImage";
@@ -8,7 +8,6 @@ import { Badge, Button, Card } from "@/components/ui-kit";
 import { formatDate, internationalPhoneHref } from "@/lib/data";
 import { useStore } from "@/lib/store";
 import { WhatsAppAction } from "@/components/WhatsAppAction";
-import { EventTicketInquiryForm } from "@/components/EventTicketInquiryForm";
 import { getEventById, getMemberRsvps, submitEventRsvpRequest } from "@/lib/database";
 
 export const Route = createFileRoute("/events/$eventId")({
@@ -57,20 +56,10 @@ function EventDetail() {
   const [rsvpMessage, setRsvpMessage] = useState("");
   const [rsvpBusy, setRsvpBusy] = useState(false);
   const [shareMessage, setShareMessage] = useState("");
-  const [creatorPassFormOpen, setCreatorPassFormOpen] = useState(false);
-  const creatorPassFormRef = useRef<HTMLDivElement>(null);
   const [guestNames, setGuestNames] = useState<string[]>([]);
   const [deliverablesAgreed, setDeliverablesAgreed] = useState(false);
   const event = data.event ?? demoEvents.find((e) => e.id === eventId);
   const eventInterestFormUrl = String(import.meta.env["VITE_RSVP_EVENT_INTEREST_FORM_URL"] || "").trim();
-
-  useEffect(() => {
-    if (window.location.hash === "#creator-pass-request") setCreatorPassFormOpen(true);
-  }, []);
-
-  useEffect(() => {
-    if (creatorPassFormOpen) creatorPassFormRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
-  }, [creatorPassFormOpen]);
 
   if (!event) {
     return (
@@ -208,12 +197,6 @@ function EventDetail() {
               <p className="eyebrow">{isPastEvent ? "Our role" : "Host note"}</p>
               <p className="mt-2 text-sm text-muted-foreground">{event.hostNote}</p>
             </Card> : null}
-            {!isPastEvent ? <div id="creator-pass-request" ref={creatorPassFormRef}>
-              {creatorPassFormOpen ? <>
-                <div className="mt-4 flex justify-end"><button type="button" className="text-sm text-primary underline" onClick={() => setCreatorPassFormOpen(false)}>Close request form</button></div>
-                <EventTicketInquiryForm event={event} requestType="creator_pass" onSubmitted={() => setCreatorPassFormOpen(false)} />
-              </> : null}
-            </div> : null}
           </div>
         </main>
 
@@ -278,7 +261,7 @@ function EventDetail() {
               </Button>
               <WhatsAppAction event={event} />
               {eventInterestFormUrl ? <a className="inline-flex h-10 w-full items-center justify-center rounded-md border border-border px-4 text-sm font-medium hover:bg-surface-2" href={eventInterestFormUrl} target="_blank" rel="noreferrer">Ask about this event</a> : null}
-              <Button className="w-full" size="sm" onClick={() => setCreatorPassFormOpen(true)}>Request a creator pass</Button>
+              {event.creatorPassFormUrl ? <a className="inline-flex h-10 w-full items-center justify-center rounded-md bg-primary px-4 text-sm font-medium text-primary-foreground hover:opacity-90" href={event.creatorPassFormUrl} target="_blank" rel="noreferrer">Request a creator pass</a> : <Button className="w-full" size="sm" disabled>Creator pass form unavailable</Button>}
             </div>
 
             {event.tracks.length ? <div className="mt-6 border-t border-border pt-4">

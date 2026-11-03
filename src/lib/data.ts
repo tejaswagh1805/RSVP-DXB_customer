@@ -19,6 +19,7 @@ export interface EventItem {
   ticketUrl?: string;
   reservationPhone?: string;
   creatorPassNote?: string;
+  creatorPassFormUrl?: string;
   ageRestriction?: string;
   hashtag?: string;
   applicationDeadline?: string;

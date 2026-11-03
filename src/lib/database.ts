@@ -64,7 +64,7 @@ async function currentMember() {
   return rows[0] ?? null;
 }
 
-type EventRow = Omit<EventItem, "image" | "images" | "video"> & { image_key: string; image_data: string | null; image_gallery?: string[] | null; video_url?: string | null; track_capacities?: Partial<Record<Track, number>> | null; influencer_deliverables?: string | null; map_url?: string | null; endDate?: string | null; end_time?: string | null; gates_open_time?: string | null; ticket_url?: string | null; reservation_phone?: string | null; creator_pass_note?: string | null; age_restriction?: string | null; application_deadline?: string | null; action_label?: string | null };
+type EventRow = Omit<EventItem, "image" | "images" | "video"> & { image_key: string; image_data: string | null; image_gallery?: string[] | null; video_url?: string | null; track_capacities?: Partial<Record<Track, number>> | null; influencer_deliverables?: string | null; map_url?: string | null; endDate?: string | null; end_time?: string | null; gates_open_time?: string | null; ticket_url?: string | null; reservation_phone?: string | null; creator_pass_note?: string | null; creator_pass_form_url?: string | null; age_restriction?: string | null; application_deadline?: string | null; action_label?: string | null };
 
 const EVENT_IMAGES: Record<string, string> = {
   "atlantis-chef-table": diningImage,
@@ -76,7 +76,7 @@ const EVENT_IMAGES: Record<string, string> = {
 };
 
 function mapEvent(row: EventRow): EventItem {
-  const { image_data, image_key, image_gallery, video_url, influencer_deliverables, map_url, endDate, end_time, gates_open_time, ticket_url, reservation_phone, creator_pass_note, age_restriction, application_deadline, action_label, ...event } = row;
+  const { image_data, image_key, image_gallery, video_url, influencer_deliverables, map_url, endDate, end_time, gates_open_time, ticket_url, reservation_phone, creator_pass_note, creator_pass_form_url, age_restriction, application_deadline, action_label, ...event } = row;
   const images = image_gallery?.length ? image_gallery : image_data ? [image_data] : [];
   return {
     ...event,
@@ -92,6 +92,7 @@ function mapEvent(row: EventRow): EventItem {
     ticketUrl: ticket_url ?? "",
     reservationPhone: reservation_phone ?? "",
     creatorPassNote: creator_pass_note ?? "",
+    creatorPassFormUrl: creator_pass_form_url ?? "",
     ageRestriction: age_restriction ?? "",
     applicationDeadline: application_deadline ?? "",
     actionLabel: /ticket link to add/i.test(action_label ?? "") ? "" : action_label ?? "",
@@ -109,7 +110,7 @@ export const listPublishedEvents = createServerFn({ method: "GET" }).handler(asy
       to_char(application_deadline, 'YYYY-MM-DD') AS application_deadline, action_label,
       track_capacities AS "trackCapacities", influencer_deliverables, map_url,
       to_char(end_date, 'YYYY-MM-DD') AS "endDate", end_time, gates_open_time,
-      status, image_key, image_data, image_gallery, video_url
+      status, image_key, image_data, image_gallery, video_url, creator_pass_form_url
     FROM events WHERE status IN ('published', 'closed') ORDER BY date, time
   `) as unknown as EventRow[];
   return rows.map(mapEvent);
@@ -151,7 +152,7 @@ export const getEventById = createServerFn({ method: "GET" })
         to_char(application_deadline, 'YYYY-MM-DD') AS application_deadline, action_label,
         track_capacities AS "trackCapacities", influencer_deliverables, map_url,
         to_char(end_date, 'YYYY-MM-DD') AS "endDate", end_time, gates_open_time,
-        status, image_key, image_data, image_gallery, video_url
+        status, image_key, image_data, image_gallery, video_url, creator_pass_form_url
       FROM events WHERE id = ${eventId} AND status IN ('published', 'closed') LIMIT 1
     `) as unknown as EventRow[];
     return rows[0] ? mapEvent(rows[0]) : null;

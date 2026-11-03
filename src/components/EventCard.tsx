@@ -46,7 +46,7 @@ export function EventCard({ event }: { event: EventItem }) {
                 : <WhatsAppAction event={event} />}
             </div>
             {event.tracks.length ? <div className="event-card-secondary-action"><WhatsAppAction event={event} /></div> : null}
-            <a className="event-card-creator-pass" href={`/events/${event.id}#creator-pass-request`}>
+            <a className="event-card-creator-pass" href={event.creatorPassFormUrl || `/events/${event.id}`} target={event.creatorPassFormUrl ? "_blank" : undefined} rel={event.creatorPassFormUrl ? "noreferrer" : undefined}>
               <span className="event-card-creator-icon"><TicketCheck size={17} /></span>
               <span><strong>Request a creator pass</strong><small>Send your details for team review</small></span>
               <ArrowUpRight className="event-card-creator-arrow" size={17} />
