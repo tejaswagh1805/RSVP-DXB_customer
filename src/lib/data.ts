@@ -287,10 +287,10 @@ export const WALL_POSTS: WallPost[] = [
 ];
 
 export const PRESS = [
-  { outlet: "Gulf News", title: "How RSVP DXB became the city's quiet gatekeeper", date: "Sep 2026" },
-  { outlet: "Esquire Middle East", title: "The invitation economy of Dubai", date: "Aug 2026" },
-  { outlet: "Hotelier ME", title: "Inside the guest lists that fill new openings", date: "Jul 2026" },
-  { outlet: "Time Out Dubai", title: "The house party service changing private hosting", date: "Jun 2026" },
+  { outlet: "Gulf News", title: "How RSVP DXB became the city's quiet gatekeeper", date: "Sep 2026", url: "https://gulfnews.com/" },
+  { outlet: "Esquire Middle East", title: "The invitation economy of Dubai", date: "Aug 2026", url: "https://www.esquireme.com/" },
+  { outlet: "Hotelier ME", title: "Inside the guest lists that fill new openings", date: "Jul 2026", url: "https://www.hoteliermiddleeast.com/" },
+  { outlet: "Time Out Dubai", title: "The house party service changing private hosting", date: "Jun 2026", url: "https://www.timeoutdubai.com/" },
 ];
 
 export const PACKAGES = [

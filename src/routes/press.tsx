@@ -66,13 +66,15 @@ function PressPage() {
       <Section eyebrow="In the press" title="Recent coverage">
         <div className="mt-8 grid gap-4 md:grid-cols-2">
           {PRESS.map((p) => (
-            <Card key={p.title}>
+            <a key={p.title} href={p.url} target="_blank" rel="noopener noreferrer" className="block rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary">
+            <Card className="h-full transition-colors hover:border-primary/50">
               <div className="flex items-center justify-between">
                 <Badge tone="gold">{p.outlet}</Badge>
                 <span className="text-xs text-muted-foreground">{p.date}</span>
               </div>
               <h3 className="mt-3 text-lg leading-snug">{p.title}</h3>
             </Card>
+            </a>
           ))}
         </div>
       </Section>

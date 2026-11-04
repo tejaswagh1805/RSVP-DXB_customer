@@ -117,7 +117,7 @@ function WallPage() {
                     <EventImage event={event} className="wall-event-image" />
                     <div className="wall-event-info">
                       <strong>{event.venue || event.area || "Event details"}</strong>
-                      <span>{[event.area, event.capacity > 0 ? `${Math.max(0, event.capacity - event.confirmed)} places left` : ""].filter(Boolean).join(" | ")}</span>
+                      <span>{[event.area, event.capacity > 0 ? `${Math.max(0, event.capacity - event.confirmed)} ${event.capacity - event.confirmed === 1 ? "place" : "places"} left` : ""].filter(Boolean).join(" | ")}</span>
                     </div>
                     <Link to="/events/$eventId" params={{ eventId: event.id }} className="wall-event-link">
                       View event <ArrowUpRight size={15} aria-hidden="true" />

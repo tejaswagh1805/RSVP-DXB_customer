@@ -23,7 +23,7 @@ export function EventCard({ event }: { event: EventItem }) {
         <div className="event-card-badges absolute inset-x-4 top-4 flex flex-wrap gap-2">
           <Badge tone="gold">{event.category}</Badge>
           {isPast ? <Badge tone="muted">Past event</Badge> : null}
-          {!isPast && event.tracks.length > 0 && event.capacity > 0 && left <= 10 && !full ? <Badge tone="amber">{left} places left</Badge> : null}
+          {!isPast && event.tracks.length > 0 && event.capacity > 0 && left <= 10 && !full ? <Badge tone="amber">{left} {left === 1 ? "place" : "places"} left</Badge> : null}
           {!isPast && event.tracks.length > 0 && full ? <Badge tone="red">Full</Badge> : null}
         </div>
       </div>

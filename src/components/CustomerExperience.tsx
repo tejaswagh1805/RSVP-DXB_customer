@@ -179,6 +179,7 @@ export function EventRibbon({
             <div
               key={copy}
               className="ribbon-set"
+              aria-hidden={copy === 1 ? "true" : undefined}
             >
               {tiles.map((event, i) => (
                 <article key={`${copy}-${event.id}-${i}`} className="ribbon-tile">
@@ -231,6 +232,7 @@ export function SiteMediaRibbon({ media }: { media: HomepageMediaItem[] }) {
             <div
               key={copy}
               className="ribbon-set"
+              aria-hidden={copy === 1 ? "true" : undefined}
             >
               {tiles.map((item, i) => (
                 <article className="ribbon-tile" key={`${copy}-${item.id}-${i}`}>

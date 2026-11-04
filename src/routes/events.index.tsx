@@ -35,10 +35,10 @@ function EventsPage() {
   const [category, setCategory] = useState("All");
   const [area, setArea] = useState("All areas");
   const [sort, setSort] = useState("Soonest");
-  const today = new Date().toISOString().slice(0, 10);
+  const today = new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Dubai" }).format(new Date());
 
   const areas = useMemo(
-    () => ["All areas", ...Array.from(new Set(events.map((e) => e.area)))],
+    () => ["All areas", ...Array.from(new Set(events.map((e) => e.area.trim()).filter(Boolean)))],
     [events],
   );
 
@@ -51,8 +51,10 @@ function EventsPage() {
     if (sort === "Few places left") {
       upcoming.sort(
         (a, b) => {
-          if (!a.capacity || !b.capacity) return Number(Boolean(a.capacity)) - Number(Boolean(b.capacity));
-          return a.capacity - a.confirmed - (b.capacity - b.confirmed);
+          const aHasCapacity = a.capacity > 0;
+          const bHasCapacity = b.capacity > 0;
+          if (!aHasCapacity || !bHasCapacity) return Number(bHasCapacity) - Number(aHasCapacity);
+          return (a.capacity - a.confirmed) - (b.capacity - b.confirmed);
         },
       );
     } else if (sort === "Newest") {
@@ -111,7 +113,7 @@ function EventsPage() {
             <EventCard key={e.id} event={e} />
           ))}
         </div>
-        {!list.length ? <p className="mt-5 rounded-md border border-border bg-card px-5 py-6 text-sm text-muted-foreground">No upcoming events right now. Browse past event recaps below.</p> : null}
+        {!list.length ? <p className="mt-5 rounded-md border border-border bg-card px-5 py-6 text-sm text-muted-foreground">No {category === "All" ? "upcoming events" : `${category} events`} right now — check back soon.</p> : null}
         {pastEvents.length ? <section className="mt-16" aria-labelledby="past-events-title">
           <div className="flex flex-wrap items-end justify-between gap-3 border-b border-border pb-4">
             <div>

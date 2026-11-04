@@ -24,6 +24,9 @@ export const Route = createFileRoute("/about")({
 
 function AboutPage() {
   const whatsappDigits = String(import.meta.env["VITE_RSVP_WHATSAPP_NUMBER"] || "971552789169").replace(/\D/g, "");
+  const whatsappDisplay = whatsappDigits.startsWith("971") && whatsappDigits.length === 12
+    ? `+971 ${whatsappDigits.slice(3, 5)} ${whatsappDigits.slice(5, 8)} ${whatsappDigits.slice(8)}`
+    : `+${whatsappDigits}`;
 
   return (
     <SitePage>
@@ -60,14 +63,14 @@ function AboutPage() {
               <span><strong>Visit us</strong><small>303 Diplomat One Building, AWR Properties, 9th Street, Umm Hurair 1, Dubai, UAE</small></span>
               <ArrowUpRight className="about-contact-arrow" size={17} aria-hidden="true" />
             </a>
-            <a className="about-contact-card" href="tel:+971552521124">
+            <a className="about-contact-card" href={`tel:+${whatsappDigits}`}>
               <span className="about-contact-icon"><Phone size={25} aria-hidden="true" /></span>
-              <span><strong>Call us</strong><small>+971 55 252 1124</small></span>
+              <span><strong>Call us</strong><small>{whatsappDisplay}</small></span>
               <ArrowUpRight className="about-contact-arrow" size={17} aria-hidden="true" />
             </a>
-            <a className="about-contact-card" href="mailto:vinitahirani@tickboxuae.com">
+            <a className="about-contact-card" href="mailto:vinitahirani@rsvpdxb.com">
               <span className="about-contact-icon"><Mail size={25} aria-hidden="true" /></span>
-              <span><strong>Email us</strong><small>vinitahirani@tickboxuae.com</small></span>
+              <span><strong>Email us</strong><small>vinitahirani@rsvpdxb.com</small></span>
               <ArrowUpRight className="about-contact-arrow" size={17} aria-hidden="true" />
             </a>
             <div className="about-contact-socials">
@@ -86,7 +89,7 @@ function AboutPage() {
               const name = String(form.get("name") ?? "").trim();
               const email = String(form.get("email") ?? "").trim();
               const organisation = String(form.get("organisation") ?? "").trim();
-              const project = String(form.get("project") ?? "").trim();
+              const eventDetails = String(form.get("event") ?? "").trim();
               const nameField = formElement.elements.namedItem("name") as HTMLInputElement;
               const organisationField = formElement.elements.namedItem("organisation") as HTMLInputElement;
               nameField.setCustomValidity(name.length >= 2 ? "" : "Enter your name.");
@@ -95,14 +98,14 @@ function AboutPage() {
               nameField.setCustomValidity("");
               organisationField.setCustomValidity("");
               if (!isValid) return;
-              const message = ["Hello RSVP DXB, I would like to get in touch.", `Name: ${name}`, `Email: ${email}`, `Organisation: ${organisation}`, project ? `Project: ${project}` : ""].filter(Boolean).join("\n");
+              const message = ["Hello RSVP DXB, I would like to get in touch.", `Name: ${name}`, `Email: ${email}`, `Organisation: ${organisation}`, eventDetails ? `Event: ${eventDetails}` : ""].filter(Boolean).join("\n");
               window.location.href = `https://wa.me/${whatsappDigits}?text=${encodeURIComponent(message)}`;
             }}>
               <div className="about-contact-fields">
                 <input name="name" autoComplete="name" placeholder="Your name" aria-label="Your name" required />
                 <input name="email" type="email" autoComplete="email" placeholder="Email address*" aria-label="Email address" required />
                 <input className="about-contact-wide" name="organisation" placeholder="Name of organisation*" aria-label="Name of organisation" required />
-                <textarea className="about-contact-wide" name="project" placeholder="Tell us about your project" aria-label="Tell us about your project" rows={4} />
+                <textarea className="about-contact-wide" name="event" placeholder="Tell us about your event" aria-label="Tell us about your event" rows={4} />
               </div>
               <Button className="about-contact-submit" type="submit">Send message <ArrowRight size={19} /></Button>
               <p className="about-contact-note">Submitting opens WhatsApp with your message — the fastest way to reach us.</p>
