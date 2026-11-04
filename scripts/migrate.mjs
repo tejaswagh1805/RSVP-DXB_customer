@@ -82,6 +82,7 @@ for (const fileName of [
   "0025_event_date_optional.sql",
   "0026_creator_pass_applicant_details.sql",
   "0027_creator_pass_google_form.sql",
+  "0028_venue_image_gallery.sql",
 ]) {
   const migration = await readFile(new URL(`../drizzle/${fileName}`, import.meta.url), "utf8");
   for (const statement of splitSqlStatements(migration)) {

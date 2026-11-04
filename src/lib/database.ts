@@ -15,7 +15,7 @@ import { isValidPassword } from "./password";
 
 export type HomepageMediaItem = { id: string; slot: "gallery" | "top_pick"; title: string; caption: string; imageUrl: string; mediaType: "image" | "video"; captionsUrl?: string; linkUrl: string; displayOrder: number };
 export type PeopleProfile = { id: string; category: "artist" | "influencer"; name: string; role: string; subtitle: string; bio: string; imageUrl: string; instagramUrl: string; tiktokUrl: string; youtubeUrl: string; xUrl: string; displayOrder: number };
-export type Venue = { id: string; slug: string; category: string; name: string; tagline: string; description: string; location: string; highlights: string[]; offer: string; featuredDate: string | null; imageUrl: string; websiteUrl: string; moreInfoUrl: string; displayOrder: number; featured: boolean };
+export type Venue = { id: string; slug: string; category: string; name: string; tagline: string; description: string; location: string; highlights: string[]; offer: string; featuredDate: string | null; imageUrl: string; galleryImages: string[]; websiteUrl: string; moreInfoUrl: string; displayOrder: number; featured: boolean };
 
 function isMissingVenueTable(error: unknown): boolean {
   const message = error instanceof Error ? error.message.toLowerCase() : "";
@@ -183,7 +183,7 @@ export const listVenues = createServerFn({ method: "GET" }).handler(async () => 
     const sql = getSql();
     const rows = (await sql`
       SELECT id, slug, category, name, tagline, description, location, highlights, offer,
-        to_char(featured_date, 'YYYY-MM-DD') AS "featuredDate", image_url AS "imageUrl",
+        to_char(featured_date, 'YYYY-MM-DD') AS "featuredDate", image_url AS "imageUrl", gallery_images AS "galleryImages",
         website_url AS "websiteUrl", more_info_url AS "moreInfoUrl",
         display_order AS "displayOrder", featured
       FROM venues WHERE active = TRUE ORDER BY CASE category
@@ -202,7 +202,7 @@ export const listFeaturedVenues = createServerFn({ method: "GET" }).handler(asyn
     const sql = getSql();
     const rows = (await sql`
       SELECT id, slug, category, name, tagline, description, location, highlights, offer,
-        to_char(featured_date, 'YYYY-MM-DD') AS "featuredDate", image_url AS "imageUrl",
+        to_char(featured_date, 'YYYY-MM-DD') AS "featuredDate", image_url AS "imageUrl", gallery_images AS "galleryImages",
         website_url AS "websiteUrl", more_info_url AS "moreInfoUrl",
         display_order AS "displayOrder", featured
       FROM venues WHERE active = TRUE AND featured = TRUE ORDER BY display_order, name LIMIT 12
@@ -221,7 +221,7 @@ export const getVenueBySlug = createServerFn({ method: "GET" })
       const sql = getSql();
       const rows = (await sql`
         SELECT id, slug, category, name, tagline, description, location, highlights, offer,
-          to_char(featured_date, 'YYYY-MM-DD') AS "featuredDate", image_url AS "imageUrl",
+          to_char(featured_date, 'YYYY-MM-DD') AS "featuredDate", image_url AS "imageUrl", gallery_images AS "galleryImages",
           website_url AS "websiteUrl", more_info_url AS "moreInfoUrl",
           display_order AS "displayOrder", featured
         FROM venues WHERE active = TRUE AND slug = ${slug} LIMIT 1

@@ -1,6 +1,6 @@
 import { Link } from "@tanstack/react-router";
-import { ArrowLeft, ArrowUpRight, CalendarDays, MapPin, Sparkles, Star } from "lucide-react";
-import { useState } from "react";
+import { ArrowLeft, ArrowUpRight, CalendarDays, ChevronLeft, ChevronRight, MapPin, Sparkles, Star, X } from "lucide-react";
+import { useEffect, useState } from "react";
 import { Button } from "@/components/ui-kit";
 import { SitePage } from "@/components/SiteLayout";
 import type { Venue } from "@/lib/database";
@@ -213,6 +213,18 @@ export function VenueDirectory({ venues }: { venues: Venue[] }) {
 }
 
 export function VenueDetails({ venue }: { venue: Venue | null }) {
+  const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
+  useEffect(() => {
+    if (lightboxIndex === null) return;
+    const images = venue ? [...new Set([venue.imageUrl, ...(venue.galleryImages || [])].filter(Boolean))] : [];
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setLightboxIndex(null);
+      if (event.key === "ArrowRight") setLightboxIndex((index) => index === null || !images.length ? null : (index + 1) % images.length);
+      if (event.key === "ArrowLeft") setLightboxIndex((index) => index === null || !images.length ? null : (index - 1 + images.length) % images.length);
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [lightboxIndex, venue]);
   if (!venue)
     return (
       <SitePage>
@@ -227,6 +239,7 @@ export function VenueDetails({ venue }: { venue: Venue | null }) {
         </section>
       </SitePage>
     );
+  const galleryImages = [...new Set([venue.imageUrl, ...(venue.galleryImages || [])].filter(Boolean))];
   const paragraphs = venue.description.split(/\n\s*\n/).filter(Boolean);
   return (
     <SitePage>
@@ -311,6 +324,31 @@ export function VenueDetails({ venue }: { venue: Venue | null }) {
             </div>
           </article>
         </section>
+        {galleryImages.length > 1 ? (
+          <section className="venue-photo-gallery" aria-label={`${venue.name} photo gallery`}>
+            <div className="venue-photo-gallery-heading">
+              <div><p className="eyebrow">A CLOSER LOOK</p><h2>Inside {venue.name}</h2></div>
+              <span>{String(galleryImages.length).padStart(2, "0")} PHOTOS</span>
+            </div>
+            <div className="venue-photo-gallery-grid">
+              {galleryImages.map((image, index) => (
+                <button type="button" className={`venue-photo-gallery-item venue-photo-gallery-item-${index % 5}`} key={`${image}-${index}`} onClick={() => setLightboxIndex(index)} aria-label={`View photo ${index + 1} of ${galleryImages.length}`}>
+                  <SafeImage src={image} alt={`${venue.name}, photo ${index + 1}`} loading="lazy" />
+                  <span>{String(index + 1).padStart(2, "0")}</span>
+                </button>
+              ))}
+            </div>
+          </section>
+        ) : null}
+        {lightboxIndex !== null && galleryImages[lightboxIndex] ? (
+          <div className="venue-gallery-lightbox" role="dialog" aria-modal="true" aria-label={`${venue.name} photo gallery`} onClick={() => setLightboxIndex(null)}>
+            <button type="button" className="venue-gallery-lightbox-close" onClick={() => setLightboxIndex(null)} aria-label="Close gallery"><X size={22} /></button>
+            <button type="button" className="venue-gallery-lightbox-arrow is-prev" onClick={(event) => { event.stopPropagation(); setLightboxIndex((lightboxIndex - 1 + galleryImages.length) % galleryImages.length); }} aria-label="Previous photo"><ChevronLeft size={28} /></button>
+            <img src={galleryImages[lightboxIndex]} alt={`${venue.name}, photo ${lightboxIndex + 1}`} onClick={(event) => event.stopPropagation()} />
+            <button type="button" className="venue-gallery-lightbox-arrow is-next" onClick={(event) => { event.stopPropagation(); setLightboxIndex((lightboxIndex + 1) % galleryImages.length); }} aria-label="Next photo"><ChevronRight size={28} /></button>
+            <span className="venue-gallery-lightbox-count">{String(lightboxIndex + 1).padStart(2, "0")} / {String(galleryImages.length).padStart(2, "0")}</span>
+          </div>
+        ) : null}
         <footer className="venue-detail-footer">
           <span>GOOD PLACES. GOOD PEOPLE.</span>
           <Link to="/top-picks">
