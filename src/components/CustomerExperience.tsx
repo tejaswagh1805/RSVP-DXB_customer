@@ -152,7 +152,7 @@ export function EventRibbon({
   events?: EventItem[];
 }) {
   const { events: storedEvents } = useStore();
-  const events = eventRows?.length ? eventRows : storedEvents;
+  const events = eventRows ?? storedEvents;
   const live = events.filter((e) => e.status === "published");
   if (!live.length) return null;
   const tiles = Array.from({ length: 15 }, (_, i) => live[i % live.length]).filter(

@@ -24,7 +24,7 @@ async function loadHomepageSection<T>(name: string, load: () => Promise<T>, fall
 export const Route = createFileRoute("/")({
   loader: async () => {
     const [events, media, profiles, venues] = await Promise.all([
-      loadHomepageSection("events", listPublishedEvents, []),
+      loadHomepageSection("events", listPublishedEvents, null),
       loadHomepageSection("media", listHomepageMedia, []),
       loadHomepageSection("profiles", listPeopleProfiles, []),
       loadHomepageSection("venues", listFeaturedVenues, []),
@@ -60,8 +60,8 @@ function Home() {
     <SitePage overlayHeader>
       <div className="customer-home">
         <ScrollShowcase />
-        <EventRibbon title="Latest events" events={databaseEvents} />
-        <EventRibbon title="RSVP TOP Pick" reverse events={databaseEvents} />
+        <EventRibbon title="Latest events" events={databaseEvents?.filter((event) => event.status === "published" && !event.topPick) ?? []} />
+        <EventRibbon title="RSVP TOP Pick" reverse events={databaseEvents?.filter((event) => event.status === "published" && event.topPick) ?? []} />
         {venues.length ? <VenueTopPicks venues={venues} /> : media.some((item) => item.slot === "top_pick") ? <SiteMediaRibbon media={media.filter((item) => item.slot === "top_pick")} /> : null}
         <EventGallery media={media.filter((item) => item.slot === "gallery")} previewLimit={5} />
         <ArtistGallery profiles={profiles} />

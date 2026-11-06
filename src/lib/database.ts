@@ -110,7 +110,8 @@ export const listPublishedEvents = createServerFn({ method: "GET" }).handler(asy
       to_char(application_deadline, 'YYYY-MM-DD') AS application_deadline, action_label,
       track_capacities AS "trackCapacities", influencer_deliverables, map_url,
       to_char(end_date, 'YYYY-MM-DD') AS "endDate", end_time, gates_open_time,
-      status, image_key, image_data, image_gallery, video_url, creator_pass_form_url
+      status, image_key, image_data, image_gallery, video_url, creator_pass_form_url,
+      top_pick AS "topPick"
     FROM events WHERE status IN ('published', 'closed') ORDER BY date, time
   `) as unknown as EventRow[];
   return rows.map(mapEvent);
