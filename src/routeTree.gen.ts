@@ -24,6 +24,7 @@ import { Route as PressRouteImport } from './routes/press'
 import { Route as PrivacyRouteImport } from './routes/privacy'
 import { Route as RegisterRouteImport } from './routes/register'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
+import { Route as RsvpTopPicksRouteImport } from './routes/rsvp-top-picks'
 import { Route as SigninRouteImport } from './routes/signin'
 import { Route as TermsRouteImport } from './routes/terms'
 import { Route as TicketsRouteImport } from './routes/tickets'
@@ -111,6 +112,11 @@ const ResetPasswordRoute = ResetPasswordRouteImport.update({
   path: '/reset-password',
   getParentRoute: () => rootRouteImport,
 } as any)
+const RsvpTopPicksRoute = RsvpTopPicksRouteImport.update({
+  id: '/rsvp-top-picks',
+  path: '/rsvp-top-picks',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const SigninRoute = SigninRouteImport.update({
   id: '/signin',
   path: '/signin',
@@ -183,6 +189,7 @@ export interface FileRoutesByFullPath {
   '/privacy': typeof PrivacyRoute
   '/register': typeof RegisterRoute
   '/reset-password': typeof ResetPasswordRoute
+  '/rsvp-top-picks': typeof RsvpTopPicksRoute
   '/signin': typeof SigninRoute
   '/terms': typeof TermsRoute
   '/tickets': typeof TicketsRoute
@@ -211,6 +218,7 @@ export interface FileRoutesByTo {
   '/privacy': typeof PrivacyRoute
   '/register': typeof RegisterRoute
   '/reset-password': typeof ResetPasswordRoute
+  '/rsvp-top-picks': typeof RsvpTopPicksRoute
   '/signin': typeof SigninRoute
   '/terms': typeof TermsRoute
   '/tickets': typeof TicketsRoute
@@ -240,6 +248,7 @@ export interface FileRoutesById {
   '/privacy': typeof PrivacyRoute
   '/register': typeof RegisterRoute
   '/reset-password': typeof ResetPasswordRoute
+  '/rsvp-top-picks': typeof RsvpTopPicksRoute
   '/signin': typeof SigninRoute
   '/terms': typeof TermsRoute
   '/tickets': typeof TicketsRoute
@@ -270,6 +279,7 @@ export interface FileRouteTypes {
     | '/privacy'
     | '/register'
     | '/reset-password'
+    | '/rsvp-top-picks'
     | '/signin'
     | '/terms'
     | '/tickets'
@@ -298,6 +308,7 @@ export interface FileRouteTypes {
     | '/privacy'
     | '/register'
     | '/reset-password'
+    | '/rsvp-top-picks'
     | '/signin'
     | '/terms'
     | '/tickets'
@@ -326,6 +337,7 @@ export interface FileRouteTypes {
     | '/privacy'
     | '/register'
     | '/reset-password'
+    | '/rsvp-top-picks'
     | '/signin'
     | '/terms'
     | '/tickets'
@@ -355,6 +367,7 @@ export interface RootRouteChildren {
   PrivacyRoute: typeof PrivacyRoute
   RegisterRoute: typeof RegisterRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
+  RsvpTopPicksRoute: typeof RsvpTopPicksRoute
   SigninRoute: typeof SigninRoute
   TermsRoute: typeof TermsRoute
   TicketsRoute: typeof TicketsRoute
@@ -471,6 +484,13 @@ declare module '@tanstack/react-router' {
       path: '/reset-password'
       fullPath: '/reset-password'
       preLoaderRoute: typeof ResetPasswordRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/rsvp-top-picks': {
+      id: '/rsvp-top-picks'
+      path: '/rsvp-top-picks'
+      fullPath: '/rsvp-top-picks'
+      preLoaderRoute: typeof RsvpTopPicksRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/signin': {
@@ -592,6 +612,7 @@ const rootRouteChildren: RootRouteChildren = {
   PrivacyRoute: PrivacyRoute,
   RegisterRoute: RegisterRoute,
   ResetPasswordRoute: ResetPasswordRoute,
+  RsvpTopPicksRoute: RsvpTopPicksRoute,
   SigninRoute: SigninRoute,
   TermsRoute: TermsRoute,
   TicketsRoute: TicketsRoute,

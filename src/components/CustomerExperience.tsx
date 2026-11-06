@@ -165,9 +165,9 @@ export function EventRibbon({
           <h2>{title}</h2>
         </div>
         <div className="flex gap-2">
-          <Link to="/events">
+          <Link to={reverse ? "/rsvp-top-picks" : "/events"}>
             <Button variant="outline" size="sm">
-              All events <ArrowUpRight size={16} />
+              {reverse ? "All RSVP Top Picks" : "All events"} <ArrowUpRight size={16} />
             </Button>
           </Link>
         </div>
