@@ -154,7 +154,6 @@ export function EventRibbon({
   const { events: storedEvents } = useStore();
   const events = eventRows ?? storedEvents;
   const live = events.filter((e) => e.status === "published");
-  if (!live.length) return null;
   const tiles = Array.from({ length: 15 }, (_, i) => live[i % live.length]).filter(
     (e): e is EventItem => Boolean(e),
   );
@@ -174,7 +173,8 @@ export function EventRibbon({
         </div>
       </div>
       <div className="ribbon-window">
-        <div className="ribbon-track">
+        {!live.length ? <p className="px-6 py-8 text-muted-foreground">{title === "Latest events" ? "No latest events are available right now." : "No RSVP Top Picks have been selected yet."}</p> : null}
+        {live.length ? <div className="ribbon-track">
           {[0, 1].map((copy) => (
             <div
               key={copy}
@@ -202,7 +202,7 @@ export function EventRibbon({
               ))}
             </div>
           ))}
-        </div>
+        </div> : null}
       </div>
     </section>
   );

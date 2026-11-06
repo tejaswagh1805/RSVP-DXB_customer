@@ -102,18 +102,37 @@ function mapEvent(row: EventRow): EventItem {
 
 export const listPublishedEvents = createServerFn({ method: "GET" }).handler(async () => {
   const sql = getSql();
-  const rows = (await sql`
-    SELECT id, title, brand, COALESCE(to_char(date, 'YYYY-MM-DD'), '') AS date, time, venue, area,
-      category, tracks, capacity, confirmed, dress_code AS "dressCode", about,
-      included, who_is_invited AS "whoIsInvited", host_note AS "hostNote",
-      ticket_url, reservation_phone, creator_pass_note, age_restriction, hashtag,
-      to_char(application_deadline, 'YYYY-MM-DD') AS application_deadline, action_label,
-      track_capacities AS "trackCapacities", influencer_deliverables, map_url,
-      to_char(end_date, 'YYYY-MM-DD') AS "endDate", end_time, gates_open_time,
-      status, image_key, image_data, image_gallery, video_url, creator_pass_form_url,
-      top_pick AS "topPick"
-    FROM events WHERE status IN ('published', 'closed') ORDER BY date, time
-  `) as unknown as EventRow[];
+  let rows: EventRow[];
+  try {
+    rows = (await sql`
+      SELECT id, title, brand, COALESCE(to_char(date, 'YYYY-MM-DD'), '') AS date, time, venue, area,
+        category, tracks, capacity, confirmed, dress_code AS "dressCode", about,
+        included, who_is_invited AS "whoIsInvited", host_note AS "hostNote",
+        ticket_url, reservation_phone, creator_pass_note, age_restriction, hashtag,
+        to_char(application_deadline, 'YYYY-MM-DD') AS application_deadline, action_label,
+        track_capacities AS "trackCapacities", influencer_deliverables, map_url,
+        to_char(end_date, 'YYYY-MM-DD') AS "endDate", end_time, gates_open_time,
+        status, image_key, image_data, image_gallery, video_url, creator_pass_form_url,
+        top_pick AS "topPick"
+      FROM events WHERE status IN ('published', 'closed') ORDER BY date, time
+    `) as unknown as EventRow[];
+  } catch (error) {
+    const message = error instanceof Error ? error.message.toLowerCase() : "";
+    if (!message.includes("top_pick") || !message.includes("does not exist")) throw error;
+    console.warn("Homepage events loaded without Top Picks support; apply the events.top_pick migration to enable curated picks.");
+    rows = (await sql`
+      SELECT id, title, brand, COALESCE(to_char(date, 'YYYY-MM-DD'), '') AS date, time, venue, area,
+        category, tracks, capacity, confirmed, dress_code AS "dressCode", about,
+        included, who_is_invited AS "whoIsInvited", host_note AS "hostNote",
+        ticket_url, reservation_phone, creator_pass_note, age_restriction, hashtag,
+        to_char(application_deadline, 'YYYY-MM-DD') AS application_deadline, action_label,
+        track_capacities AS "trackCapacities", influencer_deliverables, map_url,
+        to_char(end_date, 'YYYY-MM-DD') AS "endDate", end_time, gates_open_time,
+        status, image_key, image_data, image_gallery, video_url, creator_pass_form_url,
+        FALSE AS "topPick"
+      FROM events WHERE status IN ('published', 'closed') ORDER BY date, time
+    `) as unknown as EventRow[];
+  }
   return rows.map(mapEvent);
 });
 
