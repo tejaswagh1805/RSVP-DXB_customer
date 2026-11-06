@@ -9,6 +9,7 @@ export type RsvpState = "none" | "going" | "waitlist" | "pending" | "accepted" |
 
 export interface EventItem {
   id: string;
+  latestEvent?: boolean;
   topPick?: boolean;
   title: string;
   brand: string;

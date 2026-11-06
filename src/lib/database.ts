@@ -113,14 +113,16 @@ export const listPublishedEvents = createServerFn({ method: "GET" }).handler(asy
         track_capacities AS "trackCapacities", influencer_deliverables, map_url,
         to_char(end_date, 'YYYY-MM-DD') AS "endDate", end_time, gates_open_time,
         status, image_key, image_data, image_gallery, video_url, creator_pass_form_url,
-        top_pick AS "topPick"
+        latest_event AS "latestEvent", top_pick AS "topPick"
       FROM events WHERE status IN ('published', 'closed') ORDER BY date, time
     `) as unknown as EventRow[];
   } catch (error) {
     const message = error instanceof Error ? error.message.toLowerCase() : "";
-    if (!message.includes("top_pick") || !message.includes("does not exist")) throw error;
-    console.warn("Homepage events loaded without Top Picks support; apply the events.top_pick migration to enable curated picks.");
-    rows = (await sql`
+    if (!message.includes("latest_event") && !message.includes("top_pick")) throw error;
+    console.warn("Homepage events are using legacy section defaults; apply the latest_event and top_pick migrations to enable admin curation.");
+    let hasLatestColumn = !message.includes("latest_event");
+    let hasTopPickColumn = !message.includes("top_pick");
+    const legacyQuery = () => `
       SELECT id, title, brand, COALESCE(to_char(date, 'YYYY-MM-DD'), '') AS date, time, venue, area,
         category, tracks, capacity, confirmed, dress_code AS "dressCode", about,
         included, who_is_invited AS "whoIsInvited", host_note AS "hostNote",
@@ -129,9 +131,18 @@ export const listPublishedEvents = createServerFn({ method: "GET" }).handler(asy
         track_capacities AS "trackCapacities", influencer_deliverables, map_url,
         to_char(end_date, 'YYYY-MM-DD') AS "endDate", end_time, gates_open_time,
         status, image_key, image_data, image_gallery, video_url, creator_pass_form_url,
-        FALSE AS "topPick"
+        ${hasLatestColumn ? "latest_event" : "TRUE"} AS "latestEvent",
+        ${hasTopPickColumn ? "top_pick" : "FALSE"} AS "topPick"
       FROM events WHERE status IN ('published', 'closed') ORDER BY date, time
-    `) as unknown as EventRow[];
+    `;
+    try {
+      rows = (await sql.query(legacyQuery())) as unknown as EventRow[];
+    } catch (legacyError) {
+      const legacyMessage = legacyError instanceof Error ? legacyError.message.toLowerCase() : "";
+      if (!hasTopPickColumn || !legacyMessage.includes("top_pick") || !legacyMessage.includes("does not exist")) throw legacyError;
+      hasTopPickColumn = false;
+      rows = (await sql.query(legacyQuery())) as unknown as EventRow[];
+    }
   }
   return rows.map(mapEvent);
 });
