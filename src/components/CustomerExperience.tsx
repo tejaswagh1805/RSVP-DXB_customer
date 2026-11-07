@@ -154,11 +154,9 @@ export function EventRibbon({
   const { events: storedEvents } = useStore();
   const events = eventRows ?? storedEvents;
   const live = events.filter((e) => e.status === "published");
-  const tiles = Array.from({ length: 15 }, (_, i) => live[i % live.length]).filter(
-    (e): e is EventItem => Boolean(e),
-  );
+  const tiles = live;
   return (
-    <section className={`event-ribbon ${reverse ? "ribbon-reverse" : ""}`}>
+    <section className={`event-ribbon ${reverse ? "ribbon-reverse ribbon-static" : ""}`}>
       <div className="experience-heading">
         <div>
           <p className="eyebrow">{reverse ? "Selected for the spotlight" : "Fresh on the list"}</p>
@@ -175,7 +173,7 @@ export function EventRibbon({
       <div className="ribbon-window">
         {!live.length ? <p className="px-6 py-8 text-muted-foreground">{title === "Latest events" ? "No latest events are available right now." : "No RSVP Top Picks have been selected yet."}</p> : null}
         {live.length ? <div className="ribbon-track">
-          {[0, 1].map((copy) => (
+          {(reverse ? [0] : [0, 1]).map((copy) => (
             <div
               key={copy}
               className="ribbon-set"
@@ -270,7 +268,7 @@ export function SiteMediaRibbon({ media }: { media: HomepageMediaItem[] }) {
   );
 }
 
-export function EventGallery({ media = [], previewLimit, className = "", showMediaTabs = false }: { media?: HomepageMediaItem[]; previewLimit?: number; className?: string; showMediaTabs?: boolean }) {
+export function EventGallery({ media = [], previewLimit, className = "", showMediaTabs = false, heading = "Latest events gallery" }: { media?: HomepageMediaItem[]; previewLimit?: number; className?: string; showMediaTabs?: boolean; heading?: string }) {
   const { events } = useStore();
   const [category, setCategory] = useState("All");
   const [mediaType, setMediaType] = useState<"all" | "image" | "video">("all");
@@ -282,7 +280,7 @@ export function EventGallery({ media = [], previewLimit, className = "", showMed
   const gallery = events.filter(
     (e) => e.status === "published" && (category === "All" || e.category === category),
   );
-  const allMediaCount = media.length || gallery.length;
+  const allMediaCount = showMediaTabs ? media.length : media.length || gallery.length;
   const imageCount = media.length
     ? media.filter((item) => item.mediaType === "image").length
     : gallery.length;
@@ -302,7 +300,7 @@ export function EventGallery({ media = [], previewLimit, className = "", showMed
       <div className="experience-heading">
         <div>
           <p className="eyebrow">Inside the room</p>
-          <h2>Latest events gallery</h2>
+          <h2>{heading}</h2>
         </div>
         {media.length > 0 && previewLimit && media.length > previewLimit ? (
           <Link to="/gallery">
@@ -362,7 +360,7 @@ export function EventGallery({ media = [], previewLimit, className = "", showMed
                 </Button>
               </div>
             )) : <p className="gallery-empty-state" role="status">No {mediaType === "video" ? "videos" : "images"} in the gallery yet.</p>
-          : showMediaTabs && mediaType === "video" ? <p className="gallery-empty-state" role="status">No videos in the gallery yet.</p>
+          : showMediaTabs ? <p className="gallery-empty-state" role="status">No {mediaType === "video" ? "videos" : mediaType === "image" ? "images" : "gallery media"} available for this selection yet.</p>
           : gallery.map((e) => (
               <div className="gallery-item gallery-event-item" key={e.id}>
                 <Button variant="ghost" className="gallery-photo" onClick={() => setSelected(e)}>
