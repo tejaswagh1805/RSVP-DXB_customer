@@ -156,7 +156,7 @@ export function EventRibbon({
   const live = events.filter((e) => e.status === "published");
   const tiles = live;
   return (
-    <section className={`event-ribbon ${reverse ? "ribbon-reverse ribbon-static" : ""}`}>
+    <section className={`event-ribbon ${reverse ? "ribbon-reverse" : ""}`}>
       <div className="experience-heading">
         <div>
           <p className="eyebrow">{reverse ? "Selected for the spotlight" : "Fresh on the list"}</p>
@@ -173,7 +173,7 @@ export function EventRibbon({
       <div className="ribbon-window">
         {!live.length ? <p className="px-6 py-8 text-muted-foreground">{title === "Latest events" ? "No latest events are available right now." : "No RSVP Top Picks have been selected yet."}</p> : null}
         {live.length ? <div className="ribbon-track">
-          {(reverse ? [0] : [0, 1]).map((copy) => (
+          {[0, 1].map((copy) => (
             <div
               key={copy}
               className="ribbon-set"

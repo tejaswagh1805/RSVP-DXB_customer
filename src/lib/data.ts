@@ -44,6 +44,7 @@ export interface EventItem {
   image: string;
   images?: string[];
   video?: string;
+  videos?: string[];
 }
 
 export const profileSlug = (name: string) => name.trim().toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") || "talent";

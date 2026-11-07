@@ -31,7 +31,7 @@ function GalleryPage() {
   const eventAlbums = useMemo(() => events.map((event) => ({
     event,
     media: eventMedia(event),
-  })).filter((album) => album.media.length > 0), [events]);
+  })), [events]);
   const visibleMedia = selectedEventId === "all"
     ? [...media, ...eventAlbums.flatMap((album) => album.media)]
     : eventAlbums.find((album) => album.event.id === selectedEventId)?.media ?? [];
@@ -67,6 +67,7 @@ function GalleryPage() {
 
 function eventMedia(event: EventItem): HomepageMediaItem[] {
   const images = event.images?.length ? event.images : event.image ? [event.image] : [];
+  const videos = event.videos?.length ? event.videos : event.video ? [event.video] : [];
   return [
     ...images.map((imageUrl, index) => ({
       id: `${event.id}-image-${index}`,
@@ -78,15 +79,15 @@ function eventMedia(event: EventItem): HomepageMediaItem[] {
       linkUrl: `/events/${encodeURIComponent(event.id)}`,
       displayOrder: index,
     })),
-    ...(event.video ? [{
-      id: `${event.id}-video`,
+    ...videos.map((videoUrl, index) => ({
+      id: `${event.id}-video-${index}`,
       slot: "gallery" as const,
       title: event.title,
       caption: `${event.title} video${event.venue ? ` · ${event.venue}` : ""}`,
-      imageUrl: event.video,
+      imageUrl: videoUrl,
       mediaType: "video" as const,
       linkUrl: `/events/${encodeURIComponent(event.id)}`,
-      displayOrder: images.length,
-    }] : []),
+      displayOrder: images.length + index,
+    })),
   ];
 }

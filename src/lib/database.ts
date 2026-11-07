@@ -64,7 +64,7 @@ async function currentMember() {
   return rows[0] ?? null;
 }
 
-type EventRow = Omit<EventItem, "image" | "images" | "video"> & { image_key: string; image_data: string | null; image_gallery?: string[] | null; video_url?: string | null; track_capacities?: Partial<Record<Track, number>> | null; influencer_deliverables?: string | null; map_url?: string | null; endDate?: string | null; end_time?: string | null; gates_open_time?: string | null; ticket_url?: string | null; reservation_phone?: string | null; creator_pass_note?: string | null; creator_pass_form_url?: string | null; age_restriction?: string | null; application_deadline?: string | null; action_label?: string | null };
+type EventRow = Omit<EventItem, "image" | "images" | "video" | "videos"> & { image_key: string; image_data: string | null; image_gallery?: string[] | null; video_url?: string | null; video_gallery?: string[] | null; track_capacities?: Partial<Record<Track, number>> | null; influencer_deliverables?: string | null; map_url?: string | null; endDate?: string | null; end_time?: string | null; gates_open_time?: string | null; ticket_url?: string | null; reservation_phone?: string | null; creator_pass_note?: string | null; creator_pass_form_url?: string | null; age_restriction?: string | null; application_deadline?: string | null; action_label?: string | null };
 
 const EVENT_IMAGES: Record<string, string> = {
   "atlantis-chef-table": diningImage,
@@ -76,7 +76,7 @@ const EVENT_IMAGES: Record<string, string> = {
 };
 
 function mapEvent(row: EventRow): EventItem {
-  const { image_data, image_key, image_gallery, video_url, influencer_deliverables, map_url, endDate, end_time, gates_open_time, ticket_url, reservation_phone, creator_pass_note, creator_pass_form_url, age_restriction, application_deadline, action_label, ...event } = row;
+  const { image_data, image_key, image_gallery, video_url, video_gallery, influencer_deliverables, map_url, endDate, end_time, gates_open_time, ticket_url, reservation_phone, creator_pass_note, creator_pass_form_url, age_restriction, application_deadline, action_label, ...event } = row;
   const images = image_gallery?.length ? image_gallery : image_data ? [image_data] : [];
   return {
     ...event,
@@ -96,7 +96,10 @@ function mapEvent(row: EventRow): EventItem {
     ageRestriction: age_restriction ?? "",
     applicationDeadline: application_deadline ?? "",
     actionLabel: /ticket link to add/i.test(action_label ?? "") ? "" : action_label ?? "",
-    ...(video_url ? { video: video_url } : {}),
+    ...((video_gallery?.length ? video_gallery : video_url ? [video_url] : []).length ? {
+      video: (video_gallery?.length ? video_gallery : [video_url!])[0],
+      videos: video_gallery?.length ? video_gallery : [video_url!],
+    } : {}),
   };
 }
 
@@ -112,16 +115,16 @@ export const listPublishedEvents = createServerFn({ method: "GET" }).handler(asy
         to_char(application_deadline, 'YYYY-MM-DD') AS application_deadline, action_label,
         track_capacities AS "trackCapacities", influencer_deliverables, map_url,
         to_char(end_date, 'YYYY-MM-DD') AS "endDate", end_time, gates_open_time,
-        status, image_key, image_data, image_gallery, video_url, creator_pass_form_url,
+        status, image_key, image_data, image_gallery, video_url, video_gallery, creator_pass_form_url,
         latest_event AS "latestEvent", top_pick AS "topPick"
       FROM events WHERE status IN ('published', 'closed') ORDER BY date, time
     `) as unknown as EventRow[];
   } catch (error) {
     const message = error instanceof Error ? error.message.toLowerCase() : "";
-    if (!message.includes("latest_event") && !message.includes("top_pick")) throw error;
-    console.warn("Homepage events are using legacy section defaults; apply the latest_event and top_pick migrations to enable admin curation.");
+    if (!message.includes("latest_event") && !message.includes("top_pick") && !message.includes("video_gallery")) throw error;
     let hasLatestColumn = !message.includes("latest_event");
     let hasTopPickColumn = !message.includes("top_pick");
+    let hasVideoGalleryColumn = !message.includes("video_gallery");
     const legacyQuery = () => `
       SELECT id, title, brand, COALESCE(to_char(date, 'YYYY-MM-DD'), '') AS date, time, venue, area,
         category, tracks, capacity, confirmed, dress_code AS "dressCode", about,
@@ -130,19 +133,26 @@ export const listPublishedEvents = createServerFn({ method: "GET" }).handler(asy
         to_char(application_deadline, 'YYYY-MM-DD') AS application_deadline, action_label,
         track_capacities AS "trackCapacities", influencer_deliverables, map_url,
         to_char(end_date, 'YYYY-MM-DD') AS "endDate", end_time, gates_open_time,
-        status, image_key, image_data, image_gallery, video_url, creator_pass_form_url,
+        status, image_key, image_data, image_gallery, video_url,
+        ${hasVideoGalleryColumn ? "video_gallery" : "ARRAY[]::text[]"} AS video_gallery, creator_pass_form_url,
         ${hasLatestColumn ? "latest_event" : "TRUE"} AS "latestEvent",
         ${hasTopPickColumn ? "top_pick" : "FALSE"} AS "topPick"
       FROM events WHERE status IN ('published', 'closed') ORDER BY date, time
     `;
-    try {
-      rows = (await sql.query(legacyQuery())) as unknown as EventRow[];
-    } catch (legacyError) {
-      const legacyMessage = legacyError instanceof Error ? legacyError.message.toLowerCase() : "";
-      if (!hasTopPickColumn || !legacyMessage.includes("top_pick") || !legacyMessage.includes("does not exist")) throw legacyError;
-      hasTopPickColumn = false;
-      rows = (await sql.query(legacyQuery())) as unknown as EventRow[];
+    for (let attempt = 0; attempt < 3; attempt += 1) {
+      try {
+        rows = (await sql.query(legacyQuery())) as unknown as EventRow[];
+        break;
+      } catch (legacyError) {
+        const legacyMessage = legacyError instanceof Error ? legacyError.message.toLowerCase() : "";
+        if (legacyMessage.includes("latest_event") && legacyMessage.includes("does not exist")) hasLatestColumn = false;
+        else if (legacyMessage.includes("top_pick") && legacyMessage.includes("does not exist")) hasTopPickColumn = false;
+        else if (legacyMessage.includes("video_gallery") && legacyMessage.includes("does not exist")) hasVideoGalleryColumn = false;
+        else throw legacyError;
+        if (attempt === 2) throw legacyError;
+      }
     }
+    console.warn("Customer events are using compatibility fallbacks; apply the event section and video gallery migrations to enable all event media.");
   }
   return rows.map(mapEvent);
 });
@@ -183,7 +193,7 @@ export const getEventById = createServerFn({ method: "GET" })
         to_char(application_deadline, 'YYYY-MM-DD') AS application_deadline, action_label,
         track_capacities AS "trackCapacities", influencer_deliverables, map_url,
         to_char(end_date, 'YYYY-MM-DD') AS "endDate", end_time, gates_open_time,
-        status, image_key, image_data, image_gallery, video_url, creator_pass_form_url
+        status, image_key, image_data, image_gallery, video_url, video_gallery, creator_pass_form_url
       FROM events WHERE id = ${eventId} AND status IN ('published', 'closed') LIMIT 1
     `) as unknown as EventRow[];
     return rows[0] ? mapEvent(rows[0]) : null;
