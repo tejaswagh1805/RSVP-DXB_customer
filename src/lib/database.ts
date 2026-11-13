@@ -515,13 +515,14 @@ export const requestPressAsset = createServerFn({ method: "POST" })
   });
 
 export const submitEventRsvpRequest = createServerFn({ method: "POST" })
-  .validator((input: { eventId: string; track: Track; guestNames: string[]; deliverablesAgreed: boolean }) => input)
+  .validator((input: { eventId: string; track: Track; guestNames: string[]; deliverablesAgreed: boolean; referralCode?: string }) => input)
   .handler(async ({ data }) => {
     const member = await currentMember();
     if (!member) throw new Error("Sign in with an approved member account to RSVP.");
     if (!Array.isArray(data.guestNames) || data.guestNames.length > 2 || data.guestNames.some((name) => typeof name !== "string" || name.trim().length < 2 || name.trim().length > 120)) {
       throw new Error("Add the full name for each guest, up to two guests.");
     }
+    const referralCode = String(data.referralCode ?? "").trim().slice(0, 100).replace(/[^a-zA-Z0-9_-]/g, "");
     if (!(["Media", "Creators", "Tastemakers", "Private Circle"] as string[]).includes(data.track) || data.track !== member.track) {
       throw new Error("Choose the audience track on your approved member profile.");
     }
@@ -539,15 +540,16 @@ export const submitEventRsvpRequest = createServerFn({ method: "POST" })
     const guestNames = data.guestNames.map((name) => name.trim());
     const rows = (await sql`
       INSERT INTO event_rsvp_requests (
-        id, event_id, member_id, member_email, track, guest_names, deliverables_agreed, status
+        id, event_id, member_id, member_email, track, guest_names, deliverables_agreed, referral_code, status
       ) VALUES (
         ${`rsvp-${randomBytes(16).toString("hex")}`}, ${event.id}, ${member.id}, ${member.email},
-        ${data.track}, ${guestNames}, ${data.track === "Creators" ? data.deliverablesAgreed : false}, 'pending'
+        ${data.track}, ${guestNames}, ${data.track === "Creators" ? data.deliverablesAgreed : false}, ${referralCode}, 'pending'
       )
       ON CONFLICT (event_id, member_id) DO UPDATE SET
         track = EXCLUDED.track,
         guest_names = EXCLUDED.guest_names,
         deliverables_agreed = EXCLUDED.deliverables_agreed,
+        referral_code = EXCLUDED.referral_code,
         status = 'pending', reviewed_at = NULL, reviewed_by = NULL,
         created_at = NOW(), updated_at = NOW()
       WHERE event_rsvp_requests.status = 'declined'

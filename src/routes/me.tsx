@@ -213,7 +213,22 @@ function MemberArea() {
         ) : null}
 
         {tab === "My RSVPs" ? (
-          <div className="space-y-3">
+          <div className="space-y-5">
+            <Card aria-label="My RSVP messages">
+              <p className="eyebrow">MY MESSAGES</p>
+              <h2 className="mt-1 text-xl">Event RSVP updates</h2>
+              <div className="mt-4 space-y-3">
+                {activityEvents.length ? activityEvents.map((event) => {
+                  const state = rsvps[event.id] ?? "pending";
+                  const message = ({ pending: "We received your RSVP request. Our team is reviewing your profile.", accepted: "Your RSVP has been accepted. Please check your email for event entry details.", waitlisted: "Your RSVP is on the waitlist. We will contact you if a place opens.", declined: "Thank you for your interest. We could not include your request for this event.", going: "Your RSVP has been accepted.", waitlist: "Your RSVP is on the waitlist." } as Record<string, string>)[state] ?? "Your RSVP has been updated.";
+                  return <article key={event.id} className="rounded-md border border-border bg-surface px-4 py-3">
+                    <div className="flex flex-wrap items-center justify-between gap-2"><strong className="text-sm">{event.title}</strong><Badge tone={state === "accepted" || state === "going" ? "green" : state === "declined" ? "red" : "amber"}>{state === "going" ? "Accepted" : state === "waitlist" ? "Waitlisted" : state}</Badge></div>
+                    <p className="mt-2 text-sm text-muted-foreground">{message}</p>
+                    <p className="mt-2 text-xs text-muted-foreground">{formatDate(event.date)} · {event.time} · {event.venue}</p>
+                  </article>;
+                }) : <p className="text-sm text-muted-foreground">Your event RSVP messages will appear here.</p>}
+              </div>
+            </Card>
             {myEvents.map((e) => (
               <Card key={e.id} className="flex flex-wrap items-center gap-4">
                 <EventImage event={e} className="h-12 w-16 shrink-0 rounded" />

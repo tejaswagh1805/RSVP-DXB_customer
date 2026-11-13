@@ -1,4 +1,4 @@
-import { Link } from "@tanstack/react-router";
+﻿import { Link } from "@tanstack/react-router";
 import { ArrowLeft, ArrowUpRight, CalendarDays, ChevronLeft, ChevronRight, MapPin, Sparkles, Star, X } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui-kit";
@@ -126,7 +126,7 @@ export function VenueDirectory({ venues }: { venues: Venue[] }) {
         <section className="venue-directory-hero">
           <div className="venue-directory-hero-copy">
             <p className="eyebrow">
-              <Sparkles size={13} /> RSVP DXB · THE CITY EDIT
+              <Sparkles size={13} /> RSVP DXB Â· THE CITY EDIT
             </p>
             <h1>
               Places worth
@@ -179,7 +179,7 @@ export function VenueDirectory({ venues }: { venues: Venue[] }) {
           {!venues.length ? (
             <div className="venue-directory-empty">
               <Sparkles size={24} />
-              <h2>We’re curating the first picks.</h2>
+              <h2>Weâ€™re curating the first picks.</h2>
               <p>Check back soon for the RSVP DXB venue edit.</p>
             </div>
           ) : (
@@ -192,7 +192,7 @@ export function VenueDirectory({ venues }: { venues: Venue[] }) {
                 <div className="venue-category-heading">
                   <div>
                     <span className="eyebrow">
-                      THE CITY, THROUGH OUR LENS · {String(index + 1).padStart(2, "0")}
+                      THE CITY, THROUGH OUR LENS Â· {String(index + 1).padStart(2, "0")}
                     </span>
                     <h2>{group.category}</h2>
                   </div>
@@ -247,7 +247,8 @@ export function VenueDetails({ venue }: { venue: Venue | null }) {
         <section className="venue-detail-layout">
           <div className="venue-detail-visual">
             <SafeImage src={venue.imageUrl} alt={venue.name} />
-            <span className="venue-detail-image-caption">RSVP DXB · CITY GUIDE</span>
+            <span className="venue-detail-image-caption">RSVP DXB Â· CITY GUIDE</span>
+            <span className="venue-detail-image-index">01 <i /> {String(galleryImages.length).padStart(2, "0")}</span>
           </div>
           <article className="venue-detail-copy">
             <Link to="/top-picks" className="venue-detail-back">
@@ -258,23 +259,24 @@ export function VenueDetails({ venue }: { venue: Venue | null }) {
             </p>
             <h1>{venue.name}</h1>
             {venue.tagline ? <p className="venue-detail-tagline">{venue.tagline}</p> : null}
-            <div className="venue-detail-location">
-              <MapPin size={17} />
-              <span>{venue.location}</span>
-            </div>
-            {venue.featuredDate ? (
-              <div className="venue-detail-date">
-                <CalendarDays size={16} />
-                <span>
-                  Featured{" "}
-                  {new Date(`${venue.featuredDate}T12:00:00`).toLocaleDateString("en-GB", {
-                    day: "numeric",
-                    month: "long",
-                    year: "numeric",
-                  })}
-                </span>
+            <div className="venue-detail-facts">
+              <div className="venue-detail-location">
+                <MapPin size={17} />
+                <span>{venue.location}</span>
               </div>
-            ) : null}
+              {venue.featuredDate ? (
+                <div className="venue-detail-date">
+                  <CalendarDays size={16} />
+                  <span>
+                    In the edit · {new Date(`${venue.featuredDate}T12:00:00`).toLocaleDateString("en-GB", {
+                      day: "numeric",
+                      month: "short",
+                      year: "numeric",
+                    })}
+                  </span>
+                </div>
+              ) : null}
+            </div>
             <div className="venue-detail-rule" />
             <p className="eyebrow">THE PLACE</p>
             <div className="venue-detail-description">
@@ -330,7 +332,7 @@ export function VenueDetails({ venue }: { venue: Venue | null }) {
               <div><p className="eyebrow">A CLOSER LOOK</p><h2>Inside {venue.name}</h2></div>
               <span>{String(galleryImages.length).padStart(2, "0")} PHOTOS</span>
             </div>
-            <div className="venue-photo-gallery-grid">
+            <div className={`venue-photo-gallery-grid${galleryImages.length < 4 ? " is-compact" : ""}`}>
               {galleryImages.map((image, index) => (
                 <button type="button" className={`venue-photo-gallery-item venue-photo-gallery-item-${index % 5}`} key={`${image}-${index}`} onClick={() => setLightboxIndex(index)} aria-label={`View photo ${index + 1} of ${galleryImages.length}`}>
                   <SafeImage src={image} alt={`${venue.name}, photo ${index + 1}`} loading="lazy" />

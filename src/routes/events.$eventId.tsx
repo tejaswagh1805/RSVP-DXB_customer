@@ -92,7 +92,9 @@ function EventDetail() {
   };
   const creatorDeliverables = hasMemberRsvp && profile.track === "Creators" ? event.influencerDeliverables?.trim() ?? "" : "";
   const shareEvent = async () => {
-    const url = window.location.href;
+    const sharedUrl = new URL(window.location.href);
+    if (profile.memberId) sharedUrl.searchParams.set("ref", profile.memberId);
+    const url = sharedUrl.toString();
     try {
       if (navigator.share) await navigator.share({ title: event.title, text: `Join me at ${event.title}`, url });
       else { await navigator.clipboard.writeText(url); setShareMessage("Event link copied."); }
@@ -120,6 +122,7 @@ function EventDetail() {
         track: profile.track,
         guestNames,
         deliverablesAgreed,
+        referralCode: new URLSearchParams(window.location.search).get("ref") || "",
       } });
       setDatabaseRsvps((previous) => ({ ...previous, [event.id]: result.status }));
       setRsvpMessage(result.emailSent ? "Your request is in. We sent you a confirmation email." : "Your request is in. Our team will email you after review.");
