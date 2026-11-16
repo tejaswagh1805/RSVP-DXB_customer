@@ -7,6 +7,9 @@ import { useStore } from "@/lib/store";
 import { signInMember } from "@/lib/database";
 
 export const Route = createFileRoute("/signin")({
+  validateSearch: (search: Record<string, unknown>) => ({
+    redirect: typeof search.redirect === "string" && search.redirect.startsWith("/events/") ? search.redirect : undefined,
+  }),
   head: () => ({
     meta: [
       { title: "Sign in — RSVP DXB" },
@@ -21,6 +24,7 @@ export const Route = createFileRoute("/signin")({
 });
 
 function SignInPage() {
+  const { redirect } = Route.useSearch();
   const { hydrateMember } = useStore();
   const signIn = useServerFn(signInMember);
   const navigate = useNavigate();
@@ -46,7 +50,8 @@ function SignInPage() {
               try {
                 const member = await signIn({ data: { email, password } });
                 hydrateMember(member);
-                await navigate({ to: "/me" });
+                if (redirect) window.location.assign(redirect);
+                else await navigate({ to: "/me" });
               } catch (cause) {
                 setError(cause instanceof Error ? cause.message : "Sign in failed. Please try again.");
               } finally {

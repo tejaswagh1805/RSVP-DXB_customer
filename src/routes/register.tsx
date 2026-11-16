@@ -30,6 +30,9 @@ import { isValidPassword } from "@/lib/password";
 import { formatPhoneNational, normalizeWhatsAppNumber, PHONE_COUNTRIES, type PhoneCountryCode } from "@/lib/phone";
 
 export const Route = createFileRoute("/register")({
+  validateSearch: (search: Record<string, unknown>) => ({
+    redirect: typeof search.redirect === "string" && search.redirect.startsWith("/events/") ? search.redirect : undefined,
+  }),
   head: () => ({
     meta: [
       { title: "Register — RSVP DXB" },
@@ -86,6 +89,7 @@ const PROFILE_FIELD_ICONS: Record<string, typeof MapPin> = {
 };
 
 function RegisterPage() {
+  const { redirect } = Route.useSearch();
   const googleApplicationFormUrl = String(import.meta.env["VITE_RSVP_NEW_MEMBER_FORM_URL"] || "").trim();
   const submitToDatabase = useServerFn(submitApplication);
   const [step, setStep] = useState(1);
@@ -570,9 +574,7 @@ function RegisterPage() {
               {emailNotice ? <p className="mx-auto mt-3 max-w-md text-sm text-muted-foreground" role="status">{emailNotice}</p> : null}
               {whatsappNotice ? <p className="mx-auto mt-3 max-w-md text-sm text-muted-foreground" role="status">{whatsappNotice}</p> : null}
               <div className="mt-8 flex justify-center gap-3">
-                <Link to="/">
-                  <Button className="register-success-cta">Back to RSVP DXB</Button>
-                </Link>
+                {redirect ? <a href={redirect} className="register-success-cta inline-flex min-h-12 items-center justify-center rounded-md bg-primary px-5 text-sm font-medium text-primary-foreground">View event</a> : <Link to="/"><Button className="register-success-cta">Back to RSVP DXB</Button></Link>}
               </div>
             </div>
           ) : null}

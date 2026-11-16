@@ -1,12 +1,14 @@
-import { Link, useNavigate } from "@tanstack/react-router";
+import { Link, useNavigate, useRouter } from "@tanstack/react-router";
 import { useEffect, useState, type ReactNode } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { useStore } from "@/lib/store";
 import { Button } from "./ui-kit";
-import { Menu, MessageCircle, Send, Ticket, X } from "lucide-react";
+import { ArrowRight, CalendarDays, MapPin, Menu, MessageCircle, Send, Sparkles, Ticket, X } from "lucide-react";
 import { CursorBlob } from "./GenZFx";
 import clientLogoUrl from "@/assets/rsvp-client-logo.png";
-import { getMemberSession, signOutMember, submitNewsletterSubscription } from "@/lib/database";
+import { getMemberSession, listPublishedEvents, signOutMember, submitNewsletterSubscription } from "@/lib/database";
+import { formatDate, type EventItem } from "@/lib/data";
+import { EventImage } from "./EventImage";
 const clientLogo = { url: clientLogoUrl };
 const whatsappNumber = String(import.meta.env["VITE_RSVP_WHATSAPP_NUMBER"] || "").replace(/\D/g, "");
 const whatsappChatUrl = whatsappNumber
@@ -278,6 +280,58 @@ function FooterCol({ title, links }: { title: string; links: [string, string][] 
 }
 
 export function SitePage({ children, overlayHeader = false, showWhatsApp = false }: { children: ReactNode; overlayHeader?: boolean; showWhatsApp?: boolean }) {
+  const router = useRouter();
+  const { profile } = useStore();
+  const [featuredEvent, setFeaturedEvent] = useState<EventItem | null>(null);
+  const [popupOpen, setPopupOpen] = useState(false);
+  const [popupDismissed, setPopupDismissed] = useState(false);
+
+  useEffect(() => {
+    try {
+      if (sessionStorage.getItem("rsvp-upcoming-event-popup-dismissed") === "1") {
+        setPopupDismissed(true);
+        return;
+      }
+    } catch {
+      // Continue without session storage when the browser blocks it.
+    }
+    let active = true;
+    void listPublishedEvents().then((events) => {
+      if (!active) return;
+      const today = new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Dubai" }).format(new Date());
+      const next = events
+        .filter((event) => event.status === "published" && (event.endDate || event.date) >= today)
+        .sort((a, b) => a.date.localeCompare(b.date))[0];
+      if (!next) return;
+      setFeaturedEvent(next);
+      setPopupOpen(true);
+    }).catch(() => {
+      // The promotional popup must not interrupt normal site browsing on fetch errors.
+    });
+    return () => { active = false; };
+  }, [router.state.location.pathname, popupDismissed]);
+
+  useEffect(() => {
+    if (!popupOpen) return;
+    const previousOverflow = document.body.style.overflow;
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") dismissPopup();
+    };
+    document.body.style.overflow = "hidden";
+    window.addEventListener("keydown", onKeyDown);
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      window.removeEventListener("keydown", onKeyDown);
+    };
+  }, [popupOpen]);
+
+  const dismissPopup = () => {
+    setPopupOpen(false);
+    setPopupDismissed(true);
+    try { sessionStorage.setItem("rsvp-upcoming-event-popup-dismissed", "1"); } catch { /* session storage unavailable */ }
+  };
+
+  const eventPath = featuredEvent ? `/events/${encodeURIComponent(featuredEvent.id)}` : "/events";
   return (
     <div className={`customer-scope flex min-h-screen flex-col bg-background text-foreground${overlayHeader ? " customer-banner-page" : ""}`}>
       <a className="customer-skip-link" href="#main-content">Skip to content</a>
@@ -286,6 +340,25 @@ export function SitePage({ children, overlayHeader = false, showWhatsApp = false
       <main id="main-content" tabIndex={-1} className="flex-1">{children}</main>
       <SiteFooter />
       {showWhatsApp ? <WhatsAppFloat /> : null}
+      {popupOpen && featuredEvent ? (
+        <div className="upcoming-event-overlay" onMouseDown={(event) => { if (event.target === event.currentTarget) dismissPopup(); }}>
+          <section className="upcoming-event-modal" role="dialog" aria-modal="true" aria-labelledby="upcoming-event-title">
+            <button type="button" className="upcoming-event-close" onClick={dismissPopup} aria-label="Close upcoming event popup"><X size={20} /></button>
+            <div className="upcoming-event-art"><EventImage event={featuredEvent} className="upcoming-event-image" /><span className="upcoming-event-image-shade" /><span className="upcoming-event-kicker"><Sparkles size={14} /> Coming up in Dubai</span></div>
+            <div className="upcoming-event-copy">
+              <p className="eyebrow">A little something on the calendar</p>
+              <h2 id="upcoming-event-title">{featuredEvent.title}</h2>
+              <div className="upcoming-event-meta"><span><CalendarDays size={16} />{formatDate(featuredEvent.date)}</span>{featuredEvent.venue || featuredEvent.area ? <span><MapPin size={16} />{[featuredEvent.venue, featuredEvent.area].filter(Boolean).join(" · ")}</span> : null}</div>
+              <p className="upcoming-event-description">{featuredEvent.about || "Discover the details and RSVP for this upcoming RSVP DXB event."}</p>
+              <div className="upcoming-event-actions">
+                <Link to="/register" search={{ redirect: eventPath }} className="upcoming-event-register" onClick={dismissPopup}>Register <ArrowRight size={16} /></Link>
+                <Link to="/signin" search={{ redirect: eventPath }} className="upcoming-event-signin" onClick={dismissPopup}>Sign in</Link>
+              </div>
+              <button type="button" className="upcoming-event-dismiss" onClick={dismissPopup}>Maybe another time</button>
+            </div>
+          </section>
+        </div>
+      ) : null}
     </div>
   );
 }

@@ -5928,3 +5928,79 @@ textarea {
 }
 
 .customer-skip-link:focus { transform: translateY(0); }
+.upcoming-event-overlay {
+  position: fixed;
+  z-index: 100;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: 20px;
+  background: rgb(18 13 10 / .72);
+  backdrop-filter: blur(8px);
+  animation: upcoming-event-fade .22s ease-out both;
+}
+.upcoming-event-modal {
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(320px, .9fr);
+  width: min(880px, 100%);
+  max-height: min(720px, calc(100dvh - 40px));
+  overflow: auto;
+  border: 1px solid rgb(255 255 255 / .15);
+  border-radius: 22px;
+  background: var(--surface);
+  color: var(--foreground);
+  box-shadow: 0 32px 100px rgb(0 0 0 / .36);
+  animation: upcoming-event-rise .35s cubic-bezier(.2,.75,.2,1) both;
+}
+.upcoming-event-close {
+  position: absolute;
+  z-index: 2;
+  top: 14px;
+  right: 14px;
+  display: grid;
+  width: 40px;
+  height: 40px;
+  place-items: center;
+  border: 1px solid rgb(255 255 255 / .25);
+  border-radius: 50%;
+  background: rgb(15 12 10 / .48);
+  color: white;
+  cursor: pointer;
+  transition: background .2s, transform .2s;
+}
+.upcoming-event-close:hover { transform: rotate(90deg); background: rgb(15 12 10 / .75); }
+.upcoming-event-art { position: relative; min-height: 430px; overflow: hidden; background: #21170f; }
+.upcoming-event-image { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.upcoming-event-image-shade { position: absolute; inset: 0; background: linear-gradient(180deg, rgb(0 0 0 / .12), transparent 38%, rgb(0 0 0 / .55)); }
+.upcoming-event-kicker { position: absolute; left: 24px; bottom: 24px; display: inline-flex; align-items: center; gap: 8px; border: 1px solid rgb(255 255 255 / .32); border-radius: 99px; padding: 9px 13px; background: rgb(20 14 10 / .45); color: white; font-size: 11px; letter-spacing: .1em; text-transform: uppercase; backdrop-filter: blur(10px); }
+.upcoming-event-copy { align-self: center; padding: 48px 38px 34px; }
+.upcoming-event-copy .eyebrow { margin: 0 0 14px; }
+.upcoming-event-copy h2 { margin: 0; font-family: var(--font-display); font-size: clamp(34px, 4vw, 48px); font-weight: 400; line-height: 1.05; }
+.upcoming-event-meta { display: grid; gap: 10px; margin-top: 22px; color: var(--muted-foreground); font-size: 13px; }
+.upcoming-event-meta span { display: flex; align-items: center; gap: 9px; }
+.upcoming-event-meta svg { flex: 0 0 auto; color: var(--primary); }
+.upcoming-event-description { display: -webkit-box; overflow: hidden; margin: 20px 0 0; color: var(--muted-foreground); font-size: 13px; line-height: 1.75; -webkit-box-orient: vertical; -webkit-line-clamp: 4; }
+.upcoming-event-actions { display: grid; gap: 10px; margin-top: 26px; }
+.upcoming-event-register, .upcoming-event-signin { display: inline-flex; min-height: 48px; align-items: center; justify-content: center; gap: 9px; border-radius: 8px; font-size: 13px; font-weight: 600; text-decoration: none; transition: transform .2s, background .2s; }
+.upcoming-event-register { background: var(--primary); color: var(--primary-foreground); }
+.upcoming-event-register:hover, .upcoming-event-signin:hover { transform: translateY(-2px); }
+.upcoming-event-signin { border: 1px solid var(--border); color: var(--foreground); }
+.upcoming-event-signin:hover { background: var(--surface-2); }
+.upcoming-event-dismiss { display: block; margin: 16px auto 0; border: 0; background: transparent; color: var(--muted-foreground); cursor: pointer; font-size: 12px; text-decoration: underline; text-underline-offset: 4px; }
+@keyframes upcoming-event-fade { from { opacity: 0; } to { opacity: 1; } }
+@keyframes upcoming-event-rise { from { opacity: 0; transform: translateY(16px) scale(.985); } to { opacity: 1; transform: translateY(0) scale(1); } }
+@media (max-width: 680px) {
+  .upcoming-event-overlay { padding: 12px; }
+  .upcoming-event-modal { grid-template-columns: 1fr; width: min(460px, 100%); max-height: calc(100dvh - 24px); border-radius: 18px; }
+  .upcoming-event-art { min-height: 220px; max-height: 28dvh; }
+  .upcoming-event-copy { padding: 25px 23px 22px; }
+  .upcoming-event-copy h2 { font-size: 36px; }
+  .upcoming-event-meta { margin-top: 16px; }
+  .upcoming-event-description { margin-top: 14px; }
+  .upcoming-event-actions { margin-top: 18px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .upcoming-event-overlay, .upcoming-event-modal { animation: none; }
+  .upcoming-event-close, .upcoming-event-register, .upcoming-event-signin { transition: none; }
+}
