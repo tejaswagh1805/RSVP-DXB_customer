@@ -36,15 +36,6 @@ function AboutPage() {
         intro="RSVP DXB started as a little black book of the people who make a room work. It is now the guest-list platform behind hundreds of Dubai openings, dinners, launches and previews."
       />
 
-      <Section>
-        <div className="grid gap-4 sm:grid-cols-4">
-          <AnimatedStat label="Members" value="4,280" hint="Approved across four tracks" />
-          <AnimatedStat label="Events hosted" value="612" hint="To date" />
-          <AnimatedStat label="Brand partners" value="140" />
-          <AnimatedStat label="Avg. attendance" value="87%" hint="Of confirmed RSVPs" />
-        </div>
-      </Section>
-
       <div className="border-y border-border bg-surface">
         <Section eyebrow="Tickbox UAE" title="The company behind the list">
           <p className="mt-4 max-w-2xl text-sm leading-relaxed text-muted-foreground">

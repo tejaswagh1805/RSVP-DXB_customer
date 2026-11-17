@@ -72,7 +72,6 @@ export interface WallPost {
 
 export const POINT_RULES: { label: string; points: number }[] = [
   { label: "Referral approved", points: 100 },
-  { label: "Google review", points: 30 },
   { label: "Reel / video", points: 25 },
   { label: "Complete profile", points: 25 },
   { label: "Check-in", points: 20 },

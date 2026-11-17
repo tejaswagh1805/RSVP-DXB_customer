@@ -3898,6 +3898,14 @@ textarea {
   cursor: text;
 }
 
+@media (max-width: 767px) {
+  .customer-scope input:not([type="checkbox"]):not([type="radio"]),
+  .customer-scope select,
+  .customer-scope textarea {
+    font-size: 16px;
+  }
+}
+
 @media(max-width:700px) {
   .member-workspace {
     grid-template-columns: minmax(0, 1fr);
@@ -5220,9 +5228,17 @@ textarea {
   }
 
   .wall-post-card {
+    width: 100%;
+    min-width: 0;
     min-height: 0;
     padding: 17px 16px 13px;
     border-radius: 17px;
+  }
+
+  .wall-post-body,
+  .wall-event-info strong,
+  .wall-event-info span {
+    overflow-wrap: anywhere;
   }
 
   .wall-post-card:hover {

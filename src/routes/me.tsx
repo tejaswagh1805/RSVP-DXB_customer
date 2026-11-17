@@ -7,15 +7,15 @@ import { EventImage } from "@/components/EventImage";
 import { Badge, Button, Card, Field, inputClass } from "@/components/ui-kit";
 import { POINT_RULES, RANKS, formatDate, rankFor } from "@/lib/data";
 import { useStore } from "@/lib/store";
-import { getMemberRsvps, getMemberSession, listPublishedEvents, updateMemberProfile } from "@/lib/database";
+import { getMemberContentSubmissions, getMemberRsvps, getMemberSession, listPublishedEvents, submitMemberContent, updateMemberProfile } from "@/lib/database";
 import { useServerFn } from "@tanstack/react-start";
 
 export const Route = createFileRoute("/me")({
   loader: async () => {
     const member = await getMemberSession();
     if (!member) throw redirect({ to: "/signin" });
-    const [rsvps, events] = await Promise.all([getMemberRsvps(), listPublishedEvents()]);
-    return { member, rsvps, events };
+    const [rsvps, events, submissions] = await Promise.all([getMemberRsvps(), listPublishedEvents(), getMemberContentSubmissions()]);
+    return { member, rsvps, events, submissions };
   },
   head: () => ({
     meta: [
@@ -65,6 +65,14 @@ function MemberArea() {
   const { profile, saved, hydrateMember } = useStore();
   const loaderData = Route.useLoaderData();
   const databaseRsvps = loaderData.rsvps;
+  const [submissions, setSubmissions] = useState(loaderData.submissions);
+  const [contentEventId, setContentEventId] = useState(loaderData.events[0]?.id ?? "");
+  const [contentType, setContentType] = useState("Story");
+  const [contentLink, setContentLink] = useState("");
+  const [contentError, setContentError] = useState("");
+  const [contentMessage, setContentMessage] = useState("");
+  const [contentBusy, setContentBusy] = useState(false);
+  const submitContent = useServerFn(submitMemberContent);
   const dashboardEvents = loaderData.events;
   const persistProfile = useServerFn(updateMemberProfile);
   const rsvps = databaseRsvps;
@@ -288,51 +296,46 @@ function MemberArea() {
           <div className="grid gap-6 lg:grid-cols-2">
             <Card>
               <h2 className="text-2xl">Submit content</h2>
-              <div className="mt-5 grid gap-4">
+              <form className="mt-5 grid gap-4" onSubmit={async (event) => {
+                event.preventDefault();
+                setContentError(""); setContentMessage(""); setContentBusy(true);
+                try {
+                  const result = await submitContent({ data: { eventId: contentEventId, type: contentType, link: contentLink } });
+                  setSubmissions((items) => [{ ...result, eventTitle: dashboardEvents.find((item) => item.id === contentEventId)?.title || "Event", type: contentType, link: contentLink, createdAt: new Date().toISOString() }, ...items]);
+                  setContentLink(""); setContentMessage(result.adminEmailSent ? "Submitted for review. The team has been notified." : "Submitted and saved. The team email notification could not be sent.");
+                } catch (error) { setContentError(error instanceof Error ? error.message : "Could not submit this content."); }
+                finally { setContentBusy(false); }
+              }}>
                 <Field label="Event">
-                  <select className={inputClass}>
-                    {dashboardEvents.slice(0, 4).map((e) => (
-                      <option key={e.id}>{e.title}</option>
+                  <select className={inputClass} required value={contentEventId} onChange={(event) => setContentEventId(event.target.value)}>
+                    {dashboardEvents.filter((event) => event.status === "published" || event.status === "closed").map((e) => (
+                      <option key={e.id} value={e.id}>{e.title}</option>
                     ))}
                   </select>
                 </Field>
                 <Field label="Type">
-                  <select className={inputClass}>
+                  <select className={inputClass} value={contentType} onChange={(event) => setContentType(event.target.value)}>
                     <option>Story</option>
                     <option>Reel</option>
                     <option>Post</option>
                     <option>TikTok</option>
                     <option>YouTube</option>
                     <option>Article</option>
-                    <option>Google review</option>
                     <option>Screenshot</option>
                   </select>
                 </Field>
                 <Field label="Link">
-                  <input className={inputClass} placeholder="https://" />
+                  <input className={inputClass} type="url" required maxLength={2000} value={contentLink} onChange={(event) => setContentLink(event.target.value)} placeholder="https://" />
                 </Field>
-                <Button>Submit for review</Button>
-              </div>
+                {contentError ? <p className="text-sm text-destructive" role="alert">{contentError}</p> : null}
+                {contentMessage ? <p className="text-sm text-muted-foreground" role="status">{contentMessage}</p> : null}
+                <Button type="submit" disabled={contentBusy || !contentEventId}>{contentBusy ? "Submitting…" : "Submit for review"}</Button>
+              </form>
             </Card>
             <Card>
               <h2 className="text-2xl">Submissions</h2>
               <div className="mt-5 space-y-3">
-                {[
-                  ["Reel — Sunset Listening Session", "Approved", "+25"],
-                  ["Story — Chef's Table", "Approved", "+15"],
-                  ["Google review — Sirene", "Pending", "—"],
-                ].map(([label, status, pts]) => (
-                  <div
-                    key={label}
-                    className="flex items-center justify-between rounded-md bg-surface-2 px-4 py-3 text-sm"
-                  >
-                    <span>{label}</span>
-                    <span className="flex items-center gap-3">
-                      <Badge tone={status === "Approved" ? "green" : "amber"}>{status}</Badge>
-                      <span className="text-primary">{pts}</span>
-                    </span>
-                  </div>
-                ))}
+                {submissions.length ? submissions.map((item) => <div key={item.id} className="flex flex-wrap items-center justify-between gap-3 rounded-md bg-surface-2 px-4 py-3 text-sm"><span>{item.type} — {item.eventTitle}</span><span className="flex items-center gap-3"><Badge tone={item.status === "approved" ? "green" : "amber"}>{item.status === "new" ? "Pending" : item.status}</Badge>{item.link ? <a className="text-primary underline" href={item.link} target="_blank" rel="noreferrer">Open</a> : null}</span></div>) : <p className="text-sm text-muted-foreground">No submissions yet.</p>}
               </div>
             </Card>
           </div>

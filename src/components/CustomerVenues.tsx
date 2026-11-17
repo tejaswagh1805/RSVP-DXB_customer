@@ -1,4 +1,4 @@
-﻿import { Link } from "@tanstack/react-router";
+import { Link } from "@tanstack/react-router";
 import { ArrowLeft, ArrowUpRight, CalendarDays, ChevronLeft, ChevronRight, MapPin, Sparkles, Star, X } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui-kit";
@@ -126,7 +126,7 @@ export function VenueDirectory({ venues }: { venues: Venue[] }) {
         <section className="venue-directory-hero">
           <div className="venue-directory-hero-copy">
             <p className="eyebrow">
-              <Sparkles size={13} /> RSVP DXB Â· THE CITY EDIT
+              <Sparkles size={13} /> RSVP DXB · THE CITY EDIT
             </p>
             <h1>
               Places worth
@@ -192,7 +192,7 @@ export function VenueDirectory({ venues }: { venues: Venue[] }) {
                 <div className="venue-category-heading">
                   <div>
                     <span className="eyebrow">
-                      THE CITY, THROUGH OUR LENS Â· {String(index + 1).padStart(2, "0")}
+                      THE CITY, THROUGH OUR LENS · {String(index + 1).padStart(2, "0")}
                     </span>
                     <h2>{group.category}</h2>
                   </div>
@@ -247,7 +247,7 @@ export function VenueDetails({ venue }: { venue: Venue | null }) {
         <section className="venue-detail-layout">
           <div className="venue-detail-visual">
             <SafeImage src={venue.imageUrl} alt={venue.name} />
-            <span className="venue-detail-image-caption">RSVP DXB Â· CITY GUIDE</span>
+            <span className="venue-detail-image-caption">RSVP DXB · CITY GUIDE</span>
             <span className="venue-detail-image-index">01 <i /> {String(galleryImages.length).padStart(2, "0")}</span>
           </div>
           <article className="venue-detail-copy">

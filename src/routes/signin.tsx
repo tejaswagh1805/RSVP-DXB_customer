@@ -9,6 +9,8 @@ import { signInMember } from "@/lib/database";
 export const Route = createFileRoute("/signin")({
   validateSearch: (search: Record<string, unknown>) => ({
     redirect: typeof search.redirect === "string" && search.redirect.startsWith("/events/") ? search.redirect : undefined,
+    registered: search.registered === "1",
+    email: typeof search.email === "string" ? search.email.slice(0, 254) : "",
   }),
   head: () => ({
     meta: [
@@ -24,11 +26,11 @@ export const Route = createFileRoute("/signin")({
 });
 
 function SignInPage() {
-  const { redirect } = Route.useSearch();
+  const { redirect, registered, email: registeredEmail } = Route.useSearch();
   const { hydrateMember } = useStore();
   const signIn = useServerFn(signInMember);
   const navigate = useNavigate();
-  const [email, setEmail] = useState("");
+  const [email, setEmail] = useState(registeredEmail);
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
@@ -40,6 +42,7 @@ function SignInPage() {
         <p className="mt-2 text-center text-sm text-muted-foreground">
           Sign in to see your invitations, RSVPs and pass.
         </p>
+        {registered ? <p className="mt-5 rounded-md border border-primary/30 bg-primary/10 p-3 text-center text-sm" role="status">Your account is ready. Sign in with the password you just created.</p> : null}
         <Card className="mt-8">
           <form
             className="grid gap-4"
@@ -84,7 +87,6 @@ function SignInPage() {
             </Link>
           </p>
         </Card>
-        <p className="mt-6 text-center text-xs text-muted-foreground">Membership sign-in is available after your application is approved.</p>
       </div>
     </SitePage>
   );

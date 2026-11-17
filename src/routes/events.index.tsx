@@ -25,7 +25,6 @@ export const Route = createFileRoute("/events/")({
   component: EventsPage,
 });
 
-const CATEGORIES = ["All", "Dining", "Fashion", "Property", "Music", "Sports", "Comedy", "Awards", "Campaign", "Art", "Nightlife", "Other"];
 const SORTS = ["Soonest", "Newest", "Few places left"];
 
 function EventsPage() {
@@ -36,6 +35,7 @@ function EventsPage() {
   const [area, setArea] = useState("All areas");
   const [sort, setSort] = useState("Soonest");
   const today = new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Dubai" }).format(new Date());
+  const categories = useMemo(() => ["All", ...Array.from(new Set(events.filter((event) => event.status === "published" && (event.endDate || event.date) >= today).map((event) => event.category).filter(Boolean)))], [events, today]);
 
   const areas = useMemo(
     () => ["All areas", ...Array.from(new Set(events.map((e) => e.area.trim()).filter(Boolean)))],
@@ -76,7 +76,7 @@ function EventsPage() {
 
       <div className="customer-content-section mx-auto w-full max-w-6xl px-5 py-10">
         <div className="flex flex-wrap items-center gap-2">
-          {CATEGORIES.map((c) => (
+          {categories.map((c) => (
             <Button
               key={c}
               size="sm"

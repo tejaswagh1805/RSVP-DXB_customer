@@ -7,7 +7,7 @@ import fashionImage from "@/assets/event-fashion.jpg";
 import nightlifeImage from "@/assets/event-nightlife.jpg";
 import propertyImage from "@/assets/event-property.jpg";
 import { getSql } from "./db.server";
-import { applicationAdminEmail, applicationConfirmationEmail, enquiryConfirmationEmail, memberEmailHtml, memberPasswordResetEmail, newsletterAdminEmail, newsletterConfirmationEmail, publicEnquiryEmail, sendMemberEmail } from "./email.server";
+import { enquiryConfirmationEmail, memberEmailHtml, memberPasswordResetEmail, newsletterAdminEmail, newsletterConfirmationEmail, publicEnquiryEmail, sendMemberEmail, memberWelcomeEmail } from "./email.server";
 import { profileSlug, type EventItem, type Track, type WallPost } from "./data";
 import { getEmailValidationMessage } from "./email";
 import { normalizeWhatsAppNumber } from "./phone";
@@ -115,7 +115,8 @@ export const listPublishedEvents = createServerFn({ method: "GET" }).handler(asy
         to_char(application_deadline, 'YYYY-MM-DD') AS application_deadline, action_label,
         track_capacities AS "trackCapacities", influencer_deliverables, map_url,
         to_char(end_date, 'YYYY-MM-DD') AS "endDate", end_time, gates_open_time,
-        status, image_key, image_data, image_gallery, video_url, video_gallery, creator_pass_form_url,
+        CASE WHEN status = 'published' AND COALESCE(end_date, date) < (NOW() AT TIME ZONE 'Asia/Dubai')::date THEN 'closed' ELSE status END AS status,
+        image_key, image_data, image_gallery, video_url, video_gallery, creator_pass_form_url,
         latest_event AS "latestEvent", top_pick AS "topPick"
       FROM events WHERE status IN ('published', 'closed') ORDER BY date, time
     `) as unknown as EventRow[];
@@ -133,7 +134,8 @@ export const listPublishedEvents = createServerFn({ method: "GET" }).handler(asy
         to_char(application_deadline, 'YYYY-MM-DD') AS application_deadline, action_label,
         track_capacities AS "trackCapacities", influencer_deliverables, map_url,
         to_char(end_date, 'YYYY-MM-DD') AS "endDate", end_time, gates_open_time,
-        status, image_key, image_data, image_gallery, video_url,
+        CASE WHEN status = 'published' AND COALESCE(end_date, date) < (NOW() AT TIME ZONE 'Asia/Dubai')::date THEN 'closed' ELSE status END AS status,
+        image_key, image_data, image_gallery, video_url,
         ${hasVideoGalleryColumn ? "video_gallery" : "ARRAY[]::text[]"} AS video_gallery, creator_pass_form_url,
         ${hasLatestColumn ? "latest_event" : "TRUE"} AS "latestEvent",
         ${hasTopPickColumn ? "top_pick" : "FALSE"} AS "topPick"
@@ -193,7 +195,8 @@ export const getEventById = createServerFn({ method: "GET" })
         to_char(application_deadline, 'YYYY-MM-DD') AS application_deadline, action_label,
         track_capacities AS "trackCapacities", influencer_deliverables, map_url,
         to_char(end_date, 'YYYY-MM-DD') AS "endDate", end_time, gates_open_time,
-        status, image_key, image_data, image_gallery, video_url, video_gallery, creator_pass_form_url
+        CASE WHEN status = 'published' AND COALESCE(end_date, date) < (NOW() AT TIME ZONE 'Asia/Dubai')::date THEN 'closed' ELSE status END AS status,
+        image_key, image_data, image_gallery, video_url, video_gallery, creator_pass_form_url
       FROM events WHERE id = ${eventId} AND status IN ('published', 'closed') LIMIT 1
     `) as unknown as EventRow[];
     return rows[0] ? mapEvent(rows[0]) : null;
@@ -306,6 +309,54 @@ export const getMemberRsvps = createServerFn({ method: "GET" }).handler(async ()
   `) as unknown as { event_id: string; state: "pending" | "accepted" | "waitlisted" | "declined" }[];
   return Object.fromEntries(rows.map((row) => [row.event_id, row.state]));
 });
+
+export const getMemberContentSubmissions = createServerFn({ method: "GET" }).handler(async () => {
+  const member = await currentMember();
+  if (!member) return [];
+  const sql = getSql();
+  return await sql`
+    SELECT id, payload->>'eventTitle' AS "eventTitle", payload->>'type' AS type,
+      payload->>'link' AS link, status, created_at AS "createdAt"
+    FROM public_enquiries
+    WHERE kind = 'content' AND payload->>'memberId' = ${member.id}
+    ORDER BY created_at DESC
+  `;
+});
+
+export const submitMemberContent = createServerFn({ method: "POST" })
+  .validator((input: { eventId: string; type: string; link: string }) => input)
+  .handler(async ({ data }) => {
+    const member = await currentMember();
+    if (!member) throw new Error("Sign in with an approved member account to submit content.");
+    const eventId = String(data.eventId ?? "").trim();
+    const type = String(data.type ?? "").trim();
+    const link = String(data.link ?? "").trim();
+    const allowedTypes = ["Story", "Reel", "Post", "TikTok", "YouTube", "Article", "Screenshot"];
+    if (!eventId) throw new Error("Choose an event.");
+    if (!allowedTypes.includes(type)) throw new Error("Choose a valid content type.");
+    if (link.length > 2000) throw new Error("The link must be 2,000 characters or fewer.");
+    let url: URL;
+    try { url = new URL(link); } catch { throw new Error("Enter a valid link."); }
+    if (!(["http:", "https:"].includes(url.protocol))) throw new Error("Enter a valid web link.");
+    const sql = getSql();
+    const events = await sql`SELECT title FROM events WHERE id = ${eventId} LIMIT 1` as unknown as { title: string }[];
+    if (!events[0]) throw new Error("The selected event could not be found.");
+    const id = randomBytes(16).toString("hex");
+    const payload = { memberId: member.id, eventId, eventTitle: events[0].title, type, link };
+    await sql`
+      INSERT INTO public_enquiries (id, kind, name, contact, payload)
+      VALUES (${id}, 'content', ${member.name}, ${member.email}, ${JSON.stringify(payload)}::jsonb)
+    `;
+    const delivery = await sendMemberEmail({
+      to: enquiryAdminEmail(),
+      subject: `Member content submitted: ${events[0].title}`,
+      text: `Member: ${member.name} (${member.email})\nEvent: ${events[0].title}\nType: ${type}\nLink: ${link}\nReference: ${id}`,
+      html: publicEnquiryEmail({ kind: "member content submission", name: member.name, email: member.email, fields: [
+        { label: "Event", value: events[0].title }, { label: "Type", value: type }, { label: "Link", value: link }, { label: "Reference", value: id },
+      ] }),
+    });
+    return { id, status: "new", adminEmailSent: delivery.sent };
+  });
 
 export const submitNewsletterSubscription = createServerFn({ method: "POST" })
   .validator((input: { email: string; consent: boolean }) => input)
@@ -528,11 +579,12 @@ export const submitEventRsvpRequest = createServerFn({ method: "POST" })
     }
     const sql = getSql();
     const events = (await sql`
-      SELECT id, title, date::text AS date, time, venue, tracks, status, influencer_deliverables
+      SELECT id, title, date::text AS date, end_date::text AS "endDate", time, venue, tracks, status, influencer_deliverables
       FROM events WHERE id = ${data.eventId} LIMIT 1
-    `) as unknown as { id: string; title: string; date: string; time: string; venue: string; tracks: Track[]; status: string; influencer_deliverables: string }[];
+    `) as unknown as { id: string; title: string; date: string; endDate: string | null; time: string; venue: string; tracks: Track[]; status: string; influencer_deliverables: string }[];
     const event = events[0];
-    if (!event || event.status !== "published") throw new Error("This event is not accepting RSVP requests.");
+    const todayDubai = new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Dubai" }).format(new Date());
+    if (!event || event.status !== "published" || (event.endDate || event.date) < todayDubai) throw new Error("This event is not accepting RSVP requests.");
     if (!event.tracks.includes(data.track)) throw new Error("This event is not open to your track.");
     if (data.track === "Creators" && event.influencer_deliverables.trim() && !data.deliverablesAgreed) {
       throw new Error("Please agree to the creator deliverables before submitting.");
@@ -748,7 +800,7 @@ export const submitApplication = createServerFn({ method: "POST" })
     if (!/^\d{1,10}$/.test(followerCount)) {
       throw new Error("Enter your Instagram follower count as a whole number.");
     }
-    // Keep a plain numeric string because the staff API parses it as an integer on approval.
+    // Store the follower count as a number on the member profile.
     const followers = followerCount;
     const profileUrl = `https://www.instagram.com/${instagramHandle}/`;
     const handle = `@${instagramHandle}`;
@@ -767,80 +819,49 @@ export const submitApplication = createServerFn({ method: "POST" })
     const allProfiles = String(data.allProfiles ?? "").trim().slice(0, 1000);
     const detail = data.detail.trim().slice(0, 1000);
     const sql = getSql();
-    const existing = await sql`SELECT id FROM applications WHERE lower(email) = ${email} AND status = 'pending' LIMIT 1`;
-    if (existing.length) throw new Error("An application for this email is already under review.");
     const existingMember = await sql`SELECT id FROM members WHERE lower(email) = ${email} LIMIT 1`;
     if (existingMember.length) throw new Error("An account for this email already exists. Please sign in.");
     const passwordHash = await hashPassword(password);
     const rows = (await sql`
-      INSERT INTO applications (
-        id, name, email, track, city, detail, followers, profile_url, handle, platform,
-        mobile, outlet, application_role, all_profiles, source_track, password_hash, submitted, status,
-        whatsapp_opt_in, whatsapp_opt_in_at
+      WITH new_member AS (
+        INSERT INTO members (
+          name, email, track, source_track, rank, points, events, city, profile_url,
+          handle, platform, followers, mobile, outlet, member_role, all_profiles,
+          status, joined, password_hash
+        )
+        VALUES (
+          ${name}, ${email}, ${data.track}, ${data.track}, 'Bronze', 10, 0,
+          ${data.city.trim().slice(0, 100) || "Dubai"}, ${profileUrl}, ${handle},
+          ${platform}, ${Number.parseInt(followers, 10) || 0}, ${mobile}, ${outlet},
+          ${applicationRole}, ${allProfiles}, 'approved', CURRENT_DATE, ${passwordHash}
+        )
+        ON CONFLICT (email) DO NOTHING
+        RETURNING id, name, email
+      ), resolved_application AS (
+        UPDATE applications
+        SET status = 'approved', password_hash = ${passwordHash}, updated_at = now()
+        WHERE lower(email) = ${email} AND status = 'pending'
+          AND EXISTS (SELECT 1 FROM new_member)
+        RETURNING id
       )
-      VALUES (
-        ${crypto.randomUUID()}, ${name}, ${email}, ${data.track},
-        ${data.city.trim().slice(0, 100) || "Dubai"}, ${detail}, ${followers},
-        ${profileUrl}, ${handle}, ${platform}, ${mobile}, ${outlet},
-        ${applicationRole}, ${allProfiles}, ${data.track}, ${passwordHash}, CURRENT_DATE, 'pending',
-        ${whatsappOptIn}, CASE WHEN ${whatsappOptIn} THEN now() ELSE NULL END
-      )
-      RETURNING id, name, email
+      SELECT id, name, email FROM new_member
     `) as unknown as { id: string; name: string; email: string }[];
-    const application = rows[0];
-    if (!application) throw new Error("Could not save your application. Please try again.");
-    const adminEmail = process.env["RSVP_ADMIN_EMAIL"] || "vinitahirani@rsvpdxb.com";
-    const [customerEmailResult, adminEmailResult, whatsappSent] = await Promise.all([
+    const member = rows[0];
+    if (!member) throw new Error("An account for this email already exists. Please sign in.");
+    const signInUrl = `${(process.env["PUBLIC_SITE_URL"] || "https://www.rsvpdxb.com").replace(/\/$/, "")}/signin`;
+    const [customerEmailResult, whatsappSent] = await Promise.all([
       sendMemberEmail({
-        to: application.email,
-        subject: "You're on the list. Almost.",
-        text: `Hi ${application.name},\n\nWe've received your request, and you're now on the waitlist. Our team reviews every request personally. Until then, act natural.\n\nTeam RSVP DXB`,
-        html: applicationConfirmationEmail(application.name, data.track, application.email),
+        to: member.email,
+        subject: "Your RSVP DXB account is ready",
+        text: `Hi ${member.name},\n\nYour RSVP DXB member account is ready. Sign in with ${member.email} and the password you created to see your invitations and member benefits.\n\n${signInUrl}\n\nTeam RSVP DXB`,
+        html: memberWelcomeEmail(member.name, data.track, signInUrl),
       }),
-      sendMemberEmail({
-        to: adminEmail,
-        subject: `New RSVP DXB application: ${application.name}`,
-        text: [
-          "A new RSVP DXB application has been submitted.",
-          "",
-          `Name: ${application.name}`,
-          `Email: ${application.email}`,
-          `Track: ${data.track}`,
-          `City: ${data.city.trim() || "Dubai"}`,
-          `Instagram: ${handle}`,
-          `Followers: ${followers}`,
-          `Mobile / WhatsApp: ${mobile || "Not provided"}`,
-          `WhatsApp welcome opt-in: ${whatsappOptIn ? "Yes" : "No"}`,
-          `Outlet: ${outlet || "Not provided"}`,
-          `Role: ${applicationRole || "Not provided"}`,
-          `Profile details: ${allProfiles || "Not provided"}`,
-          `Application details: ${detail || "Not provided"}`,
-          `Application ID: ${application.id}`,
-          "Status: Pending review",
-        ].join("\n"),
-        html: applicationAdminEmail({
-          name: application.name,
-          email: application.email,
-          track: data.track,
-          city: data.city.trim() || "Dubai",
-          handle,
-          followers,
-          mobile,
-          outlet,
-          role: applicationRole,
-          profiles: allProfiles,
-          detail,
-          id: application.id,
-          ...(process.env["ADMIN_DASHBOARD_URL"] ? { dashboardUrl: process.env["ADMIN_DASHBOARD_URL"] } : {}),
-        }),
-      }),
-      whatsappOptIn ? sendApplicationWelcomeWhatsApp(application.name, mobile) : Promise.resolve(false),
+      whatsappOptIn ? sendApplicationWelcomeWhatsApp(member.name, mobile) : Promise.resolve(false),
     ]);
     return {
-      id: application.id,
-      status: "pending" as const,
+      id: member.id,
+      status: "approved" as const,
       emailSent: customerEmailResult.sent,
-      adminEmailSent: adminEmailResult.sent,
       whatsappSent,
     };
   });
@@ -977,7 +998,7 @@ export const signInMember = createServerFn({ method: "POST" })
     const member = rows[0];
     if (!member || !member.password_hash || !(await passwordMatches(data.password, member.password_hash))) {
       const pending = await sql`SELECT id FROM applications WHERE lower(email) = ${email} AND status = 'pending' LIMIT 1`;
-      if (pending.length) throw new Error("Your application is still under review. You can sign in after the team approves it.");
+      if (pending.length) throw new Error("Finish creating your RSVP DXB account from Register, then sign in with the password you choose.");
       throw new Error("Email or password is incorrect.");
     }
     const token = randomBytes(32).toString("base64url");

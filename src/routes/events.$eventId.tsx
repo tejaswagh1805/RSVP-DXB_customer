@@ -264,7 +264,7 @@ function EventDetail() {
               </Button>
               <WhatsAppAction event={event} />
               {eventInterestFormUrl ? <a className="inline-flex h-10 w-full items-center justify-center rounded-md border border-border px-4 text-sm font-medium hover:bg-surface-2" href={eventInterestFormUrl} target="_blank" rel="noreferrer">Ask about this event</a> : null}
-              {event.creatorPassFormUrl ? <a className="inline-flex h-10 w-full items-center justify-center rounded-md bg-primary px-4 text-sm font-medium text-primary-foreground hover:opacity-90" href={event.creatorPassFormUrl} target="_blank" rel="noreferrer">Request a creator pass</a> : <Button className="w-full" size="sm" disabled>Creator pass form unavailable</Button>}
+              {event.creatorPassFormUrl ? <a className="inline-flex h-10 w-full items-center justify-center rounded-md bg-primary px-4 text-sm font-medium text-primary-foreground hover:opacity-90" href={event.creatorPassFormUrl} target="_blank" rel="noreferrer">Request a creator pass</a> : null}
             </div>
 
             {event.tracks.length ? <div className="mt-6 border-t border-border pt-4">
@@ -307,10 +307,15 @@ function googleCalendarUrl(event: { title: string; date: string; endDate?: strin
     return `${String(hour).padStart(2, "0")}:${String(minute).padStart(2, "0")}`;
   };
   const compact = (date: string, time: string) => `${date.replaceAll("-", "")}T${time.replace(":", "")}00`;
-  const startTime = calendarTime(event.time, "20:00");
-  const endTime = calendarTime(event.endTime, "22:00");
-  const dates = `${compact(event.date, startTime)}/${compact(event.endDate || event.date, endTime)}`;
+  const startTime = event.time ? calendarTime(event.time, "") : "";
+  const endTime = event.endTime ? calendarTime(event.endTime, "") : startTime;
+  const allDayEnd = new Date(`${event.endDate || event.date}T12:00:00Z`);
+  allDayEnd.setUTCDate(allDayEnd.getUTCDate() + 1);
+  const allDayEndDate = allDayEnd.toISOString().slice(0, 10).replaceAll("-", "");
+  const dates = startTime && endTime
+    ? `${compact(event.date, startTime)}/${compact(event.endDate || event.date, endTime)}`
+    : `${event.date.replaceAll("-", "")}/${allDayEndDate}`;
   const location = [event.venue, event.area].filter(Boolean).join(", ");
-  const query = new URLSearchParams({ action: "TEMPLATE", text: event.title, dates, ctz: "Asia/Dubai", details: event.about || "RSVP DXB event", location });
+  const query = new URLSearchParams({ action: "TEMPLATE", text: event.title, dates, ...(startTime && endTime ? { ctz: "Asia/Dubai" } : {}), details: event.about || "RSVP DXB event", location });
   return `https://calendar.google.com/calendar/render?${query.toString()}`;
 }

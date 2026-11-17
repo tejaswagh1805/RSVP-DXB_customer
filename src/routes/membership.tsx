@@ -10,14 +10,14 @@ export const Route = createFileRoute("/membership")({
       {
         name: "description",
         content:
-          "How RSVP DXB membership works: tracks, approval, points, ranks, rewards and referrals.",
+          "How RSVP DXB membership works: tracks, points, ranks, rewards and referrals.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
       { property: "og:title", content: "Membership — RSVP DXB" },
       {
         property: "og:description",
-        content: "Tracks, approval, points, ranks, rewards and referrals at RSVP DXB.",
+        content: "Tracks, points, ranks, rewards and referrals at RSVP DXB.",
       },
     ],
   }),
@@ -25,8 +25,8 @@ export const Route = createFileRoute("/membership")({
 });
 
 const FAQS: [string, string][] = [
-  ["Is membership free?", "Yes. Membership is free for approved members. Brands pay to host."],
-  ["How long does approval take?", "Every profile is reviewed by our team, normally within 48 hours."],
+  ["Is membership free?", "Yes. Creating an RSVP DXB member account is free. Brands pay to host."],
+  ["When can I sign in?", "As soon as you create your account. Use the email and password you registered with."],
   ["Can I bring a guest?", "Plus-ones depend on the event and your rank. Gold and above get them most often."],
   ["What if I cannot attend?", "Cancel from your member area. Repeated no-shows affect your access."],
   ["Is Private Circle different?", "Yes. Private Circle profiles are private, with no points, posting or public lists."],
@@ -45,7 +45,7 @@ function MembershipPage() {
       <PageHero
         eyebrow="Membership"
         title="How it works"
-        intro="One profile, reviewed by our team, then matched to the events you are right for. Attend, post, earn points, rise through the ranks."
+        intro="Create your profile, discover the events that fit you, attend, post, earn points and rise through the ranks."
       />
 
       <Section eyebrow="Tracks" title="Pick your track">

@@ -39,12 +39,12 @@ export const Route = createFileRoute("/register")({
       {
         name: "description",
         content:
-          "Apply for RSVP DXB membership. Choose your track, complete your profile and get reviewed within 48 hours.",
+          "Create your RSVP DXB member account. Choose your track and complete your profile to get started.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
       { property: "og:title", content: "Register — RSVP DXB" },
-      { property: "og:description", content: "Apply for RSVP DXB membership in three short steps." },
+      { property: "og:description", content: "Create your RSVP DXB member account in three short steps." },
     ],
   }),
   component: RegisterPage,
@@ -90,7 +90,6 @@ const PROFILE_FIELD_ICONS: Record<string, typeof MapPin> = {
 
 function RegisterPage() {
   const { redirect } = Route.useSearch();
-  const googleApplicationFormUrl = String(import.meta.env["VITE_RSVP_NEW_MEMBER_FORM_URL"] || "").trim();
   const submitToDatabase = useServerFn(submitApplication);
   const [step, setStep] = useState(1);
   const [track, setTrack] = useState<Track>("Creators");
@@ -100,11 +99,9 @@ function RegisterPage() {
   const [city, setCity] = useState("Dubai");
   const [profileDetails, setProfileDetails] = useState<Record<string, string>>({});
   const [submitError, setSubmitError] = useState("");
-  const [emailNotice, setEmailNotice] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [interests, setInterests] = useState<string[]>(["Dining"]);
   const [whatsappOptIn, setWhatsappOptIn] = useState(false);
-  const [whatsappNotice, setWhatsappNotice] = useState("");
   const [phoneCountryCode, setPhoneCountryCode] = useState<PhoneCountryCode>("+971");
   const passwordChecks = [password.length >= 8, /[A-Z]/.test(password), /\d/.test(password), /[^A-Za-z0-9\s]/.test(password)];
   const passwordStrength = passwordChecks.filter(Boolean).length;
@@ -143,7 +140,7 @@ function RegisterPage() {
       .map(([key, value]) => `${key}: ${value.trim()}`)
       .join(" · ");
     try {
-      const result = await submitToDatabase({
+      await submitToDatabase({
         data: {
           name,
           email,
@@ -186,19 +183,11 @@ function RegisterPage() {
             .join(" | "),
         },
       });
-      setEmailNotice(
-        result.emailSent
-          ? `A confirmation email has been sent to ${email.trim()}. Please check your inbox and spam folder.`
-          : "Your application is safely submitted for review. We could not send a confirmation email just now; please contact the RSVP DXB team if you need assistance.",
-      );
-      setWhatsappNotice(
-        whatsappOptIn
-          ? result.whatsappSent
-            ? "Your WhatsApp welcome message was accepted for delivery."
-            : "Your application was saved, but we could not send the WhatsApp welcome message right now. The team will follow up by email."
-          : "",
-      );
-      setStep(5);
+      const signInUrl = new URL("/signin", window.location.origin);
+      signInUrl.searchParams.set("registered", "1");
+      signInUrl.searchParams.set("email", email.trim().toLowerCase());
+      if (redirect) signInUrl.searchParams.set("redirect", redirect);
+      window.location.assign(signInUrl.toString());
     } catch (error) {
       setSubmitError(
         error instanceof Error
@@ -209,10 +198,6 @@ function RegisterPage() {
       setSubmitting(false);
     }
   };
-
-  if (googleApplicationFormUrl) {
-    return <SitePage><div className="customer-auth-content mx-auto w-full max-w-2xl px-5 py-20"><Card className="register-card p-8"><p className="eyebrow">NEW MEMBER APPLICATION</p><h1 className="mt-3 text-4xl">Apply to join RSVP DXB</h1><p className="mt-4 text-sm leading-relaxed text-muted-foreground">This application is for people who do not already have an RSVP DXB account. Applications are reviewed by our team; approval activates a new account. Existing members should sign in.</p><a className="mt-7 inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-md bg-primary px-5 text-sm font-medium text-primary-foreground hover:opacity-90" href={googleApplicationFormUrl} target="_blank" rel="noreferrer">Open the Google application form <ArrowRight size={16} /></a><p className="mt-5 text-sm text-muted-foreground">Already have an account? <Link to="/signin" className="text-primary underline">Sign in</Link>.</p></Card></div></SitePage>;
-  }
 
   return (
     <SitePage>
@@ -394,8 +379,8 @@ function RegisterPage() {
                   />
                 </Field>
                 <p className="text-xs text-muted-foreground sm:col-span-2">
-                  Our membership team reviews your profile and follower count before making a
-                  decision. Follower counts may be checked.
+                  Add accurate profile details so we can personalize your member experience.
+                  Follower counts may be checked.
                 </p>
                 <label className="register-whatsapp-consent sm:col-span-2">
                   <input
@@ -403,7 +388,7 @@ function RegisterPage() {
                     checked={whatsappOptIn}
                     onChange={(event) => setWhatsappOptIn(event.target.checked)}
                   />
-                  <span>Send me a WhatsApp welcome message from RSVP DXB after I submit my application.</span>
+                  <span>Send me a WhatsApp welcome message from RSVP DXB after I create my account.</span>
                 </label>
                 {track === "Media" ? (
                   <>
@@ -540,7 +525,7 @@ function RegisterPage() {
               <Nav
                 onBack={() => setStep(2)}
                 onNext={() => void submit()}
-                nextLabel="Submit application"
+                nextLabel="Create account"
                 busy={submitting}
                 busyLabel="Submitting…"
                 disabled={
@@ -554,30 +539,10 @@ function RegisterPage() {
                   {submitError}
                 </p>
               ) : null}
-              <p className="mt-3 text-xs text-muted-foreground">Application details are used to review your request. See our <Link to="/privacy" className="underline underline-offset-4">Privacy Policy</Link>.</p>
+              <p className="mt-3 text-xs text-muted-foreground">Your profile details help us personalize your member experience. See our <Link to="/privacy" className="underline underline-offset-4">Privacy Policy</Link>.</p>
             </div>
           ) : null}
 
-          {step === 5 ? (
-            <div className="register-success py-6 text-center" role="status" aria-live="polite">
-              <div className="register-confetti" aria-hidden="true">
-                {Array.from({ length: 16 }, (_, index) => <span key={index} />)}
-              </div>
-              <div className="register-success-icon" aria-hidden="true">✓</div>
-              <p className="eyebrow mt-4">Congratulations, {name.trim().split(/\s+/)[0]}!</p>
-              <Badge tone="amber">Pending review</Badge>
-              <h2 className="mt-3 text-3xl">Your application is in</h2>
-              <p className="mx-auto mt-3 max-w-md text-sm text-muted-foreground">
-                Thank you for your interest in RSVP DXB. Our membership team will review your {track}
-                profile and send an update to {email.trim()}, typically within 48 hours.
-              </p>
-              {emailNotice ? <p className="mx-auto mt-3 max-w-md text-sm text-muted-foreground" role="status">{emailNotice}</p> : null}
-              {whatsappNotice ? <p className="mx-auto mt-3 max-w-md text-sm text-muted-foreground" role="status">{whatsappNotice}</p> : null}
-              <div className="mt-8 flex justify-center gap-3">
-                {redirect ? <a href={redirect} className="register-success-cta inline-flex min-h-12 items-center justify-center rounded-md bg-primary px-5 text-sm font-medium text-primary-foreground">View event</a> : <Link to="/"><Button className="register-success-cta">Back to RSVP DXB</Button></Link>}
-              </div>
-            </div>
-          ) : null}
         </Card>
       </div>
     </SitePage>

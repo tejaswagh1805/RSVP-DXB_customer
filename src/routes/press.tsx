@@ -41,10 +41,15 @@ function PressPage() {
   const requestAsset = useServerFn(requestPressAsset);
 
   async function sendAssetRequest(asset: string) {
+    const normalizedEmail = assetEmail.trim();
+    if (!normalizedEmail) {
+      setAssetMessage("Please enter your email address so our press team can reply.");
+      return;
+    }
     setAssetBusy(true);
     setAssetMessage("");
     try {
-      const result = await requestAsset({ data: { asset, email: assetEmail } });
+      const result = await requestAsset({ data: { asset, email: normalizedEmail } });
       setAssetMessage(result.adminEmailSent
         ? `Your request for “${asset}” was sent to our press team. We’ll reply to ${assetEmail}.`
         : `Your request for “${asset}” was saved, but the team notification could not be sent. Please email vinitahirani@rsvpdxb.com.`);

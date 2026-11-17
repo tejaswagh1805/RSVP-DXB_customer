@@ -69,6 +69,18 @@ export function applicationConfirmationEmail(name: string, track: string, email:
   });
 }
 
+export function memberWelcomeEmail(name: string, track: string, signInUrl: string): string {
+  return emailShell({
+    eyebrow: "Membership account created",
+    title: "Welcome to RSVP DXB.",
+    greeting: `Hi ${name},`,
+    message: `Your ${track} member account is ready. Sign in with the email address and password you just created to see your invitations and member benefits.`,
+    actionLabel: "Sign in",
+    actionUrl: signInUrl,
+    footer: "You received this email because a member account was created using this email address. If you did not create it, contact RSVP DXB support.",
+  });
+}
+
 export function newsletterConfirmationEmail(unsubscribeUrl: string): string {
   return emailShell({
     eyebrow: "Newsletter subscription",

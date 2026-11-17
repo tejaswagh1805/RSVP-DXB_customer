@@ -153,7 +153,8 @@ export function EventRibbon({
 }) {
   const { events: storedEvents } = useStore();
   const events = eventRows ?? storedEvents;
-  const live = events.filter((e) => e.status === "published");
+  const today = new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Dubai" }).format(new Date());
+  const live = events.filter((e) => e.status === "published" && (e.endDate || e.date) >= today && (reverse ? e.topPick : e.latestEvent !== false));
   const tiles = live;
   return (
     <section className={`event-ribbon ${reverse ? "ribbon-reverse" : ""}`}>
@@ -273,12 +274,10 @@ export function EventGallery({ media = [], previewLimit, className = "", showMed
   const [category, setCategory] = useState("All");
   const [mediaType, setMediaType] = useState<"all" | "image" | "video">("all");
   const [selected, setSelected] = useState<EventItem | HomepageMediaItem | null>(null);
-  const categories = [
-    "All",
-    ...new Set(events.filter((e) => e.status === "published").map((e) => e.category)),
-  ];
+  const today = new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Dubai" }).format(new Date());
+  const categories = ["All", ...new Set(events.filter((e) => e.status === "published" && (e.endDate || e.date) >= today).map((e) => e.category))];
   const gallery = events.filter(
-    (e) => e.status === "published" && (category === "All" || e.category === category),
+    (e) => e.status === "published" && (e.endDate || e.date) >= today && (category === "All" || e.category === category),
   );
   const allMediaCount = showMediaTabs ? media.length : media.length || gallery.length;
   const imageCount = media.length
