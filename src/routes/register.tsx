@@ -27,7 +27,7 @@ import { TRACKS, type Track } from "@/lib/data";
 import { submitApplication } from "@/lib/database";
 import { getEmailValidationMessage } from "@/lib/email";
 import { isValidPassword } from "@/lib/password";
-import { formatPhoneNational, normalizeWhatsAppNumber, PHONE_COUNTRIES, type PhoneCountryCode } from "@/lib/phone";
+import { normalizeWhatsAppNumber, PHONE_COUNTRIES, type PhoneCountryCode } from "@/lib/phone";
 
 export const Route = createFileRoute("/register")({
   validateSearch: (search: Record<string, unknown>) => ({
@@ -345,7 +345,7 @@ function RegisterPage() {
                       autoComplete="tel-national"
                       maxLength={24}
                       placeholder={selectedPhoneCountry.example}
-                      value={formatPhoneNational(mobile, phoneCountryCode)}
+                      value={mobile}
                       onChange={(event) => setPhoneNumber(event.target.value)}
                       aria-invalid={Boolean(phoneError)}
                       aria-describedby={phoneError ? "register-phone-error" : "register-phone-help"}
