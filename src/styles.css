@@ -6020,3 +6020,103 @@ textarea {
   .upcoming-event-overlay, .upcoming-event-modal { animation: none; }
   .upcoming-event-close, .upcoming-event-register, .upcoming-event-signin { transition: none; }
 }
+
+/* Final cross-route responsive safeguards for phones, tablets and compact
+   landscape viewports. Keep content inside the viewport without changing the
+   established editorial layouts at desktop sizes. */
+html { width: 100%; min-width: 320px; scroll-padding-top: 76px; }
+body { width: 100%; min-width: 320px; overflow-x: clip; }
+#root, .customer-scope, .customer-scope > main, .customer-scope main > * { min-width: 0; max-width: 100%; }
+.customer-scope :where(img, video, iframe, canvas) { max-width: 100%; }
+.customer-scope :where(input, select, textarea) { max-width: 100%; min-width: 0; }
+.customer-scope :where(button, a, input, select, textarea) { scroll-margin-top: 80px; }
+.customer-scope :where(h1, h2, h3, p, a, button) { overflow-wrap: anywhere; }
+.customer-scope :where(.grid, [class*="grid-cols-"]) > * { min-width: 0; }
+.customer-scope :where(.overflow-x-auto, .event-gallery, .venue-photo-gallery-grid) { overscroll-behavior-x: contain; }
+.customer-scope :where(button, a[role="button"], input, select) { touch-action: manipulation; }
+.customer-header { width: 100%; }
+.header-main { min-width: 0; }
+.header-actions { min-width: 0; }
+.footer-newsletter-form, .footer-newsletter-field, .footer-newsletter-field input { min-width: 0; max-width: 100%; }
+.upcoming-event-modal { min-width: 0; }
+
+@media (max-width: 1000px) {
+  .venue-detail-layout { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 24px; padding-inline: 24px; }
+  .venue-detail-visual { height: min(640px, calc(100svh - 76px)); min-height: 420px; }
+}
+
+@media (max-width: 900px) {
+  .customer-header { position: sticky; top: 0; z-index: 90; backdrop-filter: none; }
+  .header-main { position: relative; z-index: 92; display: flex; min-height: 68px; justify-content: space-between; gap: 10px; padding: 8px 16px; }
+  .customer-logo { flex: 0 0 auto; }
+  .customer-logo img { width: 88px; height: 48px; }
+  .customer-nav { display: none; }
+  .customer-nav.is-open { position: fixed; z-index: 93; top: 68px; right: 0; left: 0; display: flex; max-height: calc(100dvh - 68px); width: 100%; flex-direction: column; align-items: stretch; justify-content: flex-start; gap: 0; overflow-y: auto; padding: 10px 18px max(22px, env(safe-area-inset-bottom)); border-top: 1px solid var(--border); background: var(--surface); box-shadow: 0 18px 34px rgb(40 25 12 / .2); }
+  .customer-nav.is-open a { display: flex; min-height: 48px; align-items: center; border-bottom: 1px solid color-mix(in oklab, var(--border) 65%, transparent); font-size: 13px; }
+  .customer-nav .mobile-last-minute-link { color: var(--primary); font-weight: 700; }
+  .mobile-menu-toggle { display: inline-flex; width: 44px; height: 44px; flex: 0 0 auto; align-items: center; justify-content: center; border: 1px solid var(--border); border-radius: 10px; background: var(--surface); color: var(--foreground); cursor: pointer; }
+  .mobile-menu-backdrop { position: fixed; z-index: 91; inset: 68px 0 0; display: block; border: 0; background: rgb(20 13 8 / .42); }
+  .header-actions { margin-left: auto; gap: 5px; }
+  .header-actions a[href="/register"] { display: inline-flex; }
+  .header-actions a[href="/signin"] { display: none; }
+  .header-actions button { min-height: 40px; }
+}
+
+@media (max-width: 700px) {
+  .customer-scope main :where(.customer-section, .experience-section, .customer-content-section, .customer-auth-content) { padding-block: 34px; }
+  .customer-scope main :where(.customer-page-hero > div) { padding-block: 34px; }
+  .customer-scope main :where(.container, [class*="max-w-"]) { padding-inline: clamp(14px, 5vw, 22px); }
+  .customer-scope :where(.grid, [class*="grid-cols-"]) { min-width: 0; }
+  .customer-scope :where(.grid-cols-2, .grid-cols-3, .grid-cols-4) { grid-template-columns: minmax(0, 1fr); }
+  .venue-detail-layout { grid-template-columns: minmax(0, 1fr); gap: 24px; padding: 0 16px 48px; }
+  .venue-detail-visual { height: min(72svh, 540px); min-height: 300px; }
+  .venue-detail-copy { min-width: 0; }
+  .venue-detail-photos { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+  .venue-photo-gallery-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); grid-auto-rows: clamp(130px, 42vw, 220px); gap: 8px; }
+  .event-detail-layout { grid-template-columns: minmax(0, 1fr); padding-inline: 16px; }
+  .event-detail-booking { width: 100%; max-width: 100%; }
+  .upcoming-event-overlay { padding: 8px; }
+  .upcoming-event-modal { width: 100%; max-height: calc(100dvh - 16px); }
+  .footer-newsletter { padding-inline: 16px; }
+  .footer-newsletter h2 { font-size: clamp(42px, 12vw, 76px); line-height: .98; text-align: center; }
+  .footer-newsletter-field { display: flex; flex-wrap: wrap; }
+  .footer-newsletter-field input { flex: 1 1 170px; width: auto; }
+  .footer-newsletter-field button { flex: 0 0 auto; }
+  .customer-scope :where(.overflow-x-auto, .event-gallery, .venue-photo-gallery-grid) { max-width: 100%; }
+}
+
+@media (max-width: 480px) {
+  .header-main { min-height: 62px; padding: 7px 10px; gap: 6px; }
+  .customer-nav.is-open { top: 62px; max-height: calc(100dvh - 62px); }
+  .mobile-menu-backdrop { inset-block-start: 62px; }
+  .customer-logo img { width: 75px; height: 43px; }
+  .header-actions { gap: 3px; }
+  .header-actions a[href="/tickets"] { display: none; }
+  .header-actions a[href="/register"] { min-height: 38px; padding-inline: 9px; font-size: 11px; }
+  .mobile-menu-toggle { width: 40px; height: 40px; }
+  .customer-scope main :where(.customer-section, .experience-section, .customer-content-section, .customer-auth-content) { padding-block: 28px; }
+  .customer-scope main :where(.customer-page-hero > div) { padding-block: 28px; }
+  .venue-detail-layout { padding-inline: 12px; }
+  .venue-detail-visual { min-height: 260px; }
+  .venue-detail-image-caption { max-width: calc(100% - 100px); font-size: 8px; }
+  .venue-gallery-lightbox-arrow { width: 38px; height: 38px; }
+  .footer-newsletter-field { flex-direction: column; }
+  .footer-newsletter-field input, .footer-newsletter-field button { width: 100%; min-height: 44px; }
+  .upcoming-event-art { min-height: 180px; }
+  .upcoming-event-copy { padding: 20px 17px 18px; }
+  .upcoming-event-copy h2 { font-size: clamp(28px, 9vw, 36px); }
+}
+
+@media (max-width: 360px) {
+  .header-main { padding-inline: 7px; }
+  .customer-logo img { width: 66px; }
+  .header-actions a[href="/register"] { padding-inline: 7px; }
+  .venue-photo-gallery-grid { gap: 6px; }
+  .customer-scope main :where(.px-5, .px-6, .px-8) { padding-inline: 12px; }
+}
+
+@media (orientation: landscape) and (max-height: 520px) and (max-width: 900px) {
+  .customer-nav.is-open { max-height: calc(100dvh - 62px); }
+  .venue-detail-visual { height: 72svh; min-height: 240px; }
+  .upcoming-event-modal { max-height: calc(100dvh - 12px); overflow-y: auto; }
+}
