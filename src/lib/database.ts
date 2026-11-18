@@ -585,7 +585,8 @@ export const submitEventRsvpRequest = createServerFn({ method: "POST" })
     const event = events[0];
     const todayDubai = new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Dubai" }).format(new Date());
     if (!event || event.status !== "published" || (event.endDate || event.date) < todayDubai) throw new Error("This event is not accepting RSVP requests.");
-    if (!event.tracks.includes(data.track)) throw new Error("This event is not open to your track.");
+    const eventTracks = event.tracks ?? [];
+    if (eventTracks.length > 0 && !eventTracks.includes(data.track)) throw new Error("This event is not open to your track.");
     if (data.track === "Creators" && event.influencer_deliverables.trim() && !data.deliverablesAgreed) {
       throw new Error("Please agree to the creator deliverables before submitting.");
     }

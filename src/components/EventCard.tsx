@@ -4,13 +4,11 @@ import { formatDate, type EventItem } from "@/lib/data";
 import { useStore } from "@/lib/store";
 import { Badge, Button } from "./ui-kit";
 import { EventImage } from "./EventImage";
-import { WhatsAppAction } from "./WhatsAppAction";
 
 export function EventCard({ event }: { event: EventItem }) {
-  const { saved, toggleSave, profile } = useStore();
+  const { saved, toggleSave } = useStore();
   const full = event.capacity > 0 && event.confirmed >= event.capacity;
   const left = Math.max(event.capacity - event.confirmed, 0);
-  const eligible = event.tracks.includes(profile.track);
   const isPast = event.status === "closed" || Boolean((event.endDate || event.date) && (event.endDate || event.date) < new Date().toISOString().slice(0, 10));
 
   return (
@@ -40,12 +38,10 @@ export function EventCard({ event }: { event: EventItem }) {
           {isPast ? <div className="event-card-action-row"><Link to="/events/$eventId" params={{ eventId: event.id }}><Button size="sm" variant="primary">View recap <ArrowUpRight size={14} /></Button></Link></div> : <>
             <div className="event-card-action-row">
               <Button size="sm" variant="outline" onClick={() => toggleSave(event.id)}>{saved.includes(event.id) ? "Saved" : "Save event"}</Button>
-              {event.tracks.length ? eligible
-                ? <Link to="/events/$eventId" params={{ eventId: event.id }}><Button size="sm" variant="primary">Request RSVP</Button></Link>
-                : <Button size="sm" variant="outline" disabled>Not on your list</Button>
-                : <WhatsAppAction event={event} />}
+              <Link to="/events/$eventId" params={{ eventId: event.id }}>
+                <Button size="sm" variant="primary">Request RSVP</Button>
+              </Link>
             </div>
-            {event.tracks.length ? <div className="event-card-secondary-action"><WhatsAppAction event={event} /></div> : null}
             {event.creatorPassFormUrl ? <a className="event-card-creator-pass" href={event.creatorPassFormUrl} target="_blank" rel="noreferrer">
               <span className="event-card-creator-icon"><TicketCheck size={17} /></span>
               <span><strong>Request a creator pass</strong><small>Send your details for team review</small></span>

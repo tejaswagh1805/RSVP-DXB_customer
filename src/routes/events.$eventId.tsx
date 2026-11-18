@@ -76,8 +76,9 @@ function EventDetail() {
 
   const isPastEvent = event.status === "closed" || Boolean((event.endDate || event.date) && (event.endDate || event.date) < new Date().toISOString().slice(0, 10));
   const state = data.event ? (databaseRsvps[event.id] ?? "none") : (demoRsvps[event.id] ?? "none");
-  const hasMemberRsvp = event.tracks.length > 0;
-  const eligible = hasMemberRsvp && event.tracks.includes(profile.track);
+  const eventTracks = event.tracks ?? [];
+  const hasMemberRsvp = event.status === "published";
+  const eligible = eventTracks.length === 0 || eventTracks.includes(profile.track);
   const closed = event.status === "closed";
   const spotsLeft = Math.max(event.capacity - event.confirmed, 0);
   const limitedSpots = event.capacity > 0 && event.confirmed / event.capacity >= 0.8;
@@ -90,7 +91,7 @@ function EventDetail() {
     going: "Confirmed",
     waitlist: "Waitlisted",
   };
-  const creatorDeliverables = hasMemberRsvp && profile.track === "Creators" ? event.influencerDeliverables?.trim() ?? "" : "";
+  const creatorDeliverables = eventTracks.length > 0 && profile.track === "Creators" ? event.influencerDeliverables?.trim() ?? "" : "";
   const shareEvent = async () => {
     const sharedUrl = new URL(window.location.href);
     if (profile.memberId) sharedUrl.searchParams.set("ref", profile.memberId);
@@ -223,7 +224,7 @@ function EventDetail() {
           </Card> : <Card className="event-detail-booking">
             <p className="event-detail-booking-kicker">YOUR NIGHT OUT</p>
             <h2>{hasMemberRsvp ? "Request your place" : "Make it a night to remember"}</h2>
-            <p className="event-detail-booking-copy">{event.tracks.length ? "Send your RSVP request and our team will confirm the details." : "Use the event booking details below to reserve your place."}</p>
+            <p className="event-detail-booking-copy">Send your RSVP request and our team will review it and confirm the details.</p>
             <div className="flex items-center justify-between">
             <Badge tone="gold">{event.category}</Badge>
               {hasMemberRsvp && event.capacity > 0 ? <span className="text-xs text-muted-foreground">{limitedSpots ? "Limited spots · " : ""}{spotsLeft} of {event.capacity} places available</span> : null}
@@ -235,11 +236,13 @@ function EventDetail() {
               />
             </div> : null}
 
-            {event.tracks.length ? (!hasRequest ? <div className="event-detail-rsvp-form">
-              <label className="block text-xs text-muted-foreground" htmlFor="rsvp-track">Request as</label>
-              <select id="rsvp-track" value={profile.track} disabled={!eligible} className="h-10 w-full rounded-md border border-border bg-surface px-3 text-sm text-foreground">
-              {event.tracks.map((track) => <option key={track} value={track} disabled={track !== profile.track}>{track}{track !== profile.track ? " · use the matching member profile" : ""}</option>)}
-              </select>
+            {hasMemberRsvp ? (!hasRequest ? <div className="event-detail-rsvp-form">
+              {eventTracks.length ? <>
+                <label className="block text-xs text-muted-foreground" htmlFor="rsvp-track">Request as</label>
+                <select id="rsvp-track" value={profile.track} disabled={!eligible} className="h-10 w-full rounded-md border border-border bg-surface px-3 text-sm text-foreground">
+                {eventTracks.map((track) => <option key={track} value={track} disabled={track !== profile.track}>{track}{track !== profile.track ? " · use the matching member profile" : ""}</option>)}
+                </select>
+              </> : <p className="text-xs text-muted-foreground">Open to all approved member tracks.</p>}
               <div>
                 <p className="text-xs text-muted-foreground">Additional guests (optional, up to two)</p>
                 {guestNames.map((name, index) => <input key={index} className="mt-2 h-10 w-full rounded-md border border-border bg-surface px-3 text-sm text-foreground" value={name} onChange={(e) => setGuestNames((items) => items.map((item, i) => i === index ? e.target.value : item))} placeholder={`Guest ${index + 1} full name`} />)}
