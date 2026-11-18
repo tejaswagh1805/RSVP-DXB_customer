@@ -6027,6 +6027,23 @@ textarea {
   html, body { min-width: 320px; width: 100%; }
   body { overflow-x: clip; }
   #root, .customer-scope, .customer-scope > main, .customer-scope main > * { min-width: 0; max-width: 100%; }
+  /* The wall list items are <article> wrappers around the cards. Let the grid
+     track and wrapper shrink below the image/text min-content width on phones. */
+  .wall-feed { box-sizing: border-box; width: 100%; min-width: 0; padding-inline: 16px; }
+  .wall-post-list { grid-template-columns: minmax(0, 1fr); min-width: 0; width: 100%; }
+  .wall-post-list > article,
+  .wall-post-card { box-sizing: border-box; width: 100%; min-width: 0; max-width: 100%; }
+  .wall-post-header { min-width: 0; }
+  .wall-post-identity { flex: 1 1 0; width: 0; min-width: 0; }
+  .wall-post-brand { max-width: 100%; white-space: normal; overflow-wrap: anywhere; }
+  .wall-post-body,
+  .wall-event-preview,
+  .wall-event-info { min-width: 0; max-width: 100%; overflow-wrap: anywhere; }
+  .wall-event-preview { grid-template-columns: minmax(0, 1fr); }
+  .wall-event-image { display: block; min-width: 0; max-width: 100%; }
+  .wall-event-link { justify-self: stretch; white-space: normal; }
+  .wall-post-actions { min-width: 0; flex-wrap: wrap; }
+  .wall-post-actions button { min-width: 0; max-width: 100%; }
   .customer-scope :where(img, video, iframe, canvas) { max-width: 100%; }
   .customer-scope :where(input, select, textarea) { min-width: 0; max-width: 100%; }
   .customer-scope :where(.grid, [class*="grid-cols-"]) > * { min-width: 0; }
