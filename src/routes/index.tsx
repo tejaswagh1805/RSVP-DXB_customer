@@ -61,7 +61,7 @@ function Home() {
       <div className="customer-home">
         <ScrollShowcase />
         <EventRibbon title="Latest events" events={databaseEvents?.filter((event) => event.status === "published" && event.latestEvent) ?? []} />
-        <EventRibbon title="RSVP TOP Pick" reverse events={databaseEvents?.filter((event) => event.status === "published" && event.topPick) ?? []} />
+        <EventRibbon title="RSVP TOP Pick" reverse events={databaseEvents?.filter((event) => event.topPick) ?? []} />
         {venues.length ? <VenueTopPicks venues={venues} /> : media.some((item) => item.slot === "top_pick") ? <SiteMediaRibbon media={media.filter((item) => item.slot === "top_pick")} /> : null}
         <EventGallery media={media.filter((item) => item.slot === "gallery")} previewLimit={5} />
         <ArtistGallery profiles={profiles} />

@@ -15,8 +15,7 @@ export const Route = createFileRoute("/rsvp-top-picks")({
 });
 
 function RsvpTopPicksPage() {
-  const today = new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Dubai" }).format(new Date());
-  const events = Route.useLoaderData().filter((event) => event.status === "published" && event.topPick && (event.endDate || event.date) >= today);
+  const events = Route.useLoaderData().filter((event) => event.topPick);
 
   return (
     <SitePage>
