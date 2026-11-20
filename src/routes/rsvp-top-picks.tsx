@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { EventCard } from "@/components/EventCard";
-import { VenueTopPicks } from "@/components/CustomerVenues";
+import { VenueCard } from "@/components/CustomerVenues";
 import { PageHero, SitePage } from "@/components/SiteLayout";
 import { listFeaturedVenues, listPublishedEvents } from "@/lib/database";
 
@@ -32,10 +32,10 @@ function RsvpTopPicksPage() {
       <section className="customer-content-section mx-auto w-full max-w-6xl px-5 py-10">
         {events.length || venues.length ? (
           <>
-            {events.length ? <div className="grid gap-5 md:grid-cols-3">
+            <div className="grid gap-5 md:grid-cols-3">
               {events.map((event) => <EventCard key={event.id} event={event} />)}
-            </div> : null}
-            {venues.length ? <div className={events.length ? "mt-10" : ""}><VenueTopPicks venues={venues} /></div> : null}
+              {venues.map((venue) => <VenueCard key={`venue-${venue.id}`} venue={venue} />)}
+            </div>
           </>
         ) : (
           <p className="rounded-md border border-border bg-card px-5 py-6 text-sm text-muted-foreground">

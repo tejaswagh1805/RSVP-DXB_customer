@@ -38,7 +38,8 @@ export const VENUE_GUIDE_CATEGORIES = [
   "Daytime & alcohol-free",
 ] as const;
 
-function VenueCard({ venue, featured = false }: { venue: Venue; featured?: boolean }) {
+export function VenueCard({ venue, featured = false }: { venue: Venue; featured?: boolean }) {
+  const enquiryUrl = venue.websiteUrl || venue.moreInfoUrl;
   const dateLabel = venue.featuredDate
     ? new Date(`${venue.featuredDate}T12:00:00`).toLocaleDateString("en-GB", {
         day: "numeric",
@@ -46,35 +47,34 @@ function VenueCard({ venue, featured = false }: { venue: Venue; featured?: boole
       })
     : "";
   return (
-    <Link
-      to="/top-picks/$venueSlug"
-      params={{ venueSlug: venue.slug }}
-      className={`venue-guide-card${featured ? " venue-guide-card-featured" : ""}`}
-    >
-      <div className="venue-guide-card-image">
-        <SafeImage src={venue.imageUrl} alt={venue.name} />
-        {!featured ? <span className="venue-guide-card-category">{venue.category}</span> : null}
-        <span className="venue-guide-card-arrow">
-          <ArrowUpRight size={19} />
-        </span>
-      </div>
-      <div className="venue-guide-card-copy">
-        <div className="venue-guide-card-meta">
-          {dateLabel ? (
-            <span>
-              <CalendarDays size={13} />
-              {dateLabel}
-            </span>
-          ) : null}
-          <span>
-            <MapPin size={13} />
-            {venue.location}
+    <article className={`venue-guide-card${featured ? " venue-guide-card-featured" : ""}`}>
+      <Link to="/top-picks/$venueSlug" params={{ venueSlug: venue.slug }} className="venue-guide-card-main">
+        <div className="venue-guide-card-image">
+          <SafeImage src={venue.imageUrl} alt={venue.name} />
+          {!featured ? <span className="venue-guide-card-category">{venue.category}</span> : null}
+          <span className="venue-guide-card-arrow">
+            <ArrowUpRight size={19} />
           </span>
         </div>
-        <h3>{venue.name}</h3>
-        {!featured && venue.tagline ? <p>{venue.tagline}</p> : null}
-      </div>
-    </Link>
+        <div className="venue-guide-card-copy">
+          <div className="venue-guide-card-meta">
+            {dateLabel ? (
+              <span>
+                <CalendarDays size={13} />
+                {dateLabel}
+              </span>
+            ) : null}
+            <span>
+              <MapPin size={13} />
+              {venue.location}
+            </span>
+          </div>
+          <h3>{venue.name}</h3>
+          {!featured && venue.tagline ? <p>{venue.tagline}</p> : null}
+        </div>
+      </Link>
+      {enquiryUrl ? <a className="venue-enquire-button" href={enquiryUrl} target="_blank" rel="noopener noreferrer">Enquire now <ArrowUpRight size={15} /></a> : null}
+    </article>
   );
 }
 

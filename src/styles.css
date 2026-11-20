@@ -1077,7 +1077,7 @@
 }
 
 .scroll-showcase {
-  height: calc(100svh + 2000px);
+  height: calc(100svh + 2400px);
   position: relative;
   overflow: clip;
 }
@@ -3821,7 +3821,7 @@
   }
 
   .scroll-showcase {
-    height: calc(100svh + 1600px);
+    height: calc(100svh + 2000px);
   }
 }
 
@@ -3985,6 +3985,33 @@ textarea {
   display: block;
   min-width: 0;
   color: inherit;
+}
+
+.venue-guide-card-main {
+  display: block;
+  color: inherit;
+}
+
+.venue-enquire-button {
+  display: inline-flex;
+  min-height: 38px;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  margin: 8px 0 2px;
+  padding: 0 13px;
+  border: 1px solid var(--border);
+  border-radius: 7px;
+  color: var(--foreground);
+  font-size: 12px;
+  font-weight: 600;
+  transition: background .2s, border-color .2s;
+}
+
+.venue-enquire-button:hover,
+.venue-enquire-button:focus-visible {
+  border-color: var(--primary);
+  background: var(--surface-2);
 }
 
 .venue-guide-card-image {
