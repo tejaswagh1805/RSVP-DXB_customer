@@ -154,7 +154,9 @@ export function EventRibbon({
   const { events: storedEvents } = useStore();
   const events = eventRows ?? storedEvents;
   const today = new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Dubai" }).format(new Date());
-  const live = events.filter((e) => e.status === "published" && (e.endDate || e.date) >= today && (reverse ? e.topPick : e.latestEvent !== false));
+  const live = events.filter((e) => reverse
+    ? e.topPick
+    : e.status === "published" && (e.endDate || e.date) >= today && e.latestEvent !== false);
   const tiles = live;
   return (
     <section className={`event-ribbon ${reverse ? "ribbon-reverse" : ""}`}>

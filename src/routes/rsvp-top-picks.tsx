@@ -1,10 +1,14 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { EventCard } from "@/components/EventCard";
+import { VenueDirectory } from "@/components/CustomerVenues";
 import { PageHero, SitePage } from "@/components/SiteLayout";
-import { listPublishedEvents } from "@/lib/database";
+import { listFeaturedVenues, listPublishedEvents } from "@/lib/database";
 
 export const Route = createFileRoute("/rsvp-top-picks")({
-  loader: () => listPublishedEvents(),
+  loader: async () => {
+    const [events, venues] = await Promise.all([listPublishedEvents(), listFeaturedVenues()]);
+    return { events, venues };
+  },
   head: () => ({
     meta: [
       { title: "RSVP Top Picks — RSVP DXB" },
@@ -15,7 +19,8 @@ export const Route = createFileRoute("/rsvp-top-picks")({
 });
 
 function RsvpTopPicksPage() {
-  const events = Route.useLoaderData().filter((event) => event.topPick);
+  const { events: allEvents, venues } = Route.useLoaderData();
+  const events = allEvents.filter((event) => event.topPick);
 
   return (
     <SitePage>
@@ -25,10 +30,16 @@ function RsvpTopPicksPage() {
         intro="Explore the events hand-picked by RSVP DXB."
       />
       <section className="customer-content-section mx-auto w-full max-w-6xl px-5 py-10">
-        {events.length ? (
-          <div className="grid gap-5 md:grid-cols-3">
-            {events.map((event) => <EventCard key={event.id} event={event} />)}
-          </div>
+        {events.length || venues.length ? (
+          <>
+            {events.length ? <div className="grid gap-5 md:grid-cols-3">
+              {events.map((event) => <EventCard key={event.id} event={event} />)}
+            </div> : null}
+            {venues.length ? <section className="mt-12">
+              <h2 className="mb-5 text-2xl font-semibold">Venue Top Picks</h2>
+              <VenueDirectory venues={venues} />
+            </section> : null}
+          </>
         ) : (
           <p className="rounded-md border border-border bg-card px-5 py-6 text-sm text-muted-foreground">
             No RSVP Top Picks are available right now.
