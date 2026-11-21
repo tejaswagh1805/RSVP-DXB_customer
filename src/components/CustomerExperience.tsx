@@ -154,9 +154,15 @@ export function EventRibbon({
   const { events: storedEvents } = useStore();
   const events = eventRows ?? storedEvents;
   const today = new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Dubai" }).format(new Date());
-  const live = events.filter((e) => reverse
-    ? e.topPick
-    : e.status === "published" && (e.endDate || e.date) >= today && e.latestEvent !== false);
+  const live = events.filter((e) => {
+    const eventStart = e.date || "";
+    const eventEnd = e.endDate || eventStart;
+    // The homepage loader already limits the feed to public events. Compare the
+    // event's full start/end window here so future published listings aren't
+    // lost because of a stale or differently computed status value.
+    const eligible = eventEnd >= today;
+    return eligible && (reverse ? e.topPick : e.latestEvent !== false);
+  });
   const tiles = live;
   return (
     <section className={`event-ribbon ${reverse ? "ribbon-reverse" : ""}`}>
@@ -175,8 +181,8 @@ export function EventRibbon({
       </div>
       <div className="ribbon-window">
         {!live.length ? <p className="px-6 py-8 text-muted-foreground">{title === "Latest events" ? "No latest events are available right now." : "No RSVP Top Picks have been selected yet."}</p> : null}
-        {live.length ? <div className="ribbon-track">
-          {[0, 1].map((copy) => (
+        {live.length ? <div className={`ribbon-track${live.length < 3 ? " ribbon-track-static" : ""}`}>
+          {(live.length < 3 ? [0] : [0, 1]).map((copy) => (
             <div
               key={copy}
               className="ribbon-set"
