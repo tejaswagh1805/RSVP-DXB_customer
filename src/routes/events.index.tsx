@@ -43,7 +43,8 @@ function EventsPage() {
   );
 
   const { list, pastEvents } = useMemo(() => {
-    let out = events.filter((e) => e.status === "published" || e.status === "closed");
+    // Events curated as RSVP Top Picks belong on the dedicated Top Picks page.
+    let out = events.filter((e) => (e.status === "published" || e.status === "closed") && !e.topPick);
     if (category !== "All") out = out.filter((e) => e.category === category);
     if (area !== "All areas") out = out.filter((e) => e.area === area);
     const past = out.filter((e) => e.status === "closed" || (e.endDate || e.date) < today);

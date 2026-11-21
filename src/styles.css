@@ -1177,7 +1177,7 @@
 .ribbon-track {
   display: flex;
   width: max-content;
-  animation: event-flow 150s linear infinite;
+  animation: event-flow 240s linear infinite;
 }
 
 .ribbon-set {
