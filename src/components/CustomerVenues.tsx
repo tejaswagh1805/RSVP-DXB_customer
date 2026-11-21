@@ -1,9 +1,11 @@
 import { Link } from "@tanstack/react-router";
 import { ArrowLeft, ArrowUpRight, CalendarDays, ChevronLeft, ChevronRight, MapPin, Sparkles, Star, X } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useState, type FormEvent } from "react";
+import { createPortal } from "react-dom";
 import { Button } from "@/components/ui-kit";
 import { SitePage } from "@/components/SiteLayout";
-import type { Venue } from "@/lib/database";
+import { submitVenueEnquiry, type Venue } from "@/lib/database";
+import { useStore } from "@/lib/store";
 import { SafeImage } from "./SafeImage";
 
 const editorialListingHosts = [
@@ -40,12 +42,40 @@ export const VENUE_GUIDE_CATEGORIES = [
 
 export function VenueCard({ venue, featured = false }: { venue: Venue; featured?: boolean }) {
   const enquiryUrl = venue.websiteUrl || venue.moreInfoUrl;
+  const { profile } = useStore();
+  const [enquiryOpen, setEnquiryOpen] = useState(false);
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [phone, setPhone] = useState("");
+  const [consent, setConsent] = useState(false);
+  const [enquiryError, setEnquiryError] = useState("");
+  const [submittingEnquiry, setSubmittingEnquiry] = useState(false);
   const dateLabel = venue.featuredDate
     ? new Date(`${venue.featuredDate}T12:00:00`).toLocaleDateString("en-GB", {
         day: "numeric",
         month: "short",
       })
     : "";
+  const openEnquiry = () => {
+    setName(profile.signedIn ? profile.name : "");
+    setEmail(profile.signedIn ? profile.email : "");
+    setPhone("");
+    setConsent(false);
+    setEnquiryError("");
+    setEnquiryOpen(true);
+  };
+  const submitEnquiry = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    setSubmittingEnquiry(true);
+    setEnquiryError("");
+    try {
+      const result = await submitVenueEnquiry({ data: { venueId: venue.id, name, email, phone, consent } });
+      window.location.assign(result.redirectUrl);
+    } catch (error) {
+      setEnquiryError(error instanceof Error ? error.message : "Could not save your enquiry. Please try again.");
+      setSubmittingEnquiry(false);
+    }
+  };
   return (
     <article className={`venue-guide-card${featured ? " venue-guide-card-featured" : ""}`}>
       <Link to="/top-picks/$venueSlug" params={{ venueSlug: venue.slug }} className="venue-guide-card-main">
@@ -73,7 +103,23 @@ export function VenueCard({ venue, featured = false }: { venue: Venue; featured?
           {!featured && venue.tagline ? <p>{venue.tagline}</p> : null}
         </div>
       </Link>
-      {enquiryUrl ? <a className="venue-enquire-button" href={enquiryUrl} target="_blank" rel="noopener noreferrer">Enquire now <ArrowUpRight size={15} /></a> : null}
+      {enquiryUrl ? <button type="button" className="venue-enquire-button" onClick={openEnquiry}>Enquire now <ArrowUpRight size={15} /></button> : null}
+      {enquiryOpen && typeof document !== "undefined" ? createPortal(
+        <div className="venue-enquiry-overlay" onMouseDown={(event) => { if (event.target === event.currentTarget && !submittingEnquiry) setEnquiryOpen(false); }}>
+          <section className="venue-enquiry-dialog" role="dialog" aria-modal="true" aria-labelledby={`venue-enquiry-title-${venue.id}`}>
+            <div className="venue-enquiry-heading"><div><p>RSVP DXB · VENUE ENQUIRY</p><h2 id={`venue-enquiry-title-${venue.id}`}>Visit {venue.name}</h2><span>Your details help us understand how guests discover our venue picks.</span></div><button type="button" aria-label="Close enquiry" disabled={submittingEnquiry} onClick={() => setEnquiryOpen(false)}><X size={18} /></button></div>
+            <form onSubmit={submitEnquiry} className="venue-enquiry-form">
+              <label><span>Your name *</span><input autoComplete="name" required minLength={2} maxLength={120} value={name} onChange={(event) => setName(event.target.value)} readOnly={profile.signedIn} /></label>
+              <label><span>Email address *</span><input type="email" autoComplete="email" required maxLength={254} value={email} onChange={(event) => setEmail(event.target.value)} readOnly={profile.signedIn} /></label>
+              <label><span>Phone number (optional)</span><input type="tel" autoComplete="tel" maxLength={22} value={phone} onChange={(event) => setPhone(event.target.value)} placeholder="Include country code" /></label>
+              <label className="venue-enquiry-consent"><input type="checkbox" required checked={consent} onChange={(event) => setConsent(event.target.checked)} /><span>I agree that RSVP DXB may store these details with this venue enquiry to measure referrals. My details are not sent to the venue by this form.</span></label>
+              {enquiryError ? <p className="venue-enquiry-error" role="alert">{enquiryError}</p> : null}
+              <div className="venue-enquiry-actions"><button type="button" disabled={submittingEnquiry} onClick={() => setEnquiryOpen(false)}>Cancel</button><button type="submit" disabled={submittingEnquiry || !consent}>{submittingEnquiry ? "Saving…" : "Continue to venue"} <ArrowUpRight size={15} /></button></div>
+            </form>
+          </section>
+        </div>,
+        document.body,
+      ) : null}
     </article>
   );
 }

@@ -52,7 +52,7 @@ function PressPage() {
       const result = await requestAsset({ data: { asset, email: normalizedEmail } });
       setAssetMessage(result.adminEmailSent
         ? `Your request for “${asset}” was sent to our press team. We’ll reply to ${assetEmail}.`
-        : `Your request for “${asset}” was saved, but the team notification could not be sent. Please email vinitahirani@rsvpdxb.com.`);
+        : `Your request for “${asset}” was saved, but the team notification could not be sent. Please email info@rsvpdxb.com.`);
     } catch (requestError) {
       setAssetMessage(requestError instanceof Error ? requestError.message : "We couldn't send your request. Please try again.");
     } finally {
@@ -115,7 +115,7 @@ function PressPage() {
           {sent ? (
             <div className="py-6 text-center text-sm text-muted-foreground" role="status">
               <p>Your enquiry has been saved. Our press team will follow up by email.</p>
-              {deliveryWarning ? <p className="mt-2 text-destructive">The team notification could not be sent automatically. Please contact vinitahirani@rsvpdxb.com.</p> : null}
+              {deliveryWarning ? <p className="mt-2 text-destructive">The team notification could not be sent automatically. Please contact info@rsvpdxb.com.</p> : null}
               <Button className="mt-5" type="button" variant="outline" onClick={() => setSent(false)}>Send another</Button>
             </div>
           ) : (

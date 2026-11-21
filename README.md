@@ -38,7 +38,7 @@ npm run dev
 
 ## Member email delivery
 
-Application receipt, admin application notifications, and application decision emails are sent from the server through Amazon SES. Set `RSVP_ADMIN_EMAIL=vinitahirani@rsvpdxb.com` to choose the admin notification recipient (this is the default).
+Application receipt, admin application notifications, and application decision emails are sent from the server through Amazon SES. Set `RSVP_ADMIN_NOTIFICATION_EMAIL=info@rsvpdxb.com` to choose the admin notification recipient (this is the default).
 Configure `AWS_REGION=eu-north-1`, `SES_FROM_EMAIL=vinitahirani@rsvpdxb.com`,
 `RSVP_PASSWORD_RESET_FROM=RSVP DXB <noreply@rsvpdxb.com>`, and `PUBLIC_SITE_URL` in the app's
 hosting environment. Both sender addresses must belong to a verified SES identity. Give the app

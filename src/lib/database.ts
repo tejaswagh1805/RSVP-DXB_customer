@@ -23,6 +23,7 @@ function isMissingVenueTable(error: unknown): boolean {
 }
 
 const scrypt = promisify(scryptCallback);
+const adminNotificationEmail = () => process.env["RSVP_ADMIN_NOTIFICATION_EMAIL"] || "info@rsvpdxb.com";
 const MEMBER_COOKIE = "rsvp_member_session";
 const SESSION_DURATION_SECONDS = 60 * 60 * 12;
 
@@ -258,6 +259,63 @@ export const listFeaturedVenues = createServerFn({ method: "GET" }).handler(asyn
   }
 });
 
+export const submitVenueEnquiry = createServerFn({ method: "POST" })
+  .validator((input: { venueId: string; name: string; email: string; phone?: string; consent: boolean }) => input)
+  .handler(async ({ data }) => {
+    const venueId = String(data.venueId ?? "").trim();
+    const submittedName = String(data.name ?? "").trim();
+    const submittedEmail = String(data.email ?? "").trim().toLowerCase();
+    const submittedPhone = String(data.phone ?? "").trim();
+    if (!venueId || venueId.length > 180) throw new Error("Choose a valid venue.");
+    if (!data.consent) throw new Error("Please agree before continuing to the venue website.");
+    if (submittedName.length < 2 || submittedName.length > 120) throw new Error("Enter your name.");
+    if (!submittedEmail || getEmailValidationMessage(submittedEmail)) throw new Error("Enter a valid email address.");
+    if (submittedPhone && !/^\+?[\d\s().-]{8,22}$/.test(submittedPhone)) throw new Error("Enter a valid phone number or leave it blank.");
+
+    const sql = getSql();
+    const member = await currentMember();
+    const rows = (await sql`
+      SELECT id, name, website_url AS "websiteUrl", more_info_url AS "moreInfoUrl"
+      FROM venues WHERE id = ${venueId} AND active = TRUE AND content_reviewed = TRUE LIMIT 1
+    `) as { id: string; name: string; websiteUrl: string; moreInfoUrl: string }[];
+    const venue = rows[0];
+    if (!venue) throw new Error("This venue is no longer available.");
+    const destination = String(venue.websiteUrl || venue.moreInfoUrl || "").trim();
+    let redirectUrl: URL;
+    try { redirectUrl = new URL(destination); } catch { throw new Error("This venue does not have an enquiry website available yet."); }
+    if (!["https:", "http:"].includes(redirectUrl.protocol)) throw new Error("This venue does not have a valid enquiry website.");
+    redirectUrl.searchParams.set("utm_source", "rsvpdxb");
+    redirectUrl.searchParams.set("utm_medium", "venue_enquiry");
+    redirectUrl.searchParams.set("utm_campaign", "venue_top_picks");
+
+    const name = member?.name || submittedName;
+    const email = member?.email || submittedEmail;
+    const phone = submittedPhone || member?.mobile || "";
+    const id = randomBytes(16).toString("hex");
+    await sql`
+      INSERT INTO venue_enquiries
+        (id, venue_id, venue_name, visitor_name, visitor_email, visitor_phone, member_id, destination_url)
+      VALUES
+        (${id}, ${venue.id}, ${venue.name}, ${name}, ${email}, ${phone}, ${member?.id || null}, ${destination})
+    `;
+    const fields = [
+      { label: "Venue", value: venue.name },
+      { label: "Name", value: name },
+      { label: "Email", value: email },
+      { label: "Phone", value: phone || "Not provided" },
+      { label: "Account", value: member ? "RSVP member" : "Guest" },
+      { label: "Destination", value: destination },
+      { label: "Reference", value: id },
+    ];
+    const adminDelivery = await sendMemberEmail({
+      to: adminNotificationEmail(),
+      subject: `New venue enquiry: ${venue.name}`,
+      text: fields.map(({ label, value }) => `${label}: ${value}`).join("\n"),
+      html: publicEnquiryEmail({ kind: "venue website referral", name, email, fields }),
+    });
+    return { saved: true, adminEmailSent: adminDelivery.sent, redirectUrl: redirectUrl.toString() };
+  });
+
 export const getVenueBySlug = createServerFn({ method: "GET" })
   .validator((slug: string) => slug)
   .handler(async ({ data: slug }) => {
@@ -377,7 +435,6 @@ export const submitNewsletterSubscription = createServerFn({ method: "POST" })
 
     const siteUrl = String(process.env["PUBLIC_SITE_URL"] || "https://rsvpdxb.com").replace(/\/$/, "");
     const unsubscribeUrl = `${siteUrl}/unsubscribe?token=${unsubscribeToken}`;
-    const adminEmail = process.env["RSVP_ADMIN_EMAIL"] || "vinitahirani@rsvpdxb.com";
     const [subscriberResult, adminResult] = await Promise.all([
       sendMemberEmail({
         to: email,
@@ -386,7 +443,7 @@ export const submitNewsletterSubscription = createServerFn({ method: "POST" })
         html: newsletterConfirmationEmail(unsubscribeUrl),
       }),
       sendMemberEmail({
-        to: adminEmail,
+        to: adminNotificationEmail(),
         subject: "New RSVP DXB newsletter subscriber",
         text: `A visitor subscribed from the RSVP DXB website.\n\nSubscriber email: ${email}`,
         html: newsletterAdminEmail(email),
@@ -410,7 +467,7 @@ export const unsubscribeNewsletter = createServerFn({ method: "POST" })
     return { unsubscribed: rows.length > 0 };
   });
 
-const enquiryAdminEmail = () => process.env["RSVP_ADMIN_EMAIL"] || "vinitahirani@rsvpdxb.com";
+const enquiryAdminEmail = adminNotificationEmail;
 
 export const submitHostEnquiry = createServerFn({ method: "POST" })
   .validator((input: {
@@ -604,25 +661,77 @@ export const submitEventRsvpRequest = createServerFn({ method: "POST" })
         deliverables_agreed = EXCLUDED.deliverables_agreed,
         referral_code = EXCLUDED.referral_code,
         status = 'pending', reviewed_at = NULL, reviewed_by = NULL,
+        task_token_hash = NULL, task_status = 'not_required', task_submission = NULL, task_submitted_at = NULL,
         created_at = NOW(), updated_at = NOW()
       WHERE event_rsvp_requests.status = 'declined'
-      RETURNING status
-    `) as unknown as { status: "pending" }[];
+      RETURNING id, status
+    `) as unknown as { id: string; status: "pending" }[];
     if (!rows[0]) {
       const existing = (await sql`
         SELECT status FROM event_rsvp_requests WHERE event_id = ${event.id} AND member_id = ${member.id} LIMIT 1
       `) as unknown as { status: string }[];
       throw new Error(existing[0] ? `You already have an RSVP request for this event (${existing[0].status}).` : "Your RSVP request could not be saved.");
     }
+    const isCreatorTask = data.track === "Creators" && event.influencer_deliverables.trim() && data.deliverablesAgreed;
+    const taskToken = isCreatorTask ? randomBytes(32).toString("base64url") : "";
+    if (taskToken) {
+      const taskTokenHash = createHash("sha256").update(taskToken).digest("hex");
+      await sql`UPDATE event_rsvp_requests SET task_token_hash = ${taskTokenHash}, task_status = 'awaiting_submission', updated_at = NOW() WHERE id = ${rows[0].id}`;
+    }
+    const siteUrl = String(process.env["PUBLIC_SITE_URL"] || "https://www.rsvpdxb.com").replace(/\/$/, "");
+    const taskPath = taskToken ? `/creator-task/${taskToken}` : "";
+    const taskUrl = taskPath ? `${siteUrl}/signin?redirect=${encodeURIComponent(taskPath)}` : "";
     const details = [event.date, event.time, event.venue].filter(Boolean).join(" · ");
-    const message = `Thank you for your RSVP request to ${event.title}. Our team is reviewing your profile. A request does not guarantee a place; we will email you when a decision is made.${details ? ` Event details: ${details}.` : ""}`;
+    const message = `Thank you for your RSVP request to ${event.title}. Our team is reviewing your profile. A request does not guarantee a place; we will email you when a decision is made.${details ? ` Event details: ${details}.` : ""}${isCreatorTask ? ` Your agreed creator deliverables are: ${event.influencer_deliverables}. Please submit your work using the button below.` : ""}`;
     const delivery = await sendMemberEmail({
       to: member.email,
       subject: `RSVP request received · ${event.title}`,
       text: `Hello ${member.name},\n\n${message}\n\nWarm regards,\nThe RSVP DXB team`,
-      html: memberEmailHtml(member.name, message),
+      html: isCreatorTask
+        ? memberEmailHtml(member.name, message, { actionLabel: "Complete your task", actionUrl: taskUrl })
+        : memberEmailHtml(member.name, message),
     });
     return { status: "pending" as const, emailSent: delivery.sent };
+  });
+
+export const getCreatorTask = createServerFn({ method: "GET" })
+  .validator((input: { token: string }) => input)
+  .handler(async ({ data }) => {
+    const token = String(data.token ?? "").trim();
+    if (!/^[A-Za-z0-9_-]{40,60}$/.test(token)) return null;
+    const member = await currentMember();
+    if (!member) return { requiresSignIn: true as const };
+    const tokenHash = createHash("sha256").update(token).digest("hex");
+    const sql = getSql();
+    const rows = await sql`
+      SELECT r.id AS "requestId", r.task_status AS "taskStatus", r.task_submission AS "submission",
+        r.task_submitted_at AS "submittedAt", e.title AS "eventTitle", e.date::text AS date,
+        e.time, e.venue, e.influencer_deliverables AS deliverables
+      FROM event_rsvp_requests r JOIN events e ON e.id = r.event_id
+      WHERE r.task_token_hash = ${tokenHash} AND r.member_id = ${member.id} AND r.track = 'Creators' AND r.deliverables_agreed = TRUE
+      LIMIT 1
+    ` as unknown as { requestId: string; taskStatus: string; submission: string | null; submittedAt: string | null; eventTitle: string; date: string; time: string; venue: string; deliverables: string }[];
+    return rows[0] ?? null;
+  });
+
+export const submitCreatorTask = createServerFn({ method: "POST" })
+  .validator((input: { token: string; submission: string }) => input)
+  .handler(async ({ data }) => {
+    const token = String(data.token ?? "").trim();
+    const submission = String(data.submission ?? "").trim();
+    if (!/^[A-Za-z0-9_-]{40,60}$/.test(token)) throw new Error("This task link is invalid.");
+    if (submission.length < 3 || submission.length > 5000) throw new Error("Add a link or note (up to 5,000 characters).");
+    const member = await currentMember();
+    if (!member) throw new Error("Sign in to your RSVP DXB account to submit this task.");
+    const tokenHash = createHash("sha256").update(token).digest("hex");
+    const sql = getSql();
+    const rows = await sql`
+      UPDATE event_rsvp_requests SET task_submission = ${submission}, task_status = 'submitted', task_submitted_at = NOW(), updated_at = NOW()
+      WHERE task_token_hash = ${tokenHash} AND member_id = ${member.id} AND track = 'Creators' AND deliverables_agreed = TRUE
+      RETURNING id
+    `;
+    if (!rows[0]) throw new Error("This task link is invalid or no longer available.");
+    return { submitted: true };
   });
 
 export const submitEventTicketInquiry = createServerFn({ method: "POST" })

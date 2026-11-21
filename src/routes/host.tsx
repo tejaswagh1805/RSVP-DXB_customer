@@ -81,7 +81,7 @@ function HostPage() {
                 <p className="mt-2 text-sm text-muted-foreground">
                   Your request has been saved. Our team will follow up using the contact details you provided.
                 </p>
-                {deliveryWarning ? <p className="mt-3 text-sm text-destructive" role="status">Your request is saved, but an email notification could not be sent. Please contact vinitahirani@rsvpdxb.com.</p> : null}
+                {deliveryWarning ? <p className="mt-3 text-sm text-destructive" role="status">Your request is saved, but an email notification could not be sent. Please contact info@rsvpdxb.com.</p> : null}
                 <Button className="mt-6" variant="outline" onClick={() => setSent(false)}>
                   Send another
                 </Button>

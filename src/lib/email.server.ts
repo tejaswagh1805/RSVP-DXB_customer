@@ -155,8 +155,8 @@ export function applicationAdminEmail(input: { name: string; email: string; trac
   });
 }
 
-export function memberEmailHtml(name: string, message: string): string {
-  return emailShell({ eyebrow: "A note from RSVP DXB", title: "A little update for you.", greeting: `Hello ${name},`, message });
+export function memberEmailHtml(name: string, message: string, action?: { actionLabel: string; actionUrl: string }): string {
+  return emailShell({ eyebrow: "A note from RSVP DXB", title: "A little update for you.", greeting: `Hello ${name},`, message, ...action });
 }
 
 export function memberPasswordResetEmail(name: string, resetUrl: string): string {

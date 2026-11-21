@@ -8,7 +8,7 @@ import { signInMember } from "@/lib/database";
 
 export const Route = createFileRoute("/signin")({
   validateSearch: (search: Record<string, unknown>) => ({
-    redirect: typeof search.redirect === "string" && search.redirect.startsWith("/events/") ? search.redirect : undefined,
+    redirect: typeof search.redirect === "string" && (search.redirect.startsWith("/events/") || /^\/creator-task\/[A-Za-z0-9_-]+$/.test(search.redirect)) ? search.redirect : undefined,
     registered: search.registered === "1",
     email: typeof search.email === "string" ? search.email.slice(0, 254) : "",
   }),

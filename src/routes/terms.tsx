@@ -15,7 +15,7 @@ function TermsPage() {
         <p>Provide accurate information when creating an account, applying for membership, making an RSVP, or contacting the team. Keep your sign-in details secure and use the site lawfully and respectfully.</p>
         <p>Submitting an application or RSVP request does not guarantee approval, admission, or a ticket. Event access, age limits, schedules, venue rules, ticket prices, and cancellation terms are set for each event and may be provided by its organizer or ticketing provider.</p>
         <p>Event listings and availability can change. Check the event page and organizer’s instructions before attending. External links are operated by their respective providers.</p>
-        <p>RSVP DXB may update or temporarily suspend site features to maintain the service. Contact <a className="underline underline-offset-4" href="mailto:vinitahirani@rsvpdxb.com">vinitahirani@rsvpdxb.com</a> if you need help.</p>
+        <p>RSVP DXB may update or temporarily suspend site features to maintain the service. Contact <a className="underline underline-offset-4" href="mailto:info@rsvpdxb.com">info@rsvpdxb.com</a> if you need help.</p>
         <p>These terms were last updated 31 October 2026.</p>
       </div>
     </Section>

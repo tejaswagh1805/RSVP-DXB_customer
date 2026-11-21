@@ -59,9 +59,9 @@ function AboutPage() {
               <span><strong>Call us</strong><small>{whatsappDisplay}</small></span>
               <ArrowUpRight className="about-contact-arrow" size={17} aria-hidden="true" />
             </a>
-            <a className="about-contact-card" href="mailto:vinitahirani@rsvpdxb.com">
+            <a className="about-contact-card" href="mailto:info@rsvpdxb.com">
               <span className="about-contact-icon"><Mail size={25} aria-hidden="true" /></span>
-              <span><strong>Email us</strong><small>vinitahirani@rsvpdxb.com</small></span>
+              <span><strong>Email us</strong><small>info@rsvpdxb.com</small></span>
               <ArrowUpRight className="about-contact-arrow" size={17} aria-hidden="true" />
             </a>
             <div className="about-contact-socials">

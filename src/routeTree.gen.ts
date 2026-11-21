@@ -32,6 +32,7 @@ import { Route as TopPicksRouteImport } from './routes/top-picks'
 import { Route as UnsubscribeRouteImport } from './routes/unsubscribe'
 import { Route as WallRouteImport } from './routes/wall'
 import { Route as ArtistsProfileIdRouteImport } from './routes/artists.$profileId'
+import { Route as CreatorTaskTokenRouteImport } from './routes/creator-task.$token'
 import { Route as EventsIndexRouteImport } from './routes/events.index'
 import { Route as EventsEventIdRouteImport } from './routes/events.$eventId'
 import { Route as RsvpTokenRouteImport } from './routes/rsvp.$token'
@@ -152,6 +153,11 @@ const ArtistsProfileIdRoute = ArtistsProfileIdRouteImport.update({
   path: '/$profileId',
   getParentRoute: () => ArtistsRoute,
 } as any)
+const CreatorTaskTokenRoute = CreatorTaskTokenRouteImport.update({
+  id: '/creator-task/$token',
+  path: '/creator-task/$token',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const EventsIndexRoute = EventsIndexRouteImport.update({
   id: '/events/',
   path: '/events/',
@@ -197,6 +203,7 @@ export interface FileRoutesByFullPath {
   '/unsubscribe': typeof UnsubscribeRoute
   '/wall': typeof WallRoute
   '/artists/$profileId': typeof ArtistsProfileIdRoute
+  '/creator-task/$token': typeof CreatorTaskTokenRoute
   '/events/$eventId': typeof EventsEventIdRoute
   '/rsvp/$token': typeof RsvpTokenRoute
   '/top-picks/$venueSlug': typeof TopPicksVenueSlugRoute
@@ -226,6 +233,7 @@ export interface FileRoutesByTo {
   '/unsubscribe': typeof UnsubscribeRoute
   '/wall': typeof WallRoute
   '/artists/$profileId': typeof ArtistsProfileIdRoute
+  '/creator-task/$token': typeof CreatorTaskTokenRoute
   '/events/$eventId': typeof EventsEventIdRoute
   '/rsvp/$token': typeof RsvpTokenRoute
   '/top-picks/$venueSlug': typeof TopPicksVenueSlugRoute
@@ -256,6 +264,7 @@ export interface FileRoutesById {
   '/unsubscribe': typeof UnsubscribeRoute
   '/wall': typeof WallRoute
   '/artists/$profileId': typeof ArtistsProfileIdRoute
+  '/creator-task/$token': typeof CreatorTaskTokenRoute
   '/events/$eventId': typeof EventsEventIdRoute
   '/rsvp/$token': typeof RsvpTokenRoute
   '/top-picks/$venueSlug': typeof TopPicksVenueSlugRoute
@@ -287,6 +296,7 @@ export interface FileRouteTypes {
     | '/unsubscribe'
     | '/wall'
     | '/artists/$profileId'
+    | '/creator-task/$token'
     | '/events/$eventId'
     | '/rsvp/$token'
     | '/top-picks/$venueSlug'
@@ -316,6 +326,7 @@ export interface FileRouteTypes {
     | '/unsubscribe'
     | '/wall'
     | '/artists/$profileId'
+    | '/creator-task/$token'
     | '/events/$eventId'
     | '/rsvp/$token'
     | '/top-picks/$venueSlug'
@@ -345,6 +356,7 @@ export interface FileRouteTypes {
     | '/unsubscribe'
     | '/wall'
     | '/artists/$profileId'
+    | '/creator-task/$token'
     | '/events/$eventId'
     | '/rsvp/$token'
     | '/top-picks/$venueSlug'
@@ -374,6 +386,7 @@ export interface RootRouteChildren {
   TopPicksRoute: typeof TopPicksRouteWithChildren
   UnsubscribeRoute: typeof UnsubscribeRoute
   WallRoute: typeof WallRoute
+  CreatorTaskTokenRoute: typeof CreatorTaskTokenRoute
   EventsEventIdRoute: typeof EventsEventIdRoute
   RsvpTokenRoute: typeof RsvpTokenRoute
   EventsIndexRoute: typeof EventsIndexRoute
@@ -542,6 +555,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ArtistsProfileIdRouteImport
       parentRoute: typeof ArtistsRoute
     }
+    '/creator-task/$token': {
+      id: '/creator-task/$token'
+      path: '/creator-task/$token'
+      fullPath: '/creator-task/$token'
+      preLoaderRoute: typeof CreatorTaskTokenRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/events/': {
       id: '/events/'
       path: '/events'
@@ -619,6 +639,7 @@ const rootRouteChildren: RootRouteChildren = {
   TopPicksRoute: TopPicksRouteWithChildren,
   UnsubscribeRoute: UnsubscribeRoute,
   WallRoute: WallRoute,
+  CreatorTaskTokenRoute: CreatorTaskTokenRoute,
   EventsEventIdRoute: EventsEventIdRoute,
   RsvpTokenRoute: RsvpTokenRoute,
   EventsIndexRoute: EventsIndexRoute,
