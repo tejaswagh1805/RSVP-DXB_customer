@@ -87,6 +87,7 @@ function EventsPage() {
             </Button>
           ))}
           <select
+            aria-label="Filter by area"
             value={area}
             onChange={(e) => setArea(e.target.value)}
             className="h-8 rounded-md border border-border bg-surface px-3 text-xs text-foreground"
@@ -96,6 +97,7 @@ function EventsPage() {
             ))}
           </select>
           <select
+            aria-label="Sort events"
             value={sort}
             onChange={(e) => setSort(e.target.value)}
             className="h-8 rounded-md border border-border bg-surface px-3 text-xs text-foreground"
@@ -106,7 +108,7 @@ function EventsPage() {
           </select>
         </div>
 
-        <p className="mt-6 text-xs text-muted-foreground">{list.length} upcoming events</p>
+        <p className="mt-6 text-xs text-muted-foreground">{list.length} upcoming {list.length === 1 ? "event" : "events"}</p>
 
         <div className="mt-4 grid gap-5 md:grid-cols-3">
           {list.map((e) => (

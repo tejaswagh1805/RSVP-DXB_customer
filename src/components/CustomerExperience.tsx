@@ -183,11 +183,7 @@ export function EventRibbon({
         {!live.length ? <p className="px-6 py-8 text-muted-foreground">{title === "Latest events" ? "No latest events are available right now." : "No RSVP Top Picks have been selected yet."}</p> : null}
         {live.length ? <div className={`ribbon-track${live.length < 3 ? " ribbon-track-static" : ""}`}>
           {(live.length < 3 ? [0] : [0, 1]).map((copy) => (
-            <div
-              key={copy}
-              className="ribbon-set"
-              aria-hidden={copy === 1 ? "true" : undefined}
-            >
+            <div key={copy} className="ribbon-set" aria-hidden={copy === 1 ? "true" : undefined}>
               {tiles.map((event, i) => (
                 <article key={`${copy}-${event.id}-${i}`} className="ribbon-tile">
                   <Link className="ribbon-tile-link" to="/events/$eventId" params={{ eventId: event.id }} aria-label={`View event: ${event.title}`} />

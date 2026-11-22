@@ -1190,12 +1190,16 @@
   padding-right: 24px;
 }
 
-.ribbon-reverse .ribbon-track {
-  animation-direction: reverse;
-}
-
 .customer-scope .ribbon-reverse {
   background: var(--surface);
+}
+
+.ribbon-window {
+  overflow: hidden;
+}
+
+.ribbon-reverse .ribbon-track {
+  animation-direction: reverse;
 }
 
 .ribbon-window:hover .ribbon-track,
@@ -1330,6 +1334,25 @@
 @keyframes event-flow {
   to {
     transform: translateX(-50%);
+  }
+}
+
+@media (hover: none), (prefers-reduced-motion: reduce) {
+  .ribbon-window {
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+
+  .ribbon-window::-webkit-scrollbar {
+    display: none;
+  }
+
+  .ribbon-track {
+    animation: none;
+  }
+
+  .ribbon-set[aria-hidden="true"] {
+    display: none;
   }
 }
 

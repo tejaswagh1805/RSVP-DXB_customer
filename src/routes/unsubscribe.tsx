@@ -9,6 +9,7 @@ export const Route = createFileRoute("/unsubscribe")({
   validateSearch: (search: Record<string, unknown>) => ({
     token: typeof search["token"] === "string" ? search["token"] : "",
   }),
+  head: () => ({ meta: [{ title: "Unsubscribe — RSVP DXB" }] }),
   component: UnsubscribePage,
 });
 

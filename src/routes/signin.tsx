@@ -48,6 +48,10 @@ function SignInPage() {
             className="grid gap-4"
             onSubmit={async (e) => {
               e.preventDefault();
+              if (!password.trim()) {
+                setError("Please enter your password.");
+                return;
+              }
               setBusy(true);
               setError("");
               try {
