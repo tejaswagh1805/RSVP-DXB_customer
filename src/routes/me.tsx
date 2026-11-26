@@ -232,7 +232,7 @@ function MemberArea() {
                   return <article key={event.id} className="rounded-md border border-border bg-surface px-4 py-3">
                     <div className="flex flex-wrap items-center justify-between gap-2"><strong className="text-sm">{event.title}</strong><Badge tone={state === "accepted" || state === "going" ? "green" : state === "declined" ? "red" : "amber"}>{state === "going" ? "Accepted" : state === "waitlist" ? "Waitlisted" : state}</Badge></div>
                     <p className="mt-2 text-sm text-muted-foreground">{message}</p>
-                    <p className="mt-2 text-xs text-muted-foreground">{[formatDate(event.date), event.time, event.venue].filter((part) => part?.trim()).join(" · ")}</p>
+                    <p className="mt-2 text-xs text-muted-foreground">{[formatDate(event.date), event.time?.trim(), event.venue?.trim()].filter(Boolean).join(" · ")}</p>
                   </article>;
                 }) : <p className="text-sm text-muted-foreground">Your event RSVP messages will appear here.</p>}
               </div>

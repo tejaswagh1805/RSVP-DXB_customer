@@ -1,4 +1,4 @@
-import { createServerFn } from "@tanstack/react-start";
+﻿import { createServerFn } from "@tanstack/react-start";
 import { getRequestHeader, setResponseHeader } from "@tanstack/react-start/server";
 import { createHash, randomBytes, scrypt as scryptCallback, timingSafeEqual } from "node:crypto";
 import { promisify } from "node:util";
@@ -636,12 +636,13 @@ export const submitEventRsvpRequest = createServerFn({ method: "POST" })
     }
     const sql = getSql();
     const events = (await sql`
-      SELECT id, title, date::text AS date, end_date::text AS "endDate", time, venue, tracks, status, influencer_deliverables
+      SELECT id, title, date::text AS date, end_date::text AS "endDate", time, venue, tracks, status, capacity, influencer_deliverables
       FROM events WHERE id = ${data.eventId} LIMIT 1
-    `) as unknown as { id: string; title: string; date: string; endDate: string | null; time: string; venue: string; tracks: Track[]; status: string; influencer_deliverables: string }[];
+    `) as unknown as { id: string; title: string; date: string; endDate: string | null; time: string; venue: string; tracks: Track[]; status: string; capacity: number; influencer_deliverables: string }[];
     const event = events[0];
     const todayDubai = new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Dubai" }).format(new Date());
     if (!event || event.status !== "published" || (event.endDate || event.date) < todayDubai) throw new Error("This event is not accepting RSVP requests.");
+    if (Number(event.capacity) <= 0) throw new Error("This event is not accepting member RSVPs. Please use its ticket or creator pass option if available.");
     const eventTracks = event.tracks ?? [];
     if (eventTracks.length > 0 && !eventTracks.includes(data.track)) throw new Error("This event is not open to your track.");
     if (data.track === "Creators" && event.influencer_deliverables.trim() && !data.deliverablesAgreed) {
@@ -763,7 +764,7 @@ export const submitEventTicketInquiry = createServerFn({ method: "POST" })
           OR (
             ${requestType} = 'ticket'
             AND (application_deadline IS NULL OR application_deadline >= (NOW() AT TIME ZONE 'Asia/Dubai')::date)
-            AND ticket_url <> ''
+            AND (COALESCE(ticket_url, '') <> '' OR COALESCE(reservation_phone, '') <> '')
           )
         )
       LIMIT 1

@@ -161,7 +161,7 @@ function EventDetail() {
             {event.time ? ` · ${event.time}${event.endTime ? `–${event.endTime}` : ""}` : ""}
             {event.venue ? ` · ${event.venue}` : ""}{event.area ? `, ${event.area}` : ""}
             {event.gatesOpenTime ? ` · Gates open ${event.gatesOpenTime}` : ""}
-            {event.applicationDeadline ? ` · Nominations close ${formatDate(event.applicationDeadline)}` : ""}
+            {/award/i.test(`${event.category} ${event.title}`) && event.applicationDeadline ? ` · Nominations close ${formatDate(event.applicationDeadline)}` : ""}
             </p>
             {!isPastEvent && event.date ? <a className="mt-3 inline-flex text-sm text-primary underline" href={googleCalendarUrl(event)} target="_blank" rel="noreferrer">Add to calendar</a> : null}
           </div>

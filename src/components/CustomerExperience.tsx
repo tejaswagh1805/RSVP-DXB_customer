@@ -199,7 +199,7 @@ export function EventRibbon({
                     <h3 className="mt-1 text-2xl">{event.title}</h3>
                   </div>
                   <div className="mt-3 ribbon-action">
-                    <WhatsAppAction event={event} />
+                    <WhatsAppAction event={event} purpose="Request ticket" />
                   </div>
                 </article>
               ))}
@@ -666,7 +666,7 @@ export function TicketOffers() {
                 <ArrowUpRight size={18} />
               </Button>
             </Link>
-            {event && event.date >= new Date().toISOString().slice(0, 10) && (!event.applicationDeadline || event.applicationDeadline >= new Date().toISOString().slice(0, 10)) ? <WhatsAppAction event={event} /> : null}
+            {event && event.date >= new Date().toISOString().slice(0, 10) && (!event.applicationDeadline || event.applicationDeadline >= new Date().toISOString().slice(0, 10)) ? <WhatsAppAction event={event} purpose="Request ticket" /> : null}
           </div>
         </div>
       </div>

@@ -4,6 +4,7 @@ import { formatDate, type EventItem } from "@/lib/data";
 import { useStore } from "@/lib/store";
 import { Badge, Button } from "./ui-kit";
 import { EventImage } from "./EventImage";
+import { WhatsAppAction } from "./WhatsAppAction";
 
 export function EventCard({ event }: { event: EventItem }) {
   const { saved, toggleSave } = useStore();
@@ -31,7 +32,7 @@ export function EventCard({ event }: { event: EventItem }) {
         <h3 className="event-card-title mt-2 block line-clamp-2 text-xl leading-snug transition-colors group-hover:text-primary">{event.title}</h3>
         <p className="event-card-brand mt-2 truncate text-sm text-muted-foreground">{event.brand || event.venue || "RSVP DXB event"}</p>
         <p className="event-card-detail mt-3 line-clamp-2 text-sm leading-relaxed text-muted-foreground">
-          {isPast ? event.about.slice(0, 150) : event.applicationDeadline ? `Nominations close ${formatDate(event.applicationDeadline)}` : event.ageRestriction || event.hashtag || (event.tracks.length ? `Open to ${event.tracks.join(", ")}` : event.about)}
+          {isPast ? event.about.slice(0, 150) : /award/i.test(`${event.category} ${event.title}`) && event.applicationDeadline ? `Nominations close ${formatDate(event.applicationDeadline)}` : event.ageRestriction || event.hashtag || (event.tracks.length ? `Open to ${event.tracks.join(", ")}` : event.about)}
         </p>
 
         <div className="event-card-actions relative z-[2] mt-auto">
@@ -42,6 +43,7 @@ export function EventCard({ event }: { event: EventItem }) {
                 <Button size="sm" variant="primary">Request RSVP</Button>
               </Link>
             </div>
+            <WhatsAppAction event={event} purpose="Request ticket" />
             {event.creatorPassFormUrl ? <a className="event-card-creator-pass" href={event.creatorPassFormUrl} target="_blank" rel="noreferrer">
               <span className="event-card-creator-icon"><TicketCheck size={17} /></span>
               <span><strong>Request a creator pass</strong><small>Send your details for team review</small></span>
